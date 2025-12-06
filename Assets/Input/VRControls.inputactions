@@ -1,0 +1,102 @@
+{
+    "name": "VRControls",
+    "maps": [
+        {
+            "name": "XRI LeftHand",
+            "id": "f3f1232a-3884-43d5-8401-bb6d9118d62b",
+            "actions": [
+                {
+                    "name": "Select",
+                    "type": "Button",
+                    "id": "cb7b7ac7-f348-44db-8d57-c97a05cc0c3d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Cancel",
+                    "type": "Button",
+                    "id": "122c93a2-e4c5-49e4-b372-da1fc656eb85",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "f139beb1-425b-487c-8367-9786409eabad",
+                    "path": "<XRController>{LeftHand}/triggerButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bbf9cf41-1ea4-4527-8eac-e0a61f12ae82",
+                    "path": "<XRController>{LeftHand}/secondaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Cancel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "XRI RightHand",
+            "id": "73772353-1bcb-483d-b44f-b15f47c139e5",
+            "actions": [
+                {
+                    "name": "Select",
+                    "type": "Button",
+                    "id": "e943386f-e97a-4257-8221-4aec30f69946",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Cancel",
+                    "type": "Button",
+                    "id": "fd5898f4-f2f8-4c21-9073-ca454dc73da7",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "76457d72-9d2b-4e14-994c-712356029198",
+                    "path": "<XRController>{RightHand}/triggerButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "169f85e7-c5e2-4921-bbcf-db87de6495c1",
+                    "path": "<XRController>{RightHand}/secondaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Cancel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

@@ -1,0 +1,19 @@
+﻿# VR Dots Session Log (CSV)
+# dateTimeUTC,2025-11-11T18:04:35.8311160Z
+# deviceModel,Oculus Quest
+# deviceName,Quest 3
+# appVersion,0.1.4
+# simHz,75
+# viewDistance_m,2
+# metersPerDeg,0.03491013
+# apertureRadius_deg,8
+# dotSize_deg,0.5
+# rotationSpeed_degPerSec,81
+# translationSpeed_degPerSec,2.26
+# translationDuration_ms,300
+# delayedOnset_ms,750
+# preTranslation_ms,300
+# dotsPerField,400
+# trialsCount,160
+
+trialIndex,conditionID,headingDeg,onsetFrame,transStartFrame,transEndFrame,totalFrames,seedA0,seedA1,seedB2,seedB3
