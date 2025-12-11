@@ -7,15 +7,27 @@ using CondLib = StimulusConditionsLibrary;
 public class TrialBlockRunner : MonoBehaviour
 {
     [Header("References")]
-    public ExperimentSpec    spec;
-    public StimulusBuilder   builder;
-    public CsvLogger         csvLogger;
-    public StimDebugHUD      hud;      // optional, can be null
+    public ExperimentSpec  spec;
+    public StimulusBuilder builder;
+    public CsvLogger       csvLogger;
+    public StimDebugHUD    hud;              // optional
+    public ResponseCapture responseCapture;  // new: for 8-way responses
 
     [Header("Control")]
+    [Tooltip("If true, block starts automatically on Play.")]
     public bool autoStartOnPlay = true;
-    public bool loopBlock       = false;
 
+    [Tooltip("If true, loop back to the first trial after the block ends.")]
+    public bool loopBlock = false;
+
+    [Header("Trial start / response")]
+    [Tooltip("Key that starts each trial after fixation is visible.")]
+    public KeyCode startKey = KeyCode.Space;
+
+    [Tooltip("Extra frames after translationEndFrame before responses are accepted.")]
+    public int responseLagFrames = 0;
+
+    // Internal state --------------------------------------------------------
     private List<ExperimentSpec.PlannedTrial> _trials;
     private int   _trialIdx    = -1;
     private float _accum;
@@ -24,11 +36,14 @@ public class TrialBlockRunner : MonoBehaviour
 
     private CondLib.StimulusCondition   _currentCond;
     private ExperimentSpec.PlannedTrial _currentTrial;
-    private System.Random               _rng;
+    private System.Random _rng;
 
     // For mkrows / colorrows payload accumulation
     private StringBuilder _mkPayloadBuilder;
     private StringBuilder _colorPayloadBuilder;
+
+    // Whether we are showing fixation and waiting for the start key
+    private bool _waitingForStart = false;
 
     // ---------------------------------------------------------------------
     void Awake()
@@ -53,7 +68,8 @@ public class TrialBlockRunner : MonoBehaviour
                   $"spec={(spec ? spec.name : "NULL")}, " +
                   $"builder={(builder ? builder.name : "NULL")}, " +
                   $"csvLogger={(csvLogger ? csvLogger.name : "NULL")}, " +
-                  $"hud={(hud ? hud.name : "NULL")}");
+                  $"hud={(hud ? hud.name : "NULL")}, " +
+                  $"responseCapture={(responseCapture ? responseCapture.name : "NULL")}");
 
         if (autoStartOnPlay)
         {
@@ -122,6 +138,9 @@ public class TrialBlockRunner : MonoBehaviour
         _frameInTrial = 0;
         _accum        = 0f;
 
+        // We start in "fixation only, waiting for start key" state.
+        _waitingForStart = true;
+
         // reset mk/color payload builders for this trial
         _mkPayloadBuilder    = new StringBuilder();
         _colorPayloadBuilder = new StringBuilder();
@@ -148,6 +167,35 @@ public class TrialBlockRunner : MonoBehaviour
 
     void Update()
     {
+        if (_currentCond == null)
+            return;
+
+        // Phase 1: fixation-only, waiting for the start key
+        if (_waitingForStart)
+        {
+            if (Input.GetKeyDown(startKey))
+            {
+                _waitingForStart = false;
+
+                // Now we "arm" the responseCapture for this trial.
+                if (responseCapture != null)
+                {
+                    int respStart = _currentTrial.translationEndFrame + responseLagFrames;
+                    responseCapture.BeginTrial(_currentTrial.index, respStart);
+                    Debug.Log($"[TrialBlockRunner] ResponseCapture.BeginTrial: " +
+                              $"trialIndex={_currentTrial.index}, responseStartFrame={respStart} " +
+                              $"(transEnd={_currentTrial.translationEndFrame}, lag={responseLagFrames})");
+                }
+            }
+
+            if (hud != null)
+                hud.Tick();
+
+            // No motion / no frame stepping until trial is started.
+            return;
+        }
+
+        // Phase 2: trial is running, step simulation at fixed simHz
         _accum += Time.deltaTime;
         while (_accum >= _simDt)
         {
@@ -243,7 +291,7 @@ public class TrialBlockRunner : MonoBehaviour
         if (csvLogger != null && _currentCond.subfields != null)
         {
             int subCount = _currentCond.subfields.Length;
-            int[] mkCodes      = new int[subCount];
+            int[]    mkCodes    = new int[subCount];
             string[] colorCodes = new string[subCount];
 
             for (int i = 0; i < subCount; i++)
@@ -275,6 +323,12 @@ public class TrialBlockRunner : MonoBehaviour
             _colorPayloadBuilder.Append(string.Join("|", colorCodes));
         }
 
+        // Let ResponseCapture see this frame index (for RT in frames)
+        if (responseCapture != null)
+        {
+            responseCapture.NoteFrame(_frameInTrial);
+        }
+
         // Advance frame
         _frameInTrial++;
 
@@ -297,6 +351,11 @@ public class TrialBlockRunner : MonoBehaviour
                 csvLogger.LogColorRows(_currentTrial.index, _colorPayloadBuilder.ToString());
 
             csvLogger.EndTrial();
+        }
+
+        if (responseCapture != null)
+        {
+            responseCapture.EndTrial();
         }
 
         NextTrial();

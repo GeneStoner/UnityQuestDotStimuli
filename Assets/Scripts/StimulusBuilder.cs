@@ -367,7 +367,18 @@ public class StimulusBuilder : MonoBehaviour
             t.position = FromLocalPlane(lp);
         }
     }
+    public void SetDotsActive(bool active)
+{
+    if (Subfields == null) return;
 
+    for (int i = 0; i < Subfields.Length; i++)
+    {
+        if (Subfields[i] != null)
+        {
+            Subfields[i].gameObject.SetActive(active);
+        }
+    }
+}
     private bool IsValid(int i)
     {
         return Subfields != null
