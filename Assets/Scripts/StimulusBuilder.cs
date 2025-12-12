@@ -302,38 +302,38 @@ public class StimulusBuilder : MonoBehaviour
     }
 
     Material MakeAdditiveMaterial(Color c)
-{
-    // For now, favor robustness on Quest over fanciness.
-    // Use a simple Lit/Unlit that URP mobile definitely supports.
+    {
+        // For now, favor robustness on Quest over fanciness.
+        // Use a simple Lit/Unlit that URP mobile definitely supports.
 
-    Shader sh =
-        Shader.Find("Universal Render Pipeline/Lit")
-        ?? Shader.Find("Universal Render Pipeline/Unlit")
-        ?? Shader.Find("Standard")
-        ?? Shader.Find("Unlit/Color");
+        Shader sh =
+            Shader.Find("Universal Render Pipeline/Lit")
+            ?? Shader.Find("Universal Render Pipeline/Unlit")
+            ?? Shader.Find("Standard")
+            ?? Shader.Find("Unlit/Color");
 
-    var m = new Material(sh);
+        var m = new Material(sh);
 
-    // Try to set both common properties so it works across shaders.
-    if (m.HasProperty("_BaseColor"))
-        m.SetColor("_BaseColor", c);
-    if (m.HasProperty("_Color"))
-        m.SetColor("_Color", c);
+        // Try to set both common properties so it works across shaders.
+        if (m.HasProperty("_BaseColor"))
+            m.SetColor("_BaseColor", c);
+        if (m.HasProperty("_Color"))
+            m.SetColor("_Color", c);
 
-    // Make them opaque & bright.
-    if (m.HasProperty("_Surface"))
-        m.SetFloat("_Surface", 0f); // 0 = Opaque in URP Lit
+        // Make them opaque & bright.
+        if (m.HasProperty("_Surface"))
+            m.SetFloat("_Surface", 0f); // 0 = Opaque in URP Lit
 
-    // Disable transparency keywords if present.
-    m.DisableKeyword("_ALPHATEST_ON");
-    m.DisableKeyword("_ALPHABLEND_ON");
-    m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        // Disable transparency keywords if present.
+        m.DisableKeyword("_ALPHATEST_ON");
+        m.DisableKeyword("_ALPHABLEND_ON");
+        m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 
-    // Ensure it's in the opaque queue.
-    m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
+        // Ensure it's in the opaque queue.
+        m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
 
-    return m;
-}
+        return m;
+    }
 
     Vector3 ToLocalPlane(Vector3 worldPos)
     {
@@ -367,18 +367,24 @@ public class StimulusBuilder : MonoBehaviour
             t.position = FromLocalPlane(lp);
         }
     }
-    public void SetDotsActive(bool active)
-{
-    if (Subfields == null) return;
 
-    for (int i = 0; i < Subfields.Length; i++)
+    /// <summary>
+    /// Enable/disable all dot subfields as a group (used by TrialBlockRunner).
+    /// </summary>
+    public void SetDotsActive(bool active)
     {
-        if (Subfields[i] != null)
+        if (Subfields == null) return;
+
+        for (int i = 0; i < Subfields.Length; i++)
         {
-            Subfields[i].gameObject.SetActive(active);
+            var sf = Subfields[i];
+            if (sf == null || sf.root == null)
+                continue;
+
+            sf.root.gameObject.SetActive(active);
         }
     }
-}
+
     private bool IsValid(int i)
     {
         return Subfields != null
@@ -388,11 +394,19 @@ public class StimulusBuilder : MonoBehaviour
                && Subfields[i].dots != null;
     }
 
+    // *** CHANGED: Only delete Subfield_* children, keep FixationSpot etc. ***
     void ClearChildren()
     {
         var toKill = new List<GameObject>();
+
         foreach (Transform c in transform)
-            toKill.Add(c.gameObject);
+        {
+            // Only nuke auto-generated subfields
+            if (c.name.StartsWith("Subfield_"))
+            {
+                toKill.Add(c.gameObject);
+            }
+        }
 
         foreach (var g in toKill)
         {

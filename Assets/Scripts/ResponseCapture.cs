@@ -2,26 +2,19 @@
 using UnityEngine;
 
 /// <summary>
-/// Captures a single 8-way direction response per trial (keyboard only).
+/// Captures a single 8-way direction response per trial (keyboard only, for now).
 ///
-/// Idea:
-///   - 8 keys mapped to 8 directions (indices 0..7).
-///   - TrialBlockRunner tells us:
-///       BeginTrial(trialIndex, responseStartFrame)
-///       NoteFrame(frameIndex) once per frame
-///       EndTrial(), then GetResponse(...) at the end.
+/// TrialBlockRunner calls:
+///   - BeginTrial(trialIndex, responseStartFrame)
+///   - NoteFrame(frameIndex) once per frame
+///   - EndTrial()
+///   - GetResponse(...) at the end of the trial
 ///
-/// This component does *not* know what the actual heading degrees are.
-/// It only reports:
+/// This component reports:
 ///   - choiceIndex (0..7, or -1 for no response)
 ///   - RT in frames, measured from responseStartFrame
-///   - which KeyCode was pressed (for debugging).
-///
-/// Default mapping (you can change these in the Inspector):
-///   index 0 -> KeyCode.Alpha1
-///   index 1 -> KeyCode.Alpha2
-///   ...
-///   index 7 -> KeyCode.Alpha8
+///   - which KeyCode was pressed
+///   - a device tag ("keyboard" for now, later "controller" etc.)
 /// </summary>
 public class ResponseCapture : MonoBehaviour
 {
@@ -45,12 +38,12 @@ public class ResponseCapture : MonoBehaviour
     // --- internal state ----------------------------------------------------
     private bool _isTrialActive = false;
 
-    private int _currentTrialIndex = -1;
-    private int _responseStartFrame = 0;  // first frame at which responses are counted
-
-    private int _respChoiceIndex = -1;    // 0..7 or -1 (no response)
-    private int _respFrame = -1;          // absolute frame index of response
-    private KeyCode _respKey = KeyCode.None;
+    private int     _currentTrialIndex  = -1;
+    private int     _responseStartFrame = 0;   // first frame at which responses are counted
+    private int     _respChoiceIndex    = -1;  // 0..7 or -1 (no response)
+    private int     _respFrame          = -1;  // absolute frame index of response
+    private KeyCode _respKey            = KeyCode.None;
+    private string  _respDevice         = "";  // "keyboard", "controller", etc.
 
     /// <summary>
     /// Call at the start of a trial.
@@ -63,6 +56,7 @@ public class ResponseCapture : MonoBehaviour
         _respChoiceIndex = -1;
         _respFrame       = -1;
         _respKey         = KeyCode.None;
+        _respDevice      = "";
         _isTrialActive   = true;
 
         if (debugLogResponses)
@@ -87,16 +81,18 @@ public class ResponseCapture : MonoBehaviour
         if (_respChoiceIndex >= 0)
             return;
 
-        // Scan all 8 direction keys.
+        // Scan all 8 direction keys (keyboard).
         for (int i = 0; i < directionKeys.Length; i++)
         {
             var key = directionKeys[i];
             if (Input.GetKeyDown(key))
             {
-                RecordResponse(i, key, frameIndex);
+                RecordResponse(i, key, frameIndex, "keyboard");
                 break;
             }
         }
+
+        // Later: we’ll add controller-based detection here and pass device = "controller".
     }
 
     /// <summary>
@@ -108,7 +104,7 @@ public class ResponseCapture : MonoBehaviour
         {
             Debug.Log(
                 $"[ResponseCapture] EndTrial: trial={_currentTrialIndex}, " +
-                $"choiceIndex={_respChoiceIndex}, key={_respKey}, frame={_respFrame}"
+                $"choiceIndex={_respChoiceIndex}, key={_respKey}, frame={_respFrame}, device={_respDevice}"
             );
         }
 
@@ -117,12 +113,13 @@ public class ResponseCapture : MonoBehaviour
 
     /// <summary>
     /// Retrieve the response for the latest trial.
-    /// If no response: choiceIndex = -1, respRT_frames = -1, respKey = KeyCode.None.
+    /// If no response: choiceIndex = -1, respRT_frames = -1, respKey = KeyCode.None, respDevice = "".
     /// </summary>
-    public void GetResponse(out int choiceIndex, out int respRT_frames, out KeyCode respKey)
+    public void GetResponse(out int choiceIndex, out int respRT_frames, out KeyCode respKey, out string respDevice)
     {
         choiceIndex = _respChoiceIndex;
         respKey     = _respKey;
+        respDevice  = _respDevice;
 
         if (_respFrame < 0)
         {
@@ -132,6 +129,15 @@ public class ResponseCapture : MonoBehaviour
         {
             respRT_frames = _respFrame - _responseStartFrame;
         }
+    }
+
+    /// <summary>
+    /// Backwards-compatible 3-arg version (if anything else ever calls it).
+    /// </summary>
+    public void GetResponse(out int choiceIndex, out int respRT_frames, out KeyCode respKey)
+    {
+        string dummyDevice;
+        GetResponse(out choiceIndex, out respRT_frames, out respKey, out dummyDevice);
     }
 
     /// <summary>
@@ -145,25 +151,27 @@ public class ResponseCapture : MonoBehaviour
             Debug.Log($"[ResponseCapture] AbortTrial: trial={_currentTrialIndex}");
         }
 
-        _isTrialActive    = false;
-        _respChoiceIndex  = -1;
-        _respFrame        = -1;
-        _respKey          = KeyCode.None;
+        _isTrialActive     = false;
+        _respChoiceIndex   = -1;
+        _respFrame         = -1;
+        _respKey           = KeyCode.None;
+        _respDevice        = "";
         _currentTrialIndex = -1;
     }
 
     // --- internal helper ---------------------------------------------------
-    private void RecordResponse(int choiceIndex, KeyCode key, int frameIndex)
+    private void RecordResponse(int choiceIndex, KeyCode key, int frameIndex, string device)
     {
         _respChoiceIndex = choiceIndex;
         _respFrame       = frameIndex;
         _respKey         = key;
+        _respDevice      = device;
 
         if (debugLogResponses)
         {
             Debug.Log(
                 $"[ResponseCapture] Response recorded: trial={_currentTrialIndex}, " +
-                $"choiceIndex={choiceIndex}, key={key}, frame={frameIndex}"
+                $"choiceIndex={choiceIndex}, key={key}, frame={frameIndex}, device={device}"
             );
         }
     }
