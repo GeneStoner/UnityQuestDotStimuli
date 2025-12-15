@@ -9,6 +9,9 @@ UserSettings/
 MemoryCaptures/
 Recordings/
 
+# ========== Unity / Burst debug artifacts ==========
+*_BurstDebugInformation_DoNotShip*/
+
 # ========== OS / IDE junk ==========
 .DS_Store
 Thumbs.db
@@ -40,8 +43,12 @@ sysinfo.txt
 *.aab
 *.ipa
 *.exe
-*.dll
 *.unitypackage
+
+# NOTE: Do NOT ignore *.dll globally; Unity packages/plugins may include required DLLs.
+# If you want to ignore built DLLs, scope it to build outputs only, e.g.:
+# Build/**/*.dll
+# Builds/**/*.dll
 
 # ========== Unity Collab / Plastic ==========
 **/PlasticSCM/
