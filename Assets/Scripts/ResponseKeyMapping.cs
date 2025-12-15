@@ -29,45 +29,25 @@ public static class ResponseKeyMapping
     //  - TrialBlockRunner may later convert 0..3 into an 8-way
     //    representation if desired.
     // ---------------------------------------------------------
-    public static bool TryMapDirection(KeyCode key, out int choiceIndex)
+    // Convention (8-way, keypad-centric):
+// 0=Up(8), 1=UpRight(9), 2=Right(6), 3=DownRight(3),
+// 4=Down(2), 5=DownLeft(1), 6=Left(4), 7=UpLeft(7)
+public static bool TryMapDirection(KeyCode key, out int choiceIndex)
+{
+    choiceIndex = -1;
+    switch (key)
     {
-        choiceIndex = -1;
-
-        switch (key)
-        {
-            // Up
-            case KeyCode.UpArrow:
-            case KeyCode.W:
-            case KeyCode.Keypad8:
-                choiceIndex = 0;
-                return true;
-
-            // Right
-            case KeyCode.RightArrow:
-            case KeyCode.D:
-            case KeyCode.Keypad6:
-                choiceIndex = 1;
-                return true;
-
-            // Down
-            case KeyCode.DownArrow:
-            case KeyCode.S:
-            case KeyCode.Keypad2:
-                choiceIndex = 2;
-                return true;
-
-            // Left
-            case KeyCode.LeftArrow:
-            case KeyCode.A:
-            case KeyCode.Keypad4:
-                choiceIndex = 3;
-                return true;
-
-            default:
-                return false;
-        }
+        case KeyCode.Keypad8: choiceIndex = 0; return true;
+        case KeyCode.Keypad9: choiceIndex = 1; return true;
+        case KeyCode.Keypad6: choiceIndex = 2; return true;
+        case KeyCode.Keypad3: choiceIndex = 3; return true;
+        case KeyCode.Keypad2: choiceIndex = 4; return true;
+        case KeyCode.Keypad1: choiceIndex = 5; return true;
+        case KeyCode.Keypad4: choiceIndex = 6; return true;
+        case KeyCode.Keypad7: choiceIndex = 7; return true;
+        default: return false;
     }
-
+}
     // ---------------------------------------------------------
     // CONFIRM KEYS
     // A direction becomes a *valid response* only after one of these.
