@@ -1,33 +1,39 @@
 // FILE: ResponseTypes.cs
+// Purpose: shared response data types (NO input mapping logic in here).
 //
-// Single source of truth for shared response types used by:
-//  - TrialBlockRunner
-//  - TargetResponseController
-//
-// Keep these in the global namespace (no namespace block)
-// so all your existing scripts can see them without edits.
+// IMPORTANT:
+// - Do NOT define ResponseKeyMapping in this file.
+// - ResponseKeyMapping must live only in ResponseKeyMapping.cs
 
 using UnityEngine;
 
-/// <summary>
-/// Status of the response window when it ends.
-/// </summary>
 public enum ResponseStatus
 {
-    None = 0,
     Confirmed,
     Canceled,
     TimedOut
 }
 
-/// <summary>
-/// Final response summary returned to TrialBlockRunner when the response window finishes.
-/// </summary>
+[System.Serializable]
 public struct TargetResponse
 {
-    public ResponseStatus status;   // Confirmed / Canceled / TimedOut / None
-    public int      choiceIndex;    // 0..7 (or 0..3 depending on mapping), -1 if none
-    public int      rtFrames;       // RT in frames from response-window start
-    public KeyCode  key;            // key that confirmed/canceled (or None)
-    public string   deviceLabel;    // e.g., "Keyboard"
+    public ResponseStatus status;
+
+    // 0..7 when Confirmed, -1 otherwise
+    public int choiceIndex;
+
+    // Frames from response-window onset to the ENDING key (confirm/cancel) or timeout.
+    public int rtFrames;
+
+    // Direction-selection key last pressed (Keypad7 etc). None if never selected.
+    public KeyCode selectionKey;
+
+    // Confirm key used (Return/Space/KeypadEnter). None if canceled/timeout.
+    public KeyCode confirmKey;
+
+    // Backward-compat: ending key (confirm/cancel). None on timeout.
+    public KeyCode key;
+
+    // "Keyboard" for now; later controller labeling.
+    public string deviceLabel;
 }
