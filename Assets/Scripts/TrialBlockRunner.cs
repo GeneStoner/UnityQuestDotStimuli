@@ -14,6 +14,7 @@ public class TrialBlockRunner : MonoBehaviour
     public CsvLogger csvLogger;
     public StimDebugHUD hud;
     public TargetResponseController targetResponseController;
+    public FixationController fixation;
 
     [Header("Control")]
     public bool autoStartOnPlay = true;
@@ -24,8 +25,11 @@ public class TrialBlockRunner : MonoBehaviour
     public int maxResponseFrames = 0;
 
     [Header("Logging")]
-    public string outputFileName = "Dots.tsv";         // <-- default prefix shortened
-    public bool appendDateTimeToFilename = true;       // <-- keep appending
+    public string outputFileName = "Dots.tsv";
+    public bool appendDateTimeToFilename = true;
+
+    [Header("Debug")]
+    public KeyCode refreshFixationKey = KeyCode.F5;
 
     // ----------------- internal state -----------------
     private List<ExperimentSpec.PlannedTrial> _allPlannedTrials;
@@ -49,6 +53,9 @@ public class TrialBlockRunner : MonoBehaviour
 
     private int _responseFrameIndex = 0;
 
+    // Fixation change detection
+    private int _lastFixSig = int.MinValue;
+
     void Awake()
     {
         if (spec == null || builder == null)
@@ -58,8 +65,19 @@ public class TrialBlockRunner : MonoBehaviour
             return;
         }
 
+        // Robust fixation hookup
+        if (fixation == null)
+            fixation = GetComponentInChildren<FixationController>(true);
+        if (fixation == null)
+            fixation = FindObjectOfType<FixationController>(true);
+
+        if (fixation == null)
+            Debug.LogWarning("[TrialBlockRunner] No FixationController found. Assign TrialBlockRunner.fixation or add FixationController to FixationSpot.");
+
         _simDt = spec.SimDt;
         _rng = new System.Random(1234567);
+
+        RefreshFixation(force: true);
     }
 
     void Start()
@@ -85,7 +103,6 @@ public class TrialBlockRunner : MonoBehaviour
         _trialQueue = new Queue<ExperimentSpec.PlannedTrial>(_allPlannedTrials);
         _startedTrialCount = 0;
 
-        // Precompute counts for this block run
         int targetN = spec.GetTargetNumberTrialsEstimate();
         int generatedN = _allPlannedTrials.Count;
 
@@ -93,8 +110,9 @@ public class TrialBlockRunner : MonoBehaviour
         {
             string path = BuildSessionPathSimple();
             csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
-
-            // Set counts AFTER BeginSession so meta writes reflect them immediately
+            // TEMP: until we have real calibration, freeze 100 px/deg into the sidecar.
+            // Replace 100f later with your Quest calibration result.
+            csvLogger.SetStimulusSpecSnapshotFromSpec(spec, pixelsPerDeg: 100f);
             csvLogger.SetTargetNumberTrials(targetN);
             csvLogger.SetGeneratedTrials(generatedN);
         }
@@ -112,7 +130,6 @@ public class TrialBlockRunner : MonoBehaviour
         if (!appendDateTimeToFilename)
             return baseName;
 
-        // YYMMDD_HHMM (no seconds, 2-digit year)
         string stamp = DateTime.Now.ToString("yyMMdd_HHmm");
 
         int dot = baseName.LastIndexOf('.');
@@ -141,8 +158,6 @@ public class TrialBlockRunner : MonoBehaviour
                 {
                     string path = BuildSessionPathSimple();
                     csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
-
-                    // Re-assert block counts for the new session file
                     csvLogger.SetTargetNumberTrials(spec.GetTargetNumberTrialsEstimate());
                     csvLogger.SetGeneratedTrials(_allPlannedTrials != null ? _allPlannedTrials.Count : 0);
                 }
@@ -168,12 +183,19 @@ public class TrialBlockRunner : MonoBehaviour
         _mkPayloadBuilder = new StringBuilder();
         _colorPayloadBuilder = new StringBuilder();
 
+        // Refresh fixation at every trial boundary
+        RefreshFixation(force: false);
+
         // Builder setup
         builder.viewDistanceMeters = spec.viewDistance_m;
         builder.apertureDeg = spec.apertureRadius_deg * 2f;
         builder.dotSizeMeters = spec.dotSize_deg * spec.GetMetersPerDegree();
         builder.dotsPerField = spec.dotsPerField;
         builder.randomSeed = _currentTrial.seedA0;
+
+        // (Keep this ordering; affects spawn later)
+        builder.centralExclusionRadiusMeters =
+            spec.centralExclusionRadius_deg * spec.GetMetersPerDegree();
 
         builder.BuildFromCondition(_currentCond);
         builder.SetDotsActive(false);
@@ -190,6 +212,12 @@ public class TrialBlockRunner : MonoBehaviour
 
     void Update()
     {
+        // Hot-reload fixation if spec values change in Play mode
+        RefreshFixation(force: false);
+
+        if (Input.GetKeyDown(refreshFixationKey))
+            RefreshFixation(force: true);
+
         if (_currentCond == null || _phase == TrialPhase.Done)
             return;
 
@@ -215,6 +243,37 @@ public class TrialBlockRunner : MonoBehaviour
         if (hud != null) hud.Tick();
     }
 
+    private void RefreshFixation(bool force)
+    {
+        if (fixation == null || spec == null) return;
+
+        int sig = ComputeFixationSignature(spec);
+
+        if (force || sig != _lastFixSig)
+        {
+            _lastFixSig = sig;
+            fixation.ConfigureFromSpec(spec);
+        }
+    }
+
+    private static int ComputeFixationSignature(ExperimentSpec s)
+    {
+        unchecked
+        {
+            int h = 17;
+            h = h * 31 + (int)s.fixationStyle;
+            h = h * 31 + s.fixationDotRadius_deg.GetHashCode();
+            h = h * 31 + s.fixationRingInnerRadius_deg.GetHashCode();
+            h = h * 31 + s.fixationRingThickness_deg.GetHashCode();
+            h = h * 31 + s.fixationCrosshairArmLength_deg.GetHashCode();
+            h = h * 31 + s.fixationCrosshairThickness_deg.GetHashCode();
+            h = h * 31 + s.fixationColor.GetHashCode();
+            h = h * 31 + s.centralExclusionRadius_deg.GetHashCode();
+            h = h * 31 + s.viewDistance_m.GetHashCode();
+            return h;
+        }
+    }
+
     private void SimStep()
     {
         if (_phase == TrialPhase.Stimulus) SimStepStimulus();
@@ -230,7 +289,6 @@ public class TrialBlockRunner : MonoBehaviour
             return;
         }
 
-        // Log the fixed columns ONCE per trial (frame 0)
         if (_frameInStimulus == 0 && csvLogger != null)
         {
             csvLogger.LogTrialRow(
@@ -270,13 +328,13 @@ public class TrialBlockRunner : MonoBehaviour
                     break;
 
                 case CondLib.MotionKind.Linear:
-                {
-                    float th = _currentTrial.headingDeg * Mathf.Deg2Rad;
-                    float speed_mps = spec.translationSpeed_degPerSec * metersPerDeg;
-                    Vector2 d = new Vector2(Mathf.Cos(th), Mathf.Sin(th)) * (speed_mps * dt);
-                    builder.StepTranslation(i, d, _frameInStimulus);
-                    break;
-                }
+                    {
+                        float th = _currentTrial.headingDeg * Mathf.Deg2Rad;
+                        float speed_mps = spec.translationSpeed_degPerSec * metersPerDeg;
+                        Vector2 d = new Vector2(Mathf.Cos(th), Mathf.Sin(th)) * (speed_mps * dt);
+                        builder.StepTranslation(i, d, _frameInStimulus);
+                        break;
+                    }
 
                 case CondLib.MotionKind.NonCoherent:
                     builder.StepNonCoherentBalanced(i, spec.translationSpeed_degPerSec, dt, metersPerDeg, _frameInStimulus);
@@ -287,7 +345,6 @@ public class TrialBlockRunner : MonoBehaviour
             }
         }
 
-        // Accumulate mkrows + colorrows into single TSV fields
         if (_currentCond.subfields != null)
         {
             int subCount = _currentCond.subfields.Length;
@@ -394,7 +451,7 @@ public class TrialBlockRunner : MonoBehaviour
 
         if (requeue)
         {
-            csvLogger?.AddRequeuedTrial(); // <-- keep meta honest
+            csvLogger?.AddRequeuedTrial();
             if (_trialQueue == null) _trialQueue = new Queue<ExperimentSpec.PlannedTrial>();
             _trialQueue.Enqueue(_currentTrial);
         }
@@ -407,15 +464,15 @@ public class TrialBlockRunner : MonoBehaviour
     {
         switch (responseIndex)
         {
-            case 0: digit = 8; dir = "N";  break;
+            case 0: digit = 8; dir = "N"; break;
             case 1: digit = 9; dir = "NE"; break;
-            case 2: digit = 6; dir = "E";  break;
+            case 2: digit = 6; dir = "E"; break;
             case 3: digit = 3; dir = "SE"; break;
-            case 4: digit = 2; dir = "S";  break;
+            case 4: digit = 2; dir = "S"; break;
             case 5: digit = 1; dir = "SW"; break;
-            case 6: digit = 4; dir = "W";  break;
+            case 6: digit = 4; dir = "W"; break;
             case 7: digit = 7; dir = "NW"; break;
-            default: digit = -1; dir = "";  break;
+            default: digit = -1; dir = ""; break;
         }
     }
 
