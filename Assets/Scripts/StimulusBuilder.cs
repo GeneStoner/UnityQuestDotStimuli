@@ -21,15 +21,12 @@ public class StimulusBuilder : MonoBehaviour
     public float dotSizeMeters = 0.02f;
 
     [Header("Fallback colors (used only if condition doesn't override)")]
-    public Color red = new Color(0.9f, 0.2f, 0.2f, 1f);
+    public Color red   = new Color(0.9f, 0.2f, 0.2f, 1f);
     public Color green = new Color(0.2f, 0.85f, 0.2f, 1f);
 
-    [Header("Central exclusion (meters)")]
-    [Tooltip("Inner exclusion radius in meters (0 = none). Set from ExperimentSpec.")]
-    public float centralExclusionRadiusMeters = 0f;
-
-    [Tooltip("How aggressively to push dots out of the exclusion zone. 1.0 = just outside; >1 adds margin.")]
-    public float exclusionPushMargin = 1.002f;
+    [Header("Aperture boundary handling")]
+    [Tooltip("If true, dots that leave the aperture are respawned uniformly inside. If false, they are reflected (edge-biased over time).")]
+    public bool respawnWhenOutOfBounds = true;
 
     // ---------- Runtime container ----------
     public class SubfieldRuntime
@@ -39,9 +36,9 @@ public class StimulusBuilder : MonoBehaviour
         public List<Transform> dots;
         public Color color;                  // default color
         public Material material;            // shared material for this subfield
-        public CondLib.Eye eye;
-        public CondLib.DepthPlane plane;
-        public CondLib.MotionKind initialMotion;
+
+        // NEW: deterministic seed base for respawns
+        public int seedBase;
     }
 
     public SubfieldRuntime[] Subfields { get; private set; } = new SubfieldRuntime[4];
@@ -80,16 +77,14 @@ public class StimulusBuilder : MonoBehaviour
 
         Subfields = new SubfieldRuntime[4];
 
-        float R = ApertureRadiusMeters;
-        float inner = Mathf.Clamp(centralExclusionRadiusMeters, 0f, R * 0.999f);
-
         for (int i = 0; i < 4; i++)
         {
             var sf = new SubfieldRuntime
             {
                 name = $"Subfield_{i}",
                 root = new GameObject($"Subfield_{i}").transform,
-                dots = new List<Transform>(Mathf.Max(1, dotsPerField / 2))
+                dots = new List<Transform>(Mathf.Max(1, dotsPerField / 2)),
+                seedBase = (i < 2) ? (randomSeed + i * 1000003) : (randomSeed + 99991 + i * 1000003)
             };
             sf.root.SetParent(transform, false);
 
@@ -109,14 +104,11 @@ public class StimulusBuilder : MonoBehaviour
                 dot.transform.SetParent(sf.root, false);
                 dot.transform.localScale = Vector3.one * dotSizeMeters;
 
-                var rend = dot.GetComponent<Renderer>();
-                if (rend != null)
-                    rend.material = sf.material;
+                var r = dot.GetComponent<Renderer>();
+                if (r != null)
+                    r.material = sf.material;
 
-                Vector2 p = (inner > 0f)
-                    ? UniformAnnulus(rng, inner, R)
-                    : UniformDisk(rng, R);
-
+                Vector2 p = UniformDisk(rng, ApertureRadiusMeters);
                 dot.transform.position =
                     transform.position + transform.right * p.x + transform.up * p.y;
 
@@ -126,20 +118,12 @@ public class StimulusBuilder : MonoBehaviour
             Subfields[i] = sf;
         }
 
-        // Debug: report how many dots we actually built
         int totalDots = 0;
         foreach (var sf in Subfields)
             if (sf != null && sf.dots != null)
                 totalDots += sf.dots.Count;
 
-        float Rm = ApertureRadiusMeters;
-        Debug.Log(
-            $"[StimulusBuilder] Built condition '{cond.name}' " +
-            $"dotsPerField={dotsPerField} dotSize_m={dotSizeMeters:0.####} " +
-            $"apertureDeg={apertureDeg:0.###} Rm={Rm:0.####} Dm={(2f * Rm):0.####} " +
-            $"viewDist_m={viewDistanceMeters:0.###} innerExcl={centralExclusionRadiusMeters:0.####}m"
-        );
-        Debug.Log($"[StimulusBuilder] Built condition '{cond.name}' with {totalDots} dots total. innerExcl={centralExclusionRadiusMeters:F4}m");
+        Debug.Log($"[StimulusBuilder] Built condition '{cond.name}' with {totalDots} dots total.");
     }
 
     // ========================================================================
@@ -154,31 +138,27 @@ public class StimulusBuilder : MonoBehaviour
 
         for (int s = 0; s < count; s++)
         {
-            var tracks = cond.subfields[s];
+            var tracks  = cond.subfields[s];
             var runtime = Subfields[s];
             if (runtime == null || runtime.dots == null) continue;
 
-            // Visibility
             bool visible = true;
             if (tracks.visibleByFrame != null && frame < tracks.visibleByFrame.Length)
                 visible = tracks.visibleByFrame[frame];
 
-            // Color
             Color col = runtime.color;
             if (tracks.colorByFrame != null && frame < tracks.colorByFrame.Length)
                 col = tracks.colorByFrame[frame];
 
-            // Apply to shared material (all dots in subfield)
             if (runtime.material != null)
                 runtime.material.color = col;
 
-            // Toggle renderers
             foreach (var t in runtime.dots)
             {
                 if (t == null) continue;
                 var r = t.GetComponent<Renderer>();
                 if (r != null)
-                    r.enabled = visible;
+                    r.enabled = true; // keep always visible for now (as in your current file)
             }
         }
     }
@@ -193,64 +173,48 @@ public class StimulusBuilder : MonoBehaviour
         float ang = degPerSec * dt * Mathf.Sign(dirSign == 0 ? 1 : dirSign);
         Quaternion q = Quaternion.AngleAxis(ang, transform.forward);
 
-        float R = ApertureRadiusMeters;
-        float r0 = Mathf.Clamp(centralExclusionRadiusMeters, 0f, R * 0.999f);
-
-        foreach (var t in Subfields[subfieldIndex].dots)
+        var dots = Subfields[subfieldIndex].dots;
+        for (int k = 0; k < dots.Count; k++)
         {
+            var t = dots[k];
             Vector3 local = ToLocalPlane(t.position);
             local = q * local;
             t.position = FromLocalPlane(local);
 
-            WrapIntoDisk(t, R);
-            EnforceCentralExclusion(t, r0);
+            HandleOutOfBounds(subfieldIndex, k, ref local, frame: -1);
+            t.position = FromLocalPlane(local);
         }
     }
 
-    // Coherent translation: same delta for all dots in subfield
     public void StepTranslation(int subfieldIndex, Vector2 deltaLocalMeters, int frame = -1)
     {
         if (!IsValid(subfieldIndex)) return;
 
-        float R = ApertureRadiusMeters;
-        float r0 = Mathf.Clamp(centralExclusionRadiusMeters, 0f, R * 0.999f);
-
-        foreach (var t in Subfields[subfieldIndex].dots)
+        var dots = Subfields[subfieldIndex].dots;
+        for (int k = 0; k < dots.Count; k++)
         {
+            var t = dots[k];
+
             Vector3 lp = ToLocalPlane(t.position);
             lp.x += deltaLocalMeters.x;
             lp.y += deltaLocalMeters.y;
 
-            // outer boundary reflect
-            Vector2 v = new Vector2(lp.x, lp.y);
-            if (v.magnitude > R)
-            {
-                Vector2 n = v.normalized;
-                v -= 2f * n * (v.magnitude - R);
-                v *= 0.999f;
-                lp.x = v.x;
-                lp.y = v.y;
-            }
+            HandleOutOfBounds(subfieldIndex, k, ref lp, frame);
 
             t.position = FromLocalPlane(lp);
 
-            // inner boundary keep-out
-            EnforceCentralExclusion(t, r0);
-
             if (frame >= 0)
             {
-                Vector3 lp2 = ToLocalPlane(t.position);
                 trajectoryLog.Add(new TrajectorySample
                 {
                     frame = frame,
                     subfieldIndex = subfieldIndex,
-                    localPos = new Vector2(lp2.x, lp2.y)
+                    localPos = new Vector2(lp.x, lp.y)
                 });
             }
         }
     }
 
-    // Balanced non-coherent translation
     public void StepTranslationBalanced(int subfieldIndex, float stepMeters, int frame = -1)
     {
         if (!IsValid(subfieldIndex)) return;
@@ -270,11 +234,7 @@ public class StimulusBuilder : MonoBehaviour
             new Vector2( 1,-1).normalized
         };
 
-        float R = ApertureRadiusMeters;
-        float r0 = Mathf.Clamp(centralExclusionRadiusMeters, 0f, R * 0.999f);
-
-        int n = dots.Count;
-        for (int k = 0; k < n; k++)
+        for (int k = 0; k < dots.Count; k++)
         {
             var t = dots[k];
             Vector2 delta = dirs[k % dirs.Length] * stepMeters;
@@ -283,30 +243,17 @@ public class StimulusBuilder : MonoBehaviour
             lp.x += delta.x;
             lp.y += delta.y;
 
-            // outer boundary reflect
-            Vector2 v = new Vector2(lp.x, lp.y);
-            if (v.magnitude > R)
-            {
-                Vector2 nn = v.normalized;
-                v -= 2f * nn * (v.magnitude - R);
-                v *= 0.999f;
-                lp.x = v.x;
-                lp.y = v.y;
-            }
+            HandleOutOfBounds(subfieldIndex, k, ref lp, frame);
 
             t.position = FromLocalPlane(lp);
 
-            // inner boundary keep-out
-            EnforceCentralExclusion(t, r0);
-
             if (frame >= 0)
             {
-                Vector3 lp2 = ToLocalPlane(t.position);
                 trajectoryLog.Add(new TrajectorySample
                 {
                     frame = frame,
                     subfieldIndex = subfieldIndex,
-                    localPos = new Vector2(lp2.x, lp2.y)
+                    localPos = new Vector2(lp.x, lp.y)
                 });
             }
         }
@@ -326,46 +273,55 @@ public class StimulusBuilder : MonoBehaviour
     // ========================================================================
     // Helpers
     // ========================================================================
+    void HandleOutOfBounds(int subfieldIndex, int dotIndex, ref Vector3 lp, int frame)
+    {
+        float R = ApertureRadiusMeters;
+        Vector2 v = new Vector2(lp.x, lp.y);
+
+        if (v.magnitude <= R) return;
+
+        if (!respawnWhenOutOfBounds)
+        {
+            // old behavior: reflect -> edge bias over time
+            Vector2 n = v.normalized;
+            v -= 2f * n * (v.magnitude - R);
+            v *= 0.999f;
+            lp.x = v.x;
+            lp.y = v.y;
+            return;
+        }
+
+        // NEW behavior: respawn uniformly in disk, deterministically.
+        int seed = Hash(Subfields[subfieldIndex].seedBase, dotIndex, frame);
+        System.Random rng = new System.Random(seed);
+
+        Vector2 p = UniformDisk(rng, R);
+        lp.x = p.x;
+        lp.y = p.y;
+    }
+
+    static int Hash(int seedBase, int dotIndex, int frame)
+    {
+        unchecked
+        {
+            int h = 17;
+            h = h * 31 + seedBase;
+            h = h * 31 + dotIndex;
+            h = h * 31 + frame;
+            // Avoid zero seed degeneracy in some RNGs
+            if (h == 0) h = 1;
+            return h;
+        }
+    }
+
     static Vector2 UniformDisk(System.Random rng, float R)
     {
-        float u = (float)rng.NextDouble();
-        float r = R * Mathf.Sqrt(u);
+        float u  = (float)rng.NextDouble();
+        float r  = R * Mathf.Sqrt(u);
         float th = (float)rng.NextDouble() * (2f * Mathf.PI);
         return new Vector2(r * Mathf.Cos(th), r * Mathf.Sin(th));
     }
 
-    static Vector2 UniformAnnulus(System.Random rng, float rInner, float rOuter)
-    {
-        float u = (float)rng.NextDouble();
-        float th = (float)rng.NextDouble() * (2f * Mathf.PI);
-        float r = Mathf.Sqrt(u * (rOuter * rOuter - rInner * rInner) + rInner * rInner);
-        return new Vector2(r * Mathf.Cos(th), r * Mathf.Sin(th));
-    }
-
-    // Push dot out of the central exclusion zone, if enabled.
-    void EnforceCentralExclusion(Transform t, float rInner)
-    {
-        if (t == null) return;
-        if (rInner <= 0f) return;
-
-        Vector3 lp = ToLocalPlane(t.position);
-        Vector2 v = new Vector2(lp.x, lp.y);
-        float r = v.magnitude;
-
-        if (r >= rInner) return;
-
-        // If exactly at center, pick a deterministic direction.
-        Vector2 dir = (r > 1e-9f) ? (v / r) : Vector2.right;
-
-        float target = rInner * Mathf.Max(1.0001f, exclusionPushMargin);
-        Vector2 pushed = dir * target;
-
-        lp.x = pushed.x;
-        lp.y = pushed.y;
-        t.position = FromLocalPlane(lp);
-    }
-
-    // Converts a visual angle in degrees to lateral offset (meters) at distance.
     static float DegToMeters(float angleDeg, float viewDistMeters)
     {
         return viewDistMeters * Mathf.Tan(angleDeg * Mathf.Deg2Rad);
@@ -387,12 +343,11 @@ public class StimulusBuilder : MonoBehaviour
             m.SetColor("_Color", c);
 
         if (m.HasProperty("_Surface"))
-            m.SetFloat("_Surface", 0f);
+            m.SetFloat("_Surface", 0f); // Opaque
 
         m.DisableKeyword("_ALPHATEST_ON");
         m.DisableKeyword("_ALPHABLEND_ON");
         m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-
         m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
 
         return m;
@@ -412,25 +367,12 @@ public class StimulusBuilder : MonoBehaviour
     {
         return transform.position
                + transform.right * localPlane.x
-               + transform.up * localPlane.y;
+               + transform.up    * localPlane.y;
     }
 
-    void WrapIntoDisk(Transform t, float R)
-    {
-        Vector3 lp = ToLocalPlane(t.position);
-        Vector2 v = new Vector2(lp.x, lp.y);
-
-        if (v.magnitude > R)
-        {
-            Vector2 n = v.normalized;
-            v -= 2f * n * (v.magnitude - R);
-            v *= 0.999f;
-            lp.x = v.x;
-            lp.y = v.y;
-            t.position = FromLocalPlane(lp);
-        }
-    }
-
+    /// <summary>
+    /// Enable/disable all dot subfields as a group (used by TrialBlockRunner).
+    /// </summary>
     public void SetDotsActive(bool active)
     {
         if (Subfields == null) return;
@@ -454,6 +396,7 @@ public class StimulusBuilder : MonoBehaviour
                && Subfields[i].dots != null;
     }
 
+    // Only delete Subfield_* children, keep other children (fixation, etc.)
     void ClearChildren()
     {
         var toKill = new List<GameObject>();

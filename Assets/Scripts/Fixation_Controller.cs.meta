@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 04f4d82e3c7cd4f4caed1640e51a2b7f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - spec: {fileID: 11400000, guid: 20fa7573e215445689ffed4d799bb63f, type: 2}
+  - fixDot: {instanceID: 0}
+  - ringOuter: {instanceID: 0}
+  - ringInner: {instanceID: 0}
+  - hArm: {instanceID: 0}
+  - vArm: {instanceID: 0}
+  - dotMaterial: {instanceID: 0}
+  - crossMaterial: {instanceID: 0}
+  - ringOuterMaterial: {instanceID: 0}
+  - ringInnerMaterial: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

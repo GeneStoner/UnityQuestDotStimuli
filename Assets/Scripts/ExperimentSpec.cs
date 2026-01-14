@@ -17,7 +17,7 @@ public abstract class ExperimentSpec : ScriptableObject
     [Tooltip("Aperture RADIUS in degrees of visual angle (2° → 4° diameter).")]
     public float apertureRadius_deg = 2.0f;
 
-    [Tooltip("Dot size in degrees.")]
+    [Tooltip("Dot size in degrees (DIAMETER).")]
     public float dotSize_deg = 0.03f;
 
     [Header("Kinematics (degrees)")]
@@ -37,7 +37,9 @@ public abstract class ExperimentSpec : ScriptableObject
     public float preTranslation_ms = 300f;
 
     [Header("Block / Balancing")]
-    [Tooltip("How many repeats per unique stimulus (condition × heading × etc.) to generate. Keep low for pilots.")]
+    [Tooltip("How many repeats per unique stimulus (condition × heading × etc.) to generate. " +
+             "NOTE: individual ExperimentSpec subclasses may use their own repetition knobs; " +
+             "this is used only for target-number estimates unless the subclass uses it explicitly.")]
     [Min(1)]
     public int repeatsPerStimulus = 2;
 
@@ -48,96 +50,69 @@ public abstract class ExperimentSpec : ScriptableObject
     [Tooltip("Dots per perceptual FIELD (so ~dotsPerField/2 per subfield).")]
     public int dotsPerField = 200;
 
-    [Header("Color Palette")]
-    public Color rgbaRed   = new Color(0.9f, 0.2f, 0.2f, 1f);
-    public Color rgbaGreen = new Color(0.2f, 0.85f, 0.2f, 1f);
-    public Color rgbaBlack = new Color(0f, 0f, 0f, 1f);
+    // ================= FIXATION (degrees of visual angle) =================
 
-    // =========================================================================
-    // Fixation + Central Exclusion
-    // =========================================================================
-
-    // IMPORTANT: include CrosshairOnly for backward compatibility with earlier scripts
-    // that referenced ExperimentSpec.FixationStyle.CrosshairOnly.
     public enum FixationStyle
     {
         Dot,
         BullsEye,
-        Crosshair,
-        CrosshairOnly,          // alias/back-compat; treat same as Crosshair
-        BullsEyePlusCrosshair
+        BullsEyePlusCrosshair,
+        Crosshair
     }
 
-    [Header("Fixation + Central Exclusion (degrees)")]
-    [Tooltip("Exclude dots within this radius around fixation (deg). 0 = none.")]
-    [Min(0f)]
-    public float centralExclusionRadius_deg = 0.0f;
-
-    [Header("Fixation (degrees)")]
+    [Header("Fixation Target (degrees)")]
     public FixationStyle fixationStyle = FixationStyle.BullsEyePlusCrosshair;
 
-    [Tooltip("Center dot radius (deg).")]
-    [Min(0f)]
-    public float fixationDotRadius_deg = 0.05f;
-
-    [Tooltip("Bull's-eye ring INNER radius (deg).")]
-    [Min(0f)]
-    public float fixationRingInnerRadius_deg = 0.15f;
-
-    [Tooltip("Bull's-eye ring thickness (deg). Outer radius = inner + thickness.")]
-    [Min(0f)]
-    public float fixationRingThickness_deg = 0.03f;
-
-    [Tooltip("Crosshair arm length from center to tip (deg).")]
-    [Min(0f)]
-    public float fixationCrosshairArmLength_deg = 0.25f;
-
-    [Tooltip("Crosshair stroke thickness (deg).")]
-    [Min(0f)]
-    public float fixationCrosshairThickness_deg = 0.03f;
-
-    [Tooltip("Fixation color (ERP-style recommendation: white).")]
+    [Tooltip("Fixation color (applies to all parts unless overridden).")]
     public Color fixationColor = Color.white;
 
-    // Optional desktop display geometry (used later for deg->px mapping)
-    [Header("Desktop Display Geometry (optional; for deg → px)")]
-    [Tooltip("Physical screen width in meters (measure once).")]
-    [Min(0f)]
-    public float screenWidth_m = 0.0f;
+    [Tooltip("Fixation dot RADIUS in degrees.")]
+    public float fixationDotRadius_deg = 0.05f;   // ~0.1° diameter default
 
-    [Tooltip("Horizontal pixel resolution (0 = use Screen.width at runtime).")]
-    public int screenResX = 0;
+    [Tooltip("Inner radius of bullseye ring (degrees).")]
+    public float fixationRingInnerRadius_deg = 0.15f;
 
-    /// <summary>Ring OUTER radius (deg) = inner radius + thickness.</summary>
-    public float FixationRingOuterRadius_deg => Mathf.Max(0f, fixationRingInnerRadius_deg + fixationRingThickness_deg);
+    [Tooltip("Ring thickness (degrees).")]
+    public float fixationRingThickness_deg = 0.03f;
 
-    // =========================================================================
-    // Color coding for balancing
-    // =========================================================================
+    [Tooltip("Crosshair arm HALF-length (degrees).")]
+    public float fixationCrosshairArmLength_deg = 0.25f;
+
+    [Tooltip("Crosshair stroke thickness (degrees).")]
+    public float fixationCrosshairThickness_deg = 0.03f;
+
+    //temmp color fudging to get closer to red/green isoluminance
+    // [Header("Color Palette")]
+
+    public Color rgbaRed = new Color(0.9f, 0.2f, 0.2f, 1f);
+    public Color rgbaGreen = new Color(0.2f, 0.45f, 0.2f, 1f);
+    //public Color rgbaRed = new Color(0.9f, 0.2f, 0.2f, 1f);
+   // public Color rgbaGreen = new Color(0.2f, 0.85f, 0.2f, 1f);
+    public Color rgbaBlack = new Color(0f, 0f, 0f, 1f);
+
+    // ---- Color coding for balancing ----
     public const int COLOR_RED = 0;
     public const int COLOR_GREEN = 1;
 
-    protected Color ColorFromCode(int code)
-    {
-        return (code == COLOR_RED) ? rgbaRed : rgbaGreen;
-    }
-
-    protected int OppositeColorCode(int code)
-    {
-        return (code == COLOR_RED) ? COLOR_GREEN : COLOR_RED;
-    }
+    protected Color ColorFromCode(int code) => (code == COLOR_RED) ? rgbaRed : rgbaGreen;
+    protected int OppositeColorCode(int code) => (code == COLOR_RED) ? COLOR_GREEN : COLOR_RED;
 
     [Serializable]
     public class PlannedTrial
     {
         public int index;                 // 0..N-1
-        public string conditionID;        // "CUED", "UNCUED", etc.
-        public float headingDeg;          // one of 8 directions
+        public string conditionID;           // "CUED", "UNCUED", etc.
+        public float headingDeg;            // one of 8 directions
+
+        // NEW: rotation configuration axis (0/1)
+        // 0 = A: (0,1)=CW and (2,3)=CCW
+        // 1 = B: (0,1)=CCW and (2,3)=CW
+        public int rotationConfig = 0;
 
         // Timing window semantics: [translationStartFrame, translationEndFrame)
         public int onsetFrame;
-        public int translationStartFrame; // inclusive
-        public int translationEndFrame;   // exclusive
+        public int translationStartFrame;    // inclusive
+        public int translationEndFrame;      // exclusive
         public int totalFrames;
 
         // Random seeds for subfields
@@ -151,48 +126,47 @@ public abstract class ExperimentSpec : ScriptableObject
         public int delayedFieldColorCode;
     }
 
-    // =========================================================================
-    // Helpers
-    // =========================================================================
+    // ---------- Helpers ----------
     public float SimDt => 1f / Mathf.Max(1, simHz);
 
     public int MsToFrames(float ms)
     {
-        return Mathf.Max(1, Mathf.RoundToInt((ms / 1000f) * simHz));
-    }
-
-    public float GetMetersPerDegree()
-    {
-        return viewDistance_m * Mathf.Tan(Mathf.Deg2Rad * 1f);
+        // round to nearest; minimum 1 frame for any positive duration
+        return Mathf.Max(1, Mathf.RoundToInt((ms / 1000f) * Mathf.Max(1, simHz)));
     }
 
     /// <summary>
-    /// Optional: compute pixels/degree for desktop when you set screenWidth_m.
-    /// If screenWidth_m or screenResX are unset, returns 0 (caller should fallback).
+    /// Exact meters per 1 degree at viewDistance_m (small-angle approx not used).
     /// </summary>
-    public float PixelsPerDegree()
+    public float GetMetersPerDegree()
     {
-        if (screenWidth_m <= 1e-6f) return 0f;
-        int resX = (screenResX > 0) ? screenResX : Screen.width;
-        if (resX <= 0) return 0f;
-
-        float mPerDeg = GetMetersPerDegree();
-        float pxPerMeter = resX / screenWidth_m;
-        return mPerDeg * pxPerMeter;
+        float d = Mathf.Max(1e-6f, viewDistance_m);
+        return d * Mathf.Tan(Mathf.Deg2Rad * 1f);
     }
 
-    // =========================================================================
-    // Abstract API
-    // =========================================================================
+    // ---------- Abstract API ----------
     public abstract List<PlannedTrial> GetPlannedTrials(System.Random rng);
     public abstract CondLib.StimulusCondition BuildEffectiveCondition(PlannedTrial trial);
 
+    /// <summary>
+    /// Return the number of *distinct* stimuli (unique identities) implied by this spec.
+    /// Subclasses should override with the correct combinatorics for their trial generation.
+    /// </summary>
     public virtual int GetUniqueStimulusCount() { return 0; }
 
+    /// <summary>
+    /// Estimate of intended number of trials for a block/session.
+    /// This is used for meta bookkeeping only. Actual trials are GetPlannedTrials().Count.
+    /// </summary>
     public int GetTargetNumberTrialsEstimate()
     {
         int unique = GetUniqueStimulusCount();
+
+        // If subclass doesn't implement it, fall back to 0 to avoid misleading meta.
         if (unique <= 0) return 0;
+
+        // Default estimate uses repeatsPerStimulus. Subclasses may ignore repeatsPerStimulus
+        // in GetPlannedTrials() and use their own repetition knob; that's fine—this is a target.
         return Mathf.Max(1, repeatsPerStimulus) * unique;
     }
 }

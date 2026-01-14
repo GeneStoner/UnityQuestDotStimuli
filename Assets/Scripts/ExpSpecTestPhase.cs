@@ -4,30 +4,38 @@ using System.Collections.Generic;
 using UnityEngine;
 using CondLib = StimulusConditionsLibrary;
 
-[CreateAssetMenu(fileName = "ExpSpecTestPhase",
-                 menuName = "Stimuli/Experiment Specs/Test Phase",
-                 order = 10)]
+[CreateAssetMenu(
+    fileName = "ExpSpecTestPhase",
+    menuName = "Stimuli/Experiment Specs/Test Phase",
+    order = 10)]
 public class ExpSpecTestPhase : ExperimentSpec
 {
-    [Header("Balancing")]
-    [Tooltip("Base repetitions per (condition × heading). If balanceDelayedFieldColor is true, total per cell becomes 2× this (one Red-delayed + one Green-delayed per repetition).")]
-    [Min(1)]
-    public int repetitionsPerConditionPerHeading = 5;
+    [Header("Rotation configuration")]
+    [Tooltip("If true, include BOTH rotation configurations (A and B). If false, use only config A.")]
+    public bool includeBothRotationConfigs = true;
 
-    // We have 2 conditions × 8 headings × (1 or 2 delayed-colors)
+    // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor)
     public override int GetUniqueStimulusCount()
     {
-        int baseUnique = 2 * 8; // CUED/UNCUED × 8 headings
+        int condFactor = 2;
+        int headingFactor = 8;
+        int rotFactor = includeBothRotationConfigs ? 2 : 1;
         int colorFactor = balanceDelayedFieldColor ? 2 : 1;
-        return baseUnique * colorFactor;
+
+        return condFactor * headingFactor * rotFactor * colorFactor;
     }
 
     public override List<PlannedTrial> GetPlannedTrials(System.Random rng)
     {
-        var trials = new List<PlannedTrial>();
+        var trials = new List<PlannedTrial>(capacity: Mathf.Max(1, GetTargetNumberTrialsEstimate()));
 
         string[] condIDs = { "CUED", "UNCUED" };
         float[] headings = { 0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f };
+
+        int[] rotCfgs = includeBothRotationConfigs ? new[] { 0, 1 } : new[] { 0 };
+
+        // This is now the ONLY repetition knob.
+        int reps = Mathf.Max(1, repeatsPerStimulus);
 
         int idx = 0;
 
@@ -35,44 +43,56 @@ public class ExpSpecTestPhase : ExperimentSpec
         {
             foreach (var h in headings)
             {
-                for (int r = 0; r < repetitionsPerConditionPerHeading; r++)
+                foreach (int rotCfg in rotCfgs)
                 {
                     if (balanceDelayedFieldColor)
                     {
-                        // perfect balance per (cond×heading×rep): one R-delayed and one G-delayed
-                        trials.Add(MakeTrial(rng, ref idx, condID, h, COLOR_RED));
-                        trials.Add(MakeTrial(rng, ref idx, condID, h, COLOR_GREEN));
+                        // Two distinct stimuli (DelR, DelG) per (cond × heading × rotCfg)
+                        for (int r = 0; r < reps; r++)
+                        {
+                            trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED));
+                            trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN));
+                        }
                     }
                     else
                     {
-                        // legacy: delayed field always green
-                        trials.Add(MakeTrial(rng, ref idx, condID, h, COLOR_GREEN));
+                        // One distinct stimulus per (cond × heading × rotCfg)
+                        for (int r = 0; r < reps; r++)
+                        {
+                            trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN));
+                        }
                     }
                 }
             }
         }
 
-        // Shuffle
+        // Shuffle (deterministic given rng)
         for (int i = trials.Count - 1; i > 0; i--)
         {
             int j = rng.Next(i + 1);
             (trials[i], trials[j]) = (trials[j], trials[i]);
         }
 
-        // Reindex after shuffle
+        // Reindex after shuffle so Trial column is contiguous
         for (int i = 0; i < trials.Count; i++)
             trials[i].index = i;
 
         return trials;
     }
 
-    private PlannedTrial MakeTrial(System.Random rng, ref int idx, string condID, float headingDeg, int delayedColorCode)
+    private PlannedTrial MakeTrial(System.Random rng,
+                                   ref int idx,
+                                   string condID,
+                                   float headingDeg,
+                                   int rotationConfig,
+                                   int delayedColorCode)
     {
         var t = new PlannedTrial
         {
             index = idx++,
             conditionID = condID,
             headingDeg = headingDeg,
+            rotationConfig = rotationConfig,          // requires PlannedTrial to include this int
             delayedFieldColorCode = delayedColorCode
         };
 
@@ -100,10 +120,12 @@ public class ExpSpecTestPhase : ExperimentSpec
     {
         int N = t.totalFrames;
 
+        string rotTag = (t.rotationConfig == 0) ? "RotA" : "RotB";
         var cond = new CondLib.StimulusCondition
         {
-            name = $"Trial_{t.index}_{t.conditionID}_Del{(t.delayedFieldColorCode == COLOR_RED ? "R" : "G")}"
+            name = $"Trial_{t.index}_{t.conditionID}_{rotTag}_Del{(t.delayedFieldColorCode == COLOR_RED ? "R" : "G")}"
         };
+
         cond.timeline.totalFrames = N;
         cond.subfields = new CondLib.SubfieldTracks[4];
 
@@ -125,19 +147,22 @@ public class ExpSpecTestPhase : ExperimentSpec
         int tStart = t.translationStartFrame;
         int tEnd   = t.translationEndFrame; // [tStart, tEnd)
 
-        // delayed field (B) color and opposite for the non-delayed field (A)
         Color delayedColor    = ColorFromCode(t.delayedFieldColorCode);
         Color nonDelayedColor = ColorFromCode(OppositeColorCode(t.delayedFieldColorCode));
+
+        // Rotation assignment depends on rotationConfig
+        CondLib.MotionKind aRot = (t.rotationConfig == 0) ? CondLib.MotionKind.RotationCW  : CondLib.MotionKind.RotationCCW;
+        CondLib.MotionKind bRot = (t.rotationConfig == 0) ? CondLib.MotionKind.RotationCCW : CondLib.MotionKind.RotationCW;
 
         for (int f = 0; f < N; f++)
         {
             bool afterOnset = f >= onset;
 
             // Baseline rotations
-            cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.RotationCW;
-            cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.RotationCW;
-            cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.RotationCCW;
-            cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.RotationCCW;
+            cond.subfields[0].motionKindByFrame[f] = aRot;
+            cond.subfields[1].motionKindByFrame[f] = aRot;
+            cond.subfields[2].motionKindByFrame[f] = bRot;
+            cond.subfields[3].motionKindByFrame[f] = bRot;
 
             // Field A (non-delayed): visible always, opposite color
             cond.subfields[0].colorByFrame[f]   = nonDelayedColor;
@@ -177,13 +202,11 @@ public class ExpSpecTestPhase : ExperimentSpec
         {
             if (isCued)
             {
-                // delayed field (B = 2,3)
                 cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
                 cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
             }
             else
             {
-                // non-delayed field (A = 0,1)
                 cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
                 cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
             }

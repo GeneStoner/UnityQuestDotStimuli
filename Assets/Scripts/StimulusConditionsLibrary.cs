@@ -77,7 +77,9 @@ public static class StimulusConditionsLibrary
             for (int f = 0; f < totalFrames; f++)
             {
                 cond.subfields[s].motionKindByFrame[f] = MotionKind.None;
-                cond.subfields[s].visibleByFrame[f]    = false;
+                //cond.subfields[s].visibleByFrame[f] = false;
+                //changed this Jan 5 on ChatGpts advice. "things are visbble unless explicitly gated"
+                cond.subfields[s].visibleByFrame[f] = true;
                 cond.subfields[s].colorByFrame[f]      = Color.black;
                 cond.subfields[s].eyeByFrame[f]        = Eye.Both;
                 cond.subfields[s].depthByFrame[f]      = DepthPlane.Fixation;

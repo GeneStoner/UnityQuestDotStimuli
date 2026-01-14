@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Security.Cryptography;
+using System.Collections.Generic;
 using UnityEngine;
 using CondLib = StimulusConditionsLibrary;
 
@@ -12,15 +12,19 @@ public class CsvLogger : MonoBehaviour
     [Header("Subject (optional but recommended)")]
     public string subjectId = "S000";
     public string subjectNotes = "";
-    public int subjectAge = -1;           // optional
-    public string subjectSex = "";        // optional
-    public string subjectHandedness = ""; // optional
+    public int subjectAge = -1;
+    public string subjectSex = "";
+    public string subjectHandedness = "";
 
     [Header("Build (optional)")]
     public string applicationVersion = "0.1.4";
     public string gitCommit = "";
     public string gitBranch = "";
     public string experimentVersion = "";
+
+    [Header("Logging controls")]
+    [Tooltip("If false (recommended), TSV payload columns for mkrows/colorrows are left empty. Hash columns still logged.")]
+    public bool writeTrajectoryPayloads = false;
 
     // ---------------- internal ----------------
     private string _tsvPath;
@@ -32,7 +36,7 @@ public class CsvLogger : MonoBehaviour
     private bool _sessionOpen;
     private bool _metaDirty;
 
-    // --- block/session counts (clarified) ---
+    // --- block/session counts ---
     private int _targetNumberTrials = 0;
     private int _generatedTrials = 0;
 
@@ -47,6 +51,9 @@ public class CsvLogger : MonoBehaviour
     private int _curTrialIndex = -1;
     private string _curCond = "";
     private float _curTransDeg = 0f;
+
+    // rotation config (0/1), or -1 if unknown
+    private int _curRotCfg = -1;
 
     // delayed-field color (R/G)
     private string _curDelayedFieldColor = "";
@@ -63,11 +70,15 @@ public class CsvLogger : MonoBehaviour
     private string _curMotionTypeRows = "";
     private string _curColorRows = "";
 
-    // trial timing / seeds (from LogTrialRow / BeginTrial)
+    // per-trial hashes
+    private uint _curMkHash32 = 0;
+    private uint _curColorHash32 = 0;
+
+    // trial timing / seeds
     private int _curOn = -1, _curTS = -1, _curTE = -1, _curN = -1;
     private int _curSeedA0 = 0, _curSeedA1 = 0, _curSeedB2 = 0, _curSeedB3 = 0;
 
-    // session constants (these come from BeginSession / BeginTrial)
+    // session constants
     private string _sessionId = "";
     private string _createdIso = "";
     private string _timezone = "America/Los_Angeles";
@@ -88,19 +99,38 @@ public class CsvLogger : MonoBehaviour
     private float _simDt = 0f;
     private float _simHz = 0f;
 
-    // ---- NEW: spec snapshot + hash ----
-    private string _stimulusSpecSnapshotJson = "";
-    private string _stimulusSpecHashSha256 = "";
-
     // Track whether a trial has been started but not yet finalized (row not written).
     private bool _trialOpen = false;
+
+    // Sidecar write guard (once per session/file)
+    private bool _sidecarWritten = false;
+
+    // -------- Trajectory library (64 entries expected) --------
+    private struct TrajDef
+    {
+        public string stimKey;       // stable key for analyzers
+        public string cond;
+        public int rotCfg;
+        public float transDeg;
+        public string delayedColor;  // "R" or "G"
+        public string mkPayload;
+        public string colorPayload;
+        public uint mkHash32;
+        public uint colorHash32;
+    }
+
+    // Keyed by stimKey
+    private readonly Dictionary<string, TrajDef> _trajLib = new Dictionary<string, TrajDef>(128);
 
     // fixed column order
     private static readonly string[] Columns = new[]
     {
-        "Trial","Cond","TransDeg","RespDeg","RespIndex","RespDigit","RTf",
+        "Trial","Cond","RotCfg","TransDeg",
+        "RespDeg","RespIndex","RespDigit","RTf",
         "OnsetFrame","TransStartFrame","TransEndFrame","TotalFrames",
-        "SeedA0","SeedA1","SeedB2","SeedB3","DelayedFieldColor","EndKey","Device",
+        "SeedA0","SeedA1","SeedB2","SeedB3",
+        "DelayedFieldColor","EndKey","Device",
+        "MkHash32","ColorHash32",
         "MotionTypeByFrame_SubfieldCodes","ColorByFrame_SubfieldCodes"
     };
 
@@ -137,6 +167,10 @@ public class CsvLogger : MonoBehaviour
         _requeuedTrials = 0;
 
         _trialOpen = false;
+        _sidecarWritten = false;
+
+        // new session file => new trajectory library
+        _trajLib.Clear();
 
         _metaDirty = true;
         _sessionOpen = true;
@@ -216,6 +250,8 @@ public class CsvLogger : MonoBehaviour
         _curTrialIndex = trial.index;
         _curCond = trial.conditionID ?? "";
         _curTransDeg = trial.headingDeg;
+        _curRotCfg = trial.rotationConfig;
+
         _curOn = trial.onsetFrame;
         _curTS = trial.translationStartFrame;
         _curTE = trial.translationEndFrame;
@@ -231,6 +267,7 @@ public class CsvLogger : MonoBehaviour
         _trialOpen = true;
     }
 
+    // Lenient for older callers
     public void LogTrialRow(
         int trialIndex,
         string conditionId,
@@ -269,11 +306,13 @@ public class CsvLogger : MonoBehaviour
     public void LogMkRows(int trialIndex, string mkPayload)
     {
         _curMotionTypeRows = mkPayload ?? "";
+        _curMkHash32 = Fnv1a32(_curMotionTypeRows);
     }
 
     public void LogColorRows(int trialIndex, string colorPayload)
     {
         _curColorRows = colorPayload ?? "";
+        _curColorHash32 = Fnv1a32(_curColorRows);
     }
 
     public void LogResponse(int respIndex, int respDigit, string respDir, int rtFrames, string endKey, string device)
@@ -293,9 +332,13 @@ public class CsvLogger : MonoBehaviour
 
         WriteHeaderIfNeeded();
 
+        string mkOut = writeTrajectoryPayloads ? Sanitize(_curMotionTypeRows) : "";
+        string colOut = writeTrajectoryPayloads ? Sanitize(_curColorRows) : "";
+
         string line =
             _curTrialIndex + "\t" +
             _curCond + "\t" +
+            _curRotCfg + "\t" +
             F(_curTransDeg) + "\t" +
             F(_curRespDeg) + "\t" +
             _curRespIndex + "\t" +
@@ -312,8 +355,10 @@ public class CsvLogger : MonoBehaviour
             _curDelayedFieldColor + "\t" +
             Sanitize(_curEndKey) + "\t" +
             Sanitize(_curDevice) + "\t" +
-            Sanitize(_curMotionTypeRows) + "\t" +
-            Sanitize(_curColorRows);
+            _curMkHash32.ToString("X8") + "\t" +
+            _curColorHash32.ToString("X8") + "\t" +
+            mkOut + "\t" +
+            colOut;
 
         _tsv.WriteLine(line);
         _tsv.Flush();
@@ -324,7 +369,6 @@ public class CsvLogger : MonoBehaviour
         _trialOpen = false;
     }
 
-    // --- Existing setters ---
     public void SetTargetNumberTrials(int n)
     {
         _targetNumberTrials = Mathf.Max(0, n);
@@ -338,8 +382,6 @@ public class CsvLogger : MonoBehaviour
         _metaDirty = true;
         if (_sessionOpen) TryWriteMetaJson();
     }
-
-    public void SetPlannedTrials(int n) => SetGeneratedTrials(n);
 
     public void AddRequeuedTrial()
     {
@@ -356,101 +398,190 @@ public class CsvLogger : MonoBehaviour
         if (_sessionOpen) TryWriteMetaJson();
     }
 
-    // ---- NEW: stimulus spec snapshot ----
+    // -------- trajectory library API (called by TrialBlockRunner) --------
 
-    /// <summary>
-    /// Call once per session (right after BeginSession) to freeze the exact spec into meta.
-    /// pixelsPerDeg should come from your calibration or UI config (use 100 for now if unknown).
-    /// </summary>
-    public void SetStimulusSpecSnapshotFromSpec(ExperimentSpec spec, float pixelsPerDeg)
+    public static string MakeStimKey(string cond, int rotCfg, float transDeg, string delayedColor)
     {
-        if (spec == null) return;
-
-        string json = BuildStimulusSpecSnapshotJson(spec, pixelsPerDeg);
-        SetStimulusSpecSnapshotRaw(json);
+        return $"{cond}|Rot{rotCfg}|H{transDeg:0.###}|Del{delayedColor}";
     }
 
-    /// <summary>
-    /// Sets snapshot JSON + sha256 hash (hex). Stored in the .meta.json.
-    /// </summary>
-    public void SetStimulusSpecSnapshotRaw(string snapshotJson)
+    public void RegisterTrajectoryDefinition(
+        string stimKey,
+        string cond,
+        int rotCfg,
+        float transDeg,
+        string delayedColor,
+        string mkPayload,
+        string colorPayload
+    )
     {
-        _stimulusSpecSnapshotJson = snapshotJson ?? "";
-        _stimulusSpecHashSha256 = Sha256Hex(_stimulusSpecSnapshotJson);
-        _metaDirty = true;
-        if (_sessionOpen) TryWriteMetaJson();
+        if (string.IsNullOrEmpty(stimKey)) return;
+
+        mkPayload = mkPayload ?? "";
+        colorPayload = colorPayload ?? "";
+
+        var td = new TrajDef
+        {
+            stimKey = stimKey,
+            cond = cond ?? "",
+            rotCfg = rotCfg,
+            transDeg = transDeg,
+            delayedColor = delayedColor ?? "",
+            mkPayload = mkPayload,
+            colorPayload = colorPayload,
+            mkHash32 = Fnv1a32(mkPayload),
+            colorHash32 = Fnv1a32(colorPayload)
+        };
+
+        if (!_trajLib.ContainsKey(stimKey))
+            _trajLib.Add(stimKey, td);
     }
 
-    private static string BuildStimulusSpecSnapshotJson(ExperimentSpec spec, float pixelsPerDeg)
+    // -------- Sidecar (called by TrialBlockRunner) --------
+
+    public void WriteSidecarOnce(
+        ExperimentSpec spec,
+        StimulusBuilder builder,
+        Fixation_Controller fixation,
+        List<ExperimentSpec.PlannedTrial> plannedTrials,
+        bool monitorPreviewMode,
+        float previewScale,
+        bool useSeparatePreviewScales,
+        float previewDotScale,
+        float previewFixationScale,
+        float previewApertureScale,
+        Camera cam
+    )
     {
-        string f(float x) => x.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture);
-        string ci(Color c) => $"[{f(c.r)},{f(c.g)},{f(c.b)},{f(c.a)}]";
+        if (_sidecarWritten) return;
+        if (string.IsNullOrEmpty(_tsvPath))
+        {
+            Debug.LogWarning("[CsvLogger] WriteSidecarOnce: _tsvPath not set yet.");
+            return;
+        }
 
-        // Keep it deliberately explicit & stable (no Unity object IDs, no enum integer dependence beyond names).
-        var sb = new StringBuilder(1024);
-        sb.Append("{");
-        sb.Append("\"simHz\":").Append(spec.simHz).Append(",");
-        sb.Append("\"viewDistance_m\":").Append(f(spec.viewDistance_m)).Append(",");
-        sb.Append("\"metersPerDegree\":").Append(f(spec.GetMetersPerDegree())).Append(",");
-        sb.Append("\"pixelsPerDeg\":").Append(f(pixelsPerDeg)).Append(",");
+        string sidecarPath = _tsvPath + ".sidecar.json";
 
-        sb.Append("\"apertureRadius_deg\":").Append(f(spec.apertureRadius_deg)).Append(",");
-        sb.Append("\"dotSize_deg\":").Append(f(spec.dotSize_deg)).Append(",");
-        sb.Append("\"dotsPerField\":").Append(spec.dotsPerField).Append(",");
-
-        sb.Append("\"rotationSpeed_degPerSec\":").Append(f(spec.rotationSpeed_degPerSec)).Append(",");
-        sb.Append("\"translationSpeed_degPerSec\":").Append(f(spec.translationSpeed_degPerSec)).Append(",");
-        sb.Append("\"translationDuration_ms\":").Append(f(spec.translationDuration_ms)).Append(",");
-        sb.Append("\"delayedOnset_ms\":").Append(f(spec.delayedOnset_ms)).Append(",");
-        sb.Append("\"preTranslation_ms\":").Append(f(spec.preTranslation_ms)).Append(",");
-
-        sb.Append("\"repeatsPerStimulus\":").Append(spec.repeatsPerStimulus).Append(",");
-        sb.Append("\"balanceDelayedFieldColor\":").Append(spec.balanceDelayedFieldColor ? "true" : "false").Append(",");
-
-        sb.Append("\"palette\":{");
-        sb.Append("\"rgbaRed\":").Append(ci(spec.rgbaRed)).Append(",");
-        sb.Append("\"rgbaGreen\":").Append(ci(spec.rgbaGreen)).Append(",");
-        sb.Append("\"rgbaBlack\":").Append(ci(spec.rgbaBlack));
-        sb.Append("},");
-
-        sb.Append("\"centralExclusionRadius_deg\":").Append(f(spec.centralExclusionRadius_deg)).Append(",");
-
-        sb.Append("\"fixation\":{");
-        sb.Append("\"style\":\"").Append(spec.fixationStyle.ToString()).Append("\",");
-        sb.Append("\"dotRadius_deg\":").Append(f(spec.fixationDotRadius_deg)).Append(",");
-        sb.Append("\"ringInnerRadius_deg\":").Append(f(spec.fixationRingInnerRadius_deg)).Append(",");
-        sb.Append("\"ringThickness_deg\":").Append(f(spec.fixationRingThickness_deg)).Append(",");
-        sb.Append("\"crosshairArmLength_deg\":").Append(f(spec.fixationCrosshairArmLength_deg)).Append(",");
-        sb.Append("\"crosshairThickness_deg\":").Append(f(spec.fixationCrosshairThickness_deg)).Append(",");
-        sb.Append("\"color\":").Append(ci(spec.fixationColor));
-        sb.Append("}");
-
-        sb.Append("}");
-        return sb.ToString();
-    }
-
-    private static string Sha256Hex(string s)
-    {
         try
         {
-            using (var sha = SHA256.Create())
+            string esc(string s) => (s ?? "")
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n");
+
+            string f(float x) => float.IsNaN(x)
+                ? "null"
+                : x.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture);
+
+            int plannedN = (plannedTrials != null) ? plannedTrials.Count : -1;
+            int uniqueN = (spec != null) ? spec.GetUniqueStimulusCount() : -1;
+
+            string camName = (cam != null) ? cam.name : "";
+            string camProj = (cam != null) ? (cam.orthographic ? "orthographic" : "perspective") : "unknown";
+
+            float fixInnerDeg = float.NaN, fixOuterDeg = float.NaN;
+            float zOut = float.NaN, zCross = float.NaN, zIn = float.NaN;
+            float fixPreviewScale = float.NaN;
+
+            if (fixation != null)
             {
-                byte[] bytes = Encoding.UTF8.GetBytes(s ?? "");
-                byte[] hash = sha.ComputeHash(bytes);
-                var sb = new StringBuilder(hash.Length * 2);
-                for (int i = 0; i < hash.Length; i++)
-                    sb.Append(hash[i].ToString("x2"));
-                return sb.ToString();
+                fixInnerDeg = fixation.innerDiam_deg;
+                fixOuterDeg = fixation.outerDiam_deg;
+                zOut = fixation.zOuterRing;
+                zCross = fixation.zCross;
+                zIn = fixation.zInnerRing;
+                fixPreviewScale = fixation.previewScale;
             }
+
+            var sb = new StringBuilder(16384);
+            sb.Append("{\n");
+            sb.Append("  \"schema_version\": \"vrdots.sidecar.v3\",\n");
+            sb.Append("  \"created_iso8601\": \"").Append(esc(DateTimeOffset.Now.ToString("o"))).Append("\",\n");
+            sb.Append("  \"data_file\": \"").Append(esc(Path.GetFileName(_tsvPath))).Append("\",\n");
+            sb.Append("  \"sidecar_file\": \"").Append(esc(Path.GetFileName(sidecarPath))).Append("\",\n");
+
+            sb.Append("  \"experiment_spec\": {\n");
+            sb.Append("    \"spec_name\": \"").Append(esc(spec != null ? spec.name : "")).Append("\",\n");
+            sb.Append("    \"unique_stimulus_count\": ").Append(uniqueN).Append(",\n");
+            sb.Append("    \"planned_trials\": ").Append(plannedN).Append("\n");
+            sb.Append("  },\n");
+
+            sb.Append("  \"preview\": {\n");
+            sb.Append("    \"monitor_preview_mode\": ").Append(monitorPreviewMode ? "true" : "false").Append(",\n");
+            sb.Append("    \"preview_scale\": ").Append(f(previewScale)).Append(",\n");
+            sb.Append("    \"use_separate_preview_scales\": ").Append(useSeparatePreviewScales ? "true" : "false").Append(",\n");
+            sb.Append("    \"preview_dot_scale\": ").Append(f(previewDotScale)).Append(",\n");
+            sb.Append("    \"preview_fixation_scale\": ").Append(f(previewFixationScale)).Append(",\n");
+            sb.Append("    \"preview_aperture_scale\": ").Append(f(previewApertureScale)).Append("\n");
+            sb.Append("  },\n");
+
+            sb.Append("  \"camera\": {\n");
+            sb.Append("    \"name\": \"").Append(esc(camName)).Append("\",\n");
+            sb.Append("    \"projection\": \"").Append(esc(camProj)).Append("\",\n");
+            sb.Append("    \"field_of_view_deg\": ").Append(f(cam != null ? cam.fieldOfView : float.NaN)).Append(",\n");
+            sb.Append("    \"orthographic_size\": ").Append(f(cam != null ? cam.orthographicSize : float.NaN)).Append(",\n");
+            sb.Append("    \"near_clip\": ").Append(f(cam != null ? cam.nearClipPlane : float.NaN)).Append(",\n");
+            sb.Append("    \"far_clip\": ").Append(f(cam != null ? cam.farClipPlane : float.NaN)).Append("\n");
+            sb.Append("  },\n");
+
+            sb.Append("  \"stimulus_builder\": {\n");
+            sb.Append("    \"dots_per_field\": ").Append(builder != null ? builder.dotsPerField : -1).Append(",\n");
+            sb.Append("    \"aperture_diameter_deg\": ").Append(f(builder != null ? builder.apertureDeg : float.NaN)).Append(",\n");
+            sb.Append("    \"dot_size_m\": ").Append(f(builder != null ? builder.dotSizeMeters : float.NaN)).Append(",\n");
+            sb.Append("    \"respawn_when_out_of_bounds\": ").Append((builder != null && builder.respawnWhenOutOfBounds) ? "true" : "false").Append("\n");
+            sb.Append("  },\n");
+
+            sb.Append("  \"fixation\": {\n");
+            sb.Append("    \"preview_scale\": ").Append(f(fixPreviewScale)).Append(",\n");
+            sb.Append("    \"inner_diameter_deg\": ").Append(f(fixInnerDeg)).Append(",\n");
+            sb.Append("    \"outer_diameter_deg\": ").Append(f(fixOuterDeg)).Append(",\n");
+            sb.Append("    \"z_outer\": ").Append(f(zOut)).Append(",\n");
+            sb.Append("    \"z_cross\": ").Append(f(zCross)).Append(",\n");
+            sb.Append("    \"z_inner\": ").Append(f(zIn)).Append("\n");
+            sb.Append("  },\n");
+
+            sb.Append("  \"trajectory_library\": {\n");
+            sb.Append("    \"write_payloads_in_tsv\": ").Append(writeTrajectoryPayloads ? "true" : "false").Append(",\n");
+            sb.Append("    \"hash_algorithm\": \"FNV-1a-32\",\n");
+            sb.Append("    \"count\": ").Append(_trajLib.Count).Append(",\n");
+            sb.Append("    \"entries\": [\n");
+
+            int k = 0;
+            foreach (var kv in _trajLib)
+            {
+                var td = kv.Value;
+                sb.Append("      {\n");
+                sb.Append("        \"stim_key\": \"").Append(esc(td.stimKey)).Append("\",\n");
+                sb.Append("        \"cond\": \"").Append(esc(td.cond)).Append("\",\n");
+                sb.Append("        \"rot_cfg\": ").Append(td.rotCfg).Append(",\n");
+                sb.Append("        \"trans_deg\": ").Append(f(td.transDeg)).Append(",\n");
+                sb.Append("        \"delayed_field_color\": \"").Append(esc(td.delayedColor)).Append("\",\n");
+                sb.Append("        \"mk_hash32\": \"").Append(td.mkHash32.ToString("X8")).Append("\",\n");
+                sb.Append("        \"color_hash32\": \"").Append(td.colorHash32.ToString("X8")).Append("\",\n");
+                sb.Append("        \"mk_payload\": \"").Append(esc(td.mkPayload)).Append("\",\n");
+                sb.Append("        \"color_payload\": \"").Append(esc(td.colorPayload)).Append("\"\n");
+                sb.Append("      }");
+                k++;
+                sb.Append(k < _trajLib.Count ? ",\n" : "\n");
+            }
+
+            sb.Append("    ]\n");
+            sb.Append("  }\n");
+            sb.Append("}\n");
+
+            File.WriteAllText(sidecarPath, sb.ToString(), new UTF8Encoding(false));
+            _sidecarWritten = true;
+
+            Debug.Log("[CsvLogger] Wrote sidecar: " + sidecarPath);
         }
-        catch
+        catch (Exception e)
         {
-            return "";
+            Debug.LogError("[CsvLogger] WriteSidecarOnce failed: " + e);
         }
     }
 
-    // ---------- Unity lifecycle flush (critical for “Stop” in editor) ----------
-
+    // ---------- Unity lifecycle flush ----------
     private void OnApplicationQuit() { SafeFlushAll("OnApplicationQuit"); }
     private void OnDisable() { SafeFlushAll("OnDisable"); }
     private void OnDestroy() { SafeFlushAll("OnDestroy"); }
@@ -479,7 +610,6 @@ public class CsvLogger : MonoBehaviour
     }
 
     // ---------- helpers ----------
-
     private void TryFinalizeAbortedTrialRow(string why)
     {
         if (!_trialOpen) return;
@@ -507,6 +637,7 @@ public class CsvLogger : MonoBehaviour
         _curCond = "";
         _curTransDeg = 0f;
 
+        _curRotCfg = -1;
         _curDelayedFieldColor = "";
 
         _curRespDeg = -1f;
@@ -518,6 +649,9 @@ public class CsvLogger : MonoBehaviour
 
         _curMotionTypeRows = "";
         _curColorRows = "";
+
+        _curMkHash32 = 0;
+        _curColorHash32 = 0;
 
         _curOn = _curTS = _curTE = _curN = -1;
         _curSeedA0 = _curSeedA1 = _curSeedB2 = _curSeedB3 = 0;
@@ -535,134 +669,23 @@ public class CsvLogger : MonoBehaviour
 
     private string BuildMetaJsonString()
     {
-        string esc(string s) => (s ?? "")
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("\r", "\\r")
-            .Replace("\n", "\\n");
-
         string f(float x) => float.IsNaN(x) ? "null" : x.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture);
         string nNullFloat(float? x) => x.HasValue ? f(x.Value) : "null";
 
-        var sb = new StringBuilder(8192);
+        var sb = new StringBuilder(4096);
         sb.Append("{\n");
-        sb.Append("  \"schema_version\": \"vrdots.meta.v1\",\n");
-
-        sb.Append("  \"subject\": {\n");
-        sb.Append($"    \"subject_id\": \"{esc(subjectId)}\",\n");
-        sb.Append($"    \"age\": {subjectAge},\n");
-        sb.Append($"    \"sex\": \"{esc(subjectSex)}\",\n");
-        sb.Append($"    \"handedness\": \"{esc(subjectHandedness)}\",\n");
-        sb.Append($"    \"notes\": \"{esc(subjectNotes)}\"\n");
-        sb.Append("  },\n");
-
-        sb.Append("  \"session\": {\n");
-        sb.Append($"    \"session_id\": \"{esc(_sessionId)}\",\n");
-        sb.Append($"    \"created_iso8601\": \"{esc(_createdIso)}\",\n");
-        sb.Append($"    \"timezone\": \"{esc(_timezone)}\",\n");
-        sb.Append($"    \"data_file\": \"{esc(Path.GetFileName(_tsvPath))}\",\n");
-        sb.Append($"    \"meta_file\": \"{esc(Path.GetFileName(_metaPath))}\",\n");
-        sb.Append("    \"notes\": \"\"\n");
-        sb.Append("  },\n");
-
-        sb.Append("  \"build\": {\n");
-        sb.Append($"    \"unity_version\": \"{esc(_unityVersion)}\",\n");
-        sb.Append($"    \"platform\": \"{esc(_platform)}\",\n");
-        sb.Append($"    \"application_version\": \"{esc(applicationVersion)}\",\n");
-        sb.Append($"    \"git_commit\": \"{esc(gitCommit)}\",\n");
-        sb.Append($"    \"git_branch\": \"{esc(gitBranch)}\",\n");
-        sb.Append($"    \"experiment_version\": \"{esc(experimentVersion)}\"\n");
-        sb.Append("  },\n");
-
-        // ---- NEW: snapshot + hash at top-level for easy grepping ----
-        sb.Append("  \"stimulus_spec_hash_sha256\": ");
-        sb.Append(string.IsNullOrEmpty(_stimulusSpecHashSha256) ? "null" : $"\"{esc(_stimulusSpecHashSha256)}\"");
-        sb.Append(",\n");
-
-        sb.Append("  \"stimulus_spec_snapshot_json\": ");
-        sb.Append(string.IsNullOrEmpty(_stimulusSpecSnapshotJson) ? "null" : $"\"{esc(_stimulusSpecSnapshotJson)}\"");
-        sb.Append(",\n");
-
-        sb.Append("  \"stimulus\": {\n");
-        sb.Append($"    \"view_distance_m\": {f(_viewDistanceM)},\n");
-        sb.Append($"    \"meters_per_degree\": {f(_metersPerDegree)},\n");
-        sb.Append($"    \"aperture_radius_deg\": {f(_apertureRadiusDeg)},\n");
-        sb.Append($"    \"dot_size_deg\": {f(_dotSizeDeg)},\n");
-        sb.Append($"    \"dot_size_m\": {f(_dotSizeM)},\n");
-        sb.Append($"    \"dots_per_field\": {_dotsPerField},\n");
-        sb.Append($"    \"num_subfields\": {_numSubfields},\n");
-        sb.Append($"    \"sim_dt\": {f(_simDt)},\n");
-        sb.Append($"    \"sim_hz\": {f(_simHz)},\n");
-        sb.Append($"    \"translation_speed_deg_per_sec\": {f(_translationSpeedDegPerSec)},\n");
-        sb.Append($"    \"rotation_speed_deg_per_sec\": {f(_rotationSpeedDegPerSec)},\n");
-        sb.Append("    \"heading_convention\": \"0deg=+X (right), 90deg=+Y (up), CCW positive\"\n");
-        sb.Append("  },\n");
-
-        sb.Append("  \"conditions\": {\n");
-        sb.Append("    \"motion_type_map\": {\n");
-        sb.Append("      \"0\": \"None\",\n");
-        sb.Append("      \"1\": \"RotationCW\",\n");
-        sb.Append("      \"2\": \"RotationCCW\",\n");
-        sb.Append("      \"3\": \"Linear\",\n");
-        sb.Append("      \"4\": \"NonCoherent\"\n");
-        sb.Append("    },\n");
-        sb.Append("    \"color_code_map\": {\n");
-        sb.Append("      \"R\": \"Red\",\n");
-        sb.Append("      \"G\": \"Green\",\n");
-        sb.Append("      \"B\": \"Blue\",\n");
-        sb.Append("      \"Y\": \"Yellow\",\n");
-        sb.Append("      \"K\": \"Black/Off\"\n");
-        sb.Append("    }\n");
-        sb.Append("  },\n");
-
-        sb.Append("  \"response\": {\n");
-        sb.Append("    \"rt_units\": \"frames\"\n");
-        sb.Append("  },\n");
-
+        sb.Append("  \"schema_version\": \"vrdots.meta.v2\",\n");
         sb.Append("  \"logging\": {\n");
         sb.Append("    \"tsv_delimiter\": \"\\t\",\n");
-        sb.Append("    \"missing_int\": -1,\n");
-        sb.Append("    \"missing_string\": \"\",\n");
-
+        sb.Append("    \"write_payloads_in_tsv\": ").Append(writeTrajectoryPayloads ? "true" : "false").Append(",\n");
+        sb.Append("    \"hash_algorithm\": \"FNV-1a-32\",\n");
         sb.Append("    \"columns\": [");
         for (int i = 0; i < Columns.Length; i++)
         {
-            sb.Append($"\"{Columns[i]}\"");
+            sb.Append("\"").Append(Columns[i]).Append("\"");
             if (i < Columns.Length - 1) sb.Append(", ");
         }
-        sb.Append("],\n");
-
-        sb.Append("    \"column_descriptions\": {\n");
-        sb.Append("      \"Trial\": \"0-based trial index within this session file\",\n");
-        sb.Append("      \"Cond\": \"condition identifier (string)\",\n");
-        sb.Append("      \"TransDeg\": \"translation heading in degrees (0=right, 90=up, CCW+)\",\n");
-        sb.Append("      \"RespDeg\": \"response direction in degrees (same convention); -1 if none\",\n");
-        sb.Append("      \"RespIndex\": \"0..7 choice index; -1 if none\",\n");
-        sb.Append("      \"RespDigit\": \"keypad digit mapped from RespIndex; -1 if none\",\n");
-        sb.Append("      \"RTf\": \"reaction time in simulation frames; -1 if none\",\n");
-        sb.Append("      \"OnsetFrame\": \"frame index when delayed field becomes visible (simulation frames)\",\n");
-        sb.Append("      \"TransStartFrame\": \"first frame index where translation is applied (inclusive); translation spans [TransStartFrame, TransEndFrame)\",\n");
-        sb.Append("      \"TransEndFrame\": \"first frame index where translation is NOT applied (exclusive end)\",\n");
-        sb.Append("      \"TotalFrames\": \"stimulus duration in simulation frames\",\n");
-        sb.Append("      \"SeedA0\": \"random seed A0 (int32)\",\n");
-        sb.Append("      \"SeedA1\": \"random seed A1 (int32)\",\n");
-        sb.Append("      \"SeedB2\": \"random seed B2 (int32)\",\n");
-        sb.Append("      \"SeedB3\": \"random seed B3 (int32)\",\n");
-        sb.Append("      \"DelayedFieldColor\": \"delayed-onset field color after onset (R=Red, G=Green)\",\n");
-        sb.Append("      \"EndKey\": \"key that ended response window, or ABORT if session stopped mid-trial\",\n");
-        sb.Append("      \"Device\": \"input device label\",\n");
-        sb.Append("      \"MotionTypeByFrame_SubfieldCodes\": \"per-frame motion-type codes; frames separated by ';', subfields by '|'\",\n");
-        sb.Append("      \"ColorByFrame_SubfieldCodes\": \"per-frame color codes; frames separated by ';', subfields by '|'\"\n");
-        sb.Append("    },\n");
-
-        sb.Append("    \"payload_format\": {\n");
-        sb.Append("      \"frame_delimiter\": \";\",\n");
-        sb.Append("      \"subfield_delimiter\": \"|\",\n");
-        sb.Append("      \"num_subfields_source\": \"stimulus.num_subfields\",\n");
-        sb.Append("      \"frame_count_source\": \"TotalFrames\",\n");
-        sb.Append("      \"frame_rate_hz_source\": \"stimulus.sim_hz\"\n");
-        sb.Append("    }\n");
-
+        sb.Append("]\n");
         sb.Append("  },\n");
 
         sb.Append("  \"stats\": {\n");
@@ -674,7 +697,6 @@ public class CsvLogger : MonoBehaviour
         sb.Append($"    \"measured_fps_mean\": {nNullFloat(_fpsMean)},\n");
         sb.Append($"    \"measured_fps_std\": {nNullFloat(_fpsStd)}\n");
         sb.Append("  }\n");
-
         sb.Append("}\n");
         return sb.ToString();
     }
@@ -693,8 +715,7 @@ public class CsvLogger : MonoBehaviour
 
     private static string MakeSessionIdFromPath(string path)
     {
-        string name = Path.GetFileNameWithoutExtension(path) ?? "vr_dots_session";
-        return name;
+        return Path.GetFileNameWithoutExtension(path) ?? "vr_dots_session";
     }
 
     private static string Sanitize(string s)
@@ -703,24 +724,42 @@ public class CsvLogger : MonoBehaviour
         return s.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
     }
 
-    private static string F(float x)
-    {
-        return x.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
-    }
+    private static string F(float x) => x.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
 
     private static float ResponseDirToDeg(string dir)
     {
         switch ((dir ?? "").ToUpperInvariant())
         {
-            case "E":  return 0f;
+            case "E": return 0f;
             case "NE": return 45f;
-            case "N":  return 90f;
+            case "N": return 90f;
             case "NW": return 135f;
-            case "W":  return 180f;
+            case "W": return 180f;
             case "SW": return 225f;
-            case "S":  return 270f;
+            case "S": return 270f;
             case "SE": return 315f;
-            default:   return -1f;
+            default: return -1f;
+        }
+    }
+
+    // FNV-1a 32-bit hash over UTF-8 bytes of a string.
+    private static uint Fnv1a32(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return 0;
+
+        unchecked
+        {
+            const uint offset = 2166136261u;
+            const uint prime = 16777619u;
+            uint h = offset;
+
+            byte[] bytes = Encoding.UTF8.GetBytes(s);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                h ^= bytes[i];
+                h *= prime;
+            }
+            return h;
         }
     }
 }

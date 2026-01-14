@@ -21,20 +21,17 @@ MonoBehaviour:
   translationDuration_ms: 300
   delayedOnset_ms: 750
   preTranslation_ms: 300
-  repeatsPerStimulus: 2
+  repeatsPerStimulus: 1
   balanceDelayedFieldColor: 1
-  dotsPerField: 200
+  dotsPerField: 400
+  fixationStyle: 2
+  fixationColor: {r: 1, g: 1, b: 1, a: 1}
+  fixationDotRadius_deg: 0.05
+  fixationRingInnerRadius_deg: 0.12
+  fixationRingThickness_deg: 0.18
+  fixationCrosshairArmLength_deg: 0.6
+  fixationCrosshairThickness_deg: 0.06
   rgbaRed: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   rgbaGreen: {r: 0.2, g: 0.85, b: 0.2, a: 1}
   rgbaBlack: {r: 0, g: 0, b: 0, a: 1}
-  centralExclusionRadius_deg: 0
-  fixationStyle: 4
-  fixationDotRadius_deg: 0.05
-  fixationRingInnerRadius_deg: 0.15
-  fixationRingThickness_deg: 0.03
-  fixationCrosshairArmLength_deg: 0.7
-  fixationCrosshairThickness_deg: 0.08
-  fixationColor: {r: 1, g: 1, b: 1, a: 1}
-  screenWidth_m: 0
-  screenResX: 0
-  repetitionsPerConditionPerHeading: 10
+  includeBothRotationConfigs: 1
