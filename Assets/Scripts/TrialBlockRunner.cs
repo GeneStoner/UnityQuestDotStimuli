@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using CondLib = StimulusConditionsLibrary;
 
 [DisallowMultipleComponent]
@@ -48,6 +49,16 @@ public class TrialBlockRunner : MonoBehaviour
     public KeyCode startKey = KeyCode.Space;
     public int maxResponseFrames = 0;
 
+    [Header("XR Controller Input")]
+    [Tooltip("Input Action Asset containing XR controller bindings (e.g., XRI Default Input Actions).")]
+    public InputActionAsset xrInputActions;
+
+    [Tooltip("Use right-hand trigger to start trials and confirm responses.")]
+    public bool useRightHandTrigger = true;
+
+    [Tooltip("Use left-hand trigger to start trials and confirm responses.")]
+    public bool useLeftHandTrigger = true;
+
     [Header("Logging")]
     public string outputFileName = "Dots.tsv";
     public bool appendDateTimeToFilename = true;
@@ -55,6 +66,11 @@ public class TrialBlockRunner : MonoBehaviour
     // ----------------- internal state -----------------
     private List<ExperimentSpec.PlannedTrial> _allPlannedTrials;
     private Queue<ExperimentSpec.PlannedTrial> _trialQueue;
+
+    // XR input actions
+    private InputAction _activateLeft;
+    private InputAction _activateRight;
+    private bool _xrTriggerPressedThisFrame;
 
     private int _startedTrialCount = 0;
     private float _accum;
@@ -86,7 +102,93 @@ public class TrialBlockRunner : MonoBehaviour
         _simDt = spec.SimDt;
         _rng = new System.Random(1234567);
 
+        // Setup XR input actions
+        SetupXRInput();
+
         Debug.Log($"[TBR {GetInstanceID()}] Awake. fixationRef={(fixation ? fixation.GetInstanceID() : -1)}", this);
+    }
+
+    void OnDestroy()
+    {
+        CleanupXRInput();
+    }
+
+    void OnDisable()
+    {
+        // Disable XR actions when component is disabled
+        if (_activateLeft != null) _activateLeft.Disable();
+        if (_activateRight != null) _activateRight.Disable();
+    }
+
+    void OnEnable()
+    {
+        // Re-enable XR actions when component is enabled
+        if (_activateLeft != null) _activateLeft.Enable();
+        if (_activateRight != null) _activateRight.Enable();
+    }
+
+    private void SetupXRInput()
+    {
+        if (xrInputActions == null)
+        {
+            Debug.Log("[TrialBlockRunner] No XR Input Actions assigned. XR controller input disabled.");
+            return;
+        }
+
+        // Activate action is in the Interaction maps (XRI Left Interaction / XRI Right Interaction)
+        var leftInteractionMap = xrInputActions.FindActionMap("XRI Left Interaction", false);
+        var rightInteractionMap = xrInputActions.FindActionMap("XRI Right Interaction", false);
+
+        if (leftInteractionMap != null && useLeftHandTrigger)
+        {
+            _activateLeft = leftInteractionMap.FindAction("Activate", false);
+            if (_activateLeft != null)
+            {
+                _activateLeft.Enable();
+                _activateLeft.performed += OnXRTriggerPressed;
+                Debug.Log("[TrialBlockRunner] Left hand trigger (Activate) bound.");
+            }
+        }
+
+        if (rightInteractionMap != null && useRightHandTrigger)
+        {
+            _activateRight = rightInteractionMap.FindAction("Activate", false);
+            if (_activateRight != null)
+            {
+                _activateRight.Enable();
+                _activateRight.performed += OnXRTriggerPressed;
+                Debug.Log("[TrialBlockRunner] Right hand trigger (Activate) bound.");
+            }
+        }
+
+        if (_activateLeft == null && _activateRight == null)
+        {
+            Debug.LogWarning("[TrialBlockRunner] Could not find 'Activate' action in XR Input Actions. " +
+                           "Ensure 'XRI Left Interaction' and 'XRI Right Interaction' action maps exist.");
+        }
+    }
+
+    private void CleanupXRInput()
+    {
+        if (_activateLeft != null)
+        {
+            _activateLeft.performed -= OnXRTriggerPressed;
+            _activateLeft.Disable();
+            _activateLeft = null;
+        }
+
+        if (_activateRight != null)
+        {
+            _activateRight.performed -= OnXRTriggerPressed;
+            _activateRight.Disable();
+            _activateRight = null;
+        }
+    }
+
+    private void OnXRTriggerPressed(InputAction.CallbackContext context)
+    {
+        _xrTriggerPressedThisFrame = true;
+        Debug.Log("[TrialBlockRunner] XR Trigger pressed!");
     }
 
     void Start()
@@ -118,37 +220,45 @@ public class TrialBlockRunner : MonoBehaviour
 
         if (csvLogger != null)
         {
-            string path = BuildSessionPathSimple();
-            csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
-
-            // Set counts AFTER BeginSession so meta writes reflect them immediately
-            csvLogger.SetTargetNumberTrials(targetN);
-            csvLogger.SetGeneratedTrials(generatedN);
-
-            // Build 64-entry trajectory library INSIDE CsvLogger (for sidecar + analyzers)
-            BuildAndRegisterTrajectoryLibrary(_allPlannedTrials);
-
-            // ---- SIDE CAR: write ONCE per session ----
             try
             {
-                var cam = Camera.main;
-                csvLogger.WriteSidecarOnce(
-                    spec,
-                    builder,
-                    fixation,
-                    _allPlannedTrials,
-                    monitorPreviewMode,
-                    previewScale,
-                    useSeparatePreviewScales,
-                    previewDotScale,
-                    previewFixationScale,
-                    previewApertureScale,
-                    cam
-                );
+                string path = BuildSessionPathSimple();
+                csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
+
+                // Set counts AFTER BeginSession so meta writes reflect them immediately
+                csvLogger.SetTargetNumberTrials(targetN);
+                csvLogger.SetGeneratedTrials(generatedN);
+
+                // Build 64-entry trajectory library INSIDE CsvLogger (for sidecar + analyzers)
+                BuildAndRegisterTrajectoryLibrary(_allPlannedTrials);
+
+                // ---- SIDE CAR: write ONCE per session ----
+                try
+                {
+                    var cam = Camera.main;
+                    csvLogger.WriteSidecarOnce(
+                        spec,
+                        builder,
+                        fixation,
+                        _allPlannedTrials,
+                        monitorPreviewMode,
+                        previewScale,
+                        useSeparatePreviewScales,
+                        previewDotScale,
+                        previewFixationScale,
+                        previewApertureScale,
+                        cam
+                    );
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[TrialBlockRunner] Sidecar write failed: " + e, this);
+                }
             }
             catch (Exception e)
             {
-                Debug.LogError("[TrialBlockRunner] Sidecar write failed (CsvLogger.WriteSidecarOnce missing or threw): " + e, this);
+                Debug.LogError("[TrialBlockRunner] CsvLogger.BeginSession failed - logging disabled for this session: " + e, this);
+                csvLogger = null; // Disable logging but allow trials to continue
             }
         }
 
@@ -396,19 +506,29 @@ public class TrialBlockRunner : MonoBehaviour
     void Update()
     {
         if (_currentCond == null || _phase == TrialPhase.Done)
+        {
+            _xrTriggerPressedThisFrame = false;
             return;
+        }
 
         if (_phase == TrialPhase.WaitingForStart)
         {
-            if (Input.GetKeyDown(startKey))
+            // Check for keyboard OR XR trigger to start trial
+            bool startTrialInput = Input.GetKeyDown(startKey) || _xrTriggerPressedThisFrame;
+            _xrTriggerPressedThisFrame = false; // Consume the input
+
+            if (startTrialInput)
             {
                 _phase = TrialPhase.Stimulus;
                 builder.SetDotsActive(true);
+                Debug.Log("[TrialBlockRunner] Trial started!");
             }
 
             if (hud != null) hud.Tick();
             return;
         }
+
+        _xrTriggerPressedThisFrame = false; // Clear any unconsumed XR input
 
         _accum += Time.deltaTime;
         while (_accum >= _simDt)
