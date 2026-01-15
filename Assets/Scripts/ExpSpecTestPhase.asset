@@ -14,23 +14,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
   simHz: 75
   viewDistance_m: 2
-  apertureRadius_deg: 2
-  dotSize_deg: 0.03
+  apertureRadius_deg: 3.5
+  dotSize_deg: 0.04
   rotationSpeed_degPerSec: 81
   translationSpeed_degPerSec: 2.26
   translationDuration_ms: 300
   delayedOnset_ms: 750
   preTranslation_ms: 300
-  repeatsPerStimulus: 1
+  repeatsPerStimulus: 4
   balanceDelayedFieldColor: 1
-  dotsPerField: 400
+  dotsPerField: 63
   fixationStyle: 2
   fixationColor: {r: 1, g: 1, b: 1, a: 1}
-  fixationDotRadius_deg: 0.05
-  fixationRingInnerRadius_deg: 0.12
-  fixationRingThickness_deg: 0.18
-  fixationCrosshairArmLength_deg: 0.6
-  fixationCrosshairThickness_deg: 0.06
+  fixationDotRadius_deg: 0.20
+  fixationRingInnerRadius_deg: 0.20
+  fixationRingThickness_deg: 0.30
+  fixationCrosshairArmLength_deg: 1.0
+  fixationCrosshairThickness_deg: 0.12
   rgbaRed: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   rgbaGreen: {r: 0.2, g: 0.85, b: 0.2, a: 1}
   rgbaBlack: {r: 0, g: 0, b: 0, a: 1}

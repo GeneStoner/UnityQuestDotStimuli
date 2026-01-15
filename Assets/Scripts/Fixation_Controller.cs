@@ -10,12 +10,35 @@ public class Fixation_Controller : MonoBehaviour
     [Header("Monitor Preview (render-only)")]
     [Min(0.1f)] public float previewScale = 1f;
 
-    [Header("Assign fixation parts (children of this object)")]
+    [Header("Rendering Mode")]
+    [Tooltip("Use shader-based quads for smooth anti-aliased circles (recommended). If false, uses assigned cylinder GameObjects.")]
+    public bool useShaderCircles = true;
+
+    [Header("Shader Circle Settings (when useShaderCircles=true)")]
+    [Range(0.005f, 0.1f)]
+    public float edgeSmoothness = 0.03f;
+
+    [Header("Assign fixation parts (when useShaderCircles=false)")]
     public GameObject fixDot;      // optional
     public GameObject ringOuter;   // Cylinder (disk)
     public GameObject ringInner;   // Cylinder (disk)
     public GameObject hArm;        // Cube
     public GameObject vArm;        // Cube
+
+    // Shader-created objects (when useShaderCircles=true)
+    private GameObject _shaderRingQuad;
+    private GameObject _shaderCenterQuad;
+    private GameObject _shaderHCross;
+    private GameObject _shaderVCross;
+    private Material _ringMaterial;
+    private Material _centerMaterial;
+    private Material _crossMaterialH;
+    private Material _crossMaterialV;
+
+    private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
+    private static readonly int InnerRadiusId = Shader.PropertyToID("_InnerRadius");
+    private static readonly int OuterRadiusId = Shader.PropertyToID("_OuterRadius");
+    private static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
 
     [Header("Visibility (script overrides while playing)")]
     public bool showDot = false;
@@ -41,15 +64,15 @@ public class Fixation_Controller : MonoBehaviour
     public bool diskNormalIsPlusZ = true;
 
     [Header("Bullseye diameters (degrees)")]
-    [Tooltip("Inner circle DIAMETER in degrees (paper: 0.24°).")]
-    public float innerDiam_deg = 0.24f;
+    [Tooltip("Inner circle DIAMETER in degrees.")]
+    public float innerDiam_deg = 0.40f;
 
-    [Tooltip("Outer circle DIAMETER in degrees (paper: 0.60°).")]
-    public float outerDiam_deg = 0.60f;
+    [Tooltip("Outer circle DIAMETER in degrees.")]
+    public float outerDiam_deg = 1.00f;
 
     [Header("Crosshair geometry (decoupled from inner circle)")]
     [Tooltip("Crosshair stroke thickness in degrees (independent knob).")]
-    public float crossThickness_deg = 0.03f;
+    public float crossThickness_deg = 0.12f;
 
     [Tooltip("Cross half-length scale relative to outer radius. 1.00 reaches edge; 1.02 slightly overshoots to hide ring tips.")]
     public float crossHalfLenScale = 1.00f;
@@ -77,13 +100,29 @@ public class Fixation_Controller : MonoBehaviour
     private static readonly int ColorId     = Shader.PropertyToID("_Color");
     private MaterialPropertyBlock _mpb;
 
-    void OnEnable() { Apply("OnEnable"); }
-    void Start()    { Apply("Start"); }
+    void OnEnable()
+    {
+        if (useShaderCircles)
+            CreateShaderObjects();
+        Apply("OnEnable");
+    }
+
+    void OnDisable()
+    {
+        DestroyShaderObjects();
+    }
+
+    void Start() { Apply("Start"); }
 
     void OnValidate()
     {
         if (isActiveAndEnabled)
-            ApplySizesAndColorsOnly();
+        {
+            if (useShaderCircles)
+                ApplyShaderCircles();
+            else
+                ApplySizesAndColorsOnly();
+        }
     }
 
     // Call this from TrialBlockRunner
@@ -101,16 +140,28 @@ public class Fixation_Controller : MonoBehaviour
             return;
         }
 
-        if (Application.isPlaying)
+        if (useShaderCircles)
         {
-            if (ringOuter) ringOuter.SetActive(showRings);
-            if (ringInner) ringInner.SetActive(showRings);
-            if (hArm)      hArm.SetActive(showCross);
-            if (vArm)      vArm.SetActive(showCross);
-            if (fixDot)    fixDot.SetActive(showDot);
-        }
+            // Shader-based path: use quads with SmoothCircle shader
+            if (_shaderRingQuad == null)
+                CreateShaderObjects();
 
-        ApplySizesAndColorsOnly();
+            ApplyShaderCircles();
+        }
+        else
+        {
+            // Legacy cylinder-based path
+            if (Application.isPlaying)
+            {
+                if (ringOuter) ringOuter.SetActive(showRings);
+                if (ringInner) ringInner.SetActive(showRings);
+                if (hArm)      hArm.SetActive(showCross);
+                if (vArm)      vArm.SetActive(showCross);
+                if (fixDot)    fixDot.SetActive(showDot);
+            }
+
+            ApplySizesAndColorsOnly();
+        }
 
         if (logOnApply)
             Debug.Log(BuildOneLineLog(tag), this);
@@ -253,5 +304,162 @@ public class Fixation_Controller : MonoBehaviour
     {
         return $"[Fixation {GetInstanceID()}] ({tag}) z(out/cross/in)=({zOuterRing:F4},{zCross:F4},{zInnerRing:F4}) " +
                $"innerDiam_deg={innerDiam_deg:F3} outerDiam_deg={outerDiam_deg:F3} crossThk_deg={crossThickness_deg:F3} crossLenScale={crossHalfLenScale:F3}";
+    }
+
+    // ==================== SHADER-BASED CIRCLE METHODS ====================
+
+    void CreateShaderObjects()
+    {
+        Shader circleShader = Shader.Find("Custom/SmoothCircle");
+        Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (unlitShader == null)
+            unlitShader = Shader.Find("Unlit/Color");
+
+        if (circleShader == null)
+        {
+            Debug.LogError("[Fixation_Controller] Custom/SmoothCircle shader not found! Falling back to cylinder mode.");
+            useShaderCircles = false;
+            return;
+        }
+
+        // Ring material (white ring with transparent hole)
+        _ringMaterial = new Material(circleShader) { name = "FixRingMat" };
+
+        // Center material (filled circle for inner/hole)
+        _centerMaterial = new Material(circleShader) { name = "FixCenterMat" };
+
+        // Crosshair materials (unlit rectangles)
+        _crossMaterialH = new Material(unlitShader) { name = "FixCrossH" };
+        _crossMaterialV = new Material(unlitShader) { name = "FixCrossV" };
+
+        // Create quads
+        _shaderRingQuad = CreateShaderQuad("ShaderRing", _ringMaterial);
+        _shaderCenterQuad = CreateShaderQuad("ShaderCenter", _centerMaterial);
+        _shaderHCross = CreateShaderQuad("ShaderHCross", _crossMaterialH);
+        _shaderVCross = CreateShaderQuad("ShaderVCross", _crossMaterialV);
+
+        // Hide old cylinder-based objects if assigned
+        if (ringOuter) ringOuter.SetActive(false);
+        if (ringInner) ringInner.SetActive(false);
+        if (hArm) hArm.SetActive(false);
+        if (vArm) vArm.SetActive(false);
+        if (fixDot) fixDot.SetActive(false);
+    }
+
+    void DestroyShaderObjects()
+    {
+        SafeDestroyObj(_shaderRingQuad);
+        SafeDestroyObj(_shaderCenterQuad);
+        SafeDestroyObj(_shaderHCross);
+        SafeDestroyObj(_shaderVCross);
+        SafeDestroyObj(_ringMaterial);
+        SafeDestroyObj(_centerMaterial);
+        SafeDestroyObj(_crossMaterialH);
+        SafeDestroyObj(_crossMaterialV);
+
+        _shaderRingQuad = null;
+        _shaderCenterQuad = null;
+        _shaderHCross = null;
+        _shaderVCross = null;
+        _ringMaterial = null;
+        _centerMaterial = null;
+        _crossMaterialH = null;
+        _crossMaterialV = null;
+    }
+
+    void SafeDestroyObj(Object obj)
+    {
+        if (obj == null) return;
+        if (Application.isPlaying)
+            Destroy(obj);
+        else
+            DestroyImmediate(obj);
+    }
+
+    GameObject CreateShaderQuad(string name, Material mat)
+    {
+        var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        go.name = name;
+        go.transform.SetParent(transform, false);
+
+        // Remove collider
+        var col = go.GetComponent<Collider>();
+        if (col != null) SafeDestroyObj(col);
+
+        var renderer = go.GetComponent<MeshRenderer>();
+        renderer.sharedMaterial = mat;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
+        return go;
+    }
+
+    void ApplyShaderCircles()
+    {
+        if (_shaderRingQuad == null || _ringMaterial == null) return;
+        if (spec == null) return;
+
+        float mPerDeg = spec.GetMetersPerDegree();
+        float s = Mathf.Max(0.1f, previewScale);
+
+        // Get sizes in meters
+        float innerDiam_m = Mathf.Max(1e-6f, innerDiam_deg * mPerDeg) * s;
+        float outerDiam_m = Mathf.Max(1e-6f, outerDiam_deg * mPerDeg) * s;
+        float crossThk_m = Mathf.Max(1e-6f, crossThickness_deg * mPerDeg) * s;
+        float outerRadius_m = 0.5f * outerDiam_m;
+        float crossHalfLen_m = outerRadius_m * Mathf.Max(0.1f, crossHalfLenScale);
+
+        // Colors
+        Color fixC = driveColorFromSpec ? spec.fixationColor : overrideFixColor;
+
+        // --- Ring (outer white with transparent hole) ---
+        _shaderRingQuad.SetActive(showRings);
+        _shaderRingQuad.transform.localPosition = new Vector3(0, 0, zOuterRing);
+        _shaderRingQuad.transform.localScale = new Vector3(outerDiam_m, outerDiam_m, 1f);
+        _shaderRingQuad.transform.localRotation = Quaternion.identity;
+
+        float innerFraction = (innerDiam_m / outerDiam_m) * 0.5f;
+        _ringMaterial.SetColor(ShaderColorId, fixC);
+        _ringMaterial.SetFloat(InnerRadiusId, innerFraction);
+        _ringMaterial.SetFloat(OuterRadiusId, 0.5f);
+        _ringMaterial.SetFloat(SmoothnessId, edgeSmoothness);
+
+        // --- Center dot (filled circle, covers crosshair intersection) ---
+        _shaderCenterQuad.SetActive(showRings);
+        _shaderCenterQuad.transform.localPosition = new Vector3(0, 0, zInnerRing);
+        _shaderCenterQuad.transform.localScale = new Vector3(innerDiam_m, innerDiam_m, 1f);
+        _shaderCenterQuad.transform.localRotation = Quaternion.identity;
+
+        _centerMaterial.SetColor(ShaderColorId, holeColor);
+        _centerMaterial.SetFloat(InnerRadiusId, 0f);
+        _centerMaterial.SetFloat(OuterRadiusId, 0.5f);
+        _centerMaterial.SetFloat(SmoothnessId, edgeSmoothness);
+
+        // --- Crosshairs ---
+        _shaderHCross.SetActive(showCross);
+        _shaderVCross.SetActive(showCross);
+
+        if (showCross)
+        {
+            _shaderHCross.transform.localPosition = new Vector3(0, 0, zCross);
+            _shaderHCross.transform.localScale = new Vector3(2f * crossHalfLen_m, crossThk_m, 1f);
+            _shaderHCross.transform.localRotation = Quaternion.identity;
+
+            _shaderVCross.transform.localPosition = new Vector3(0, 0, zCross);
+            _shaderVCross.transform.localScale = new Vector3(crossThk_m, 2f * crossHalfLen_m, 1f);
+            _shaderVCross.transform.localRotation = Quaternion.identity;
+
+            // Set crosshair colors
+            if (_crossMaterialH.HasProperty("_BaseColor"))
+            {
+                _crossMaterialH.SetColor("_BaseColor", crossColor);
+                _crossMaterialV.SetColor("_BaseColor", crossColor);
+            }
+            else
+            {
+                _crossMaterialH.SetColor("_Color", crossColor);
+                _crossMaterialV.SetColor("_Color", crossColor);
+            }
+        }
     }
 }
