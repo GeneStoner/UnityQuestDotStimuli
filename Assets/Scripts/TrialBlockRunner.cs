@@ -20,6 +20,9 @@ public class TrialBlockRunner : MonoBehaviour
     public StimDebugHUD hud;
     public TargetResponseController targetResponseController;
 
+    [Tooltip("Optional: Shows animated spot in direction of subject's response")]
+    public DirectionalFeedbackSpot directionalFeedback;
+
     [Header("Control")]
     public bool autoStartOnPlay = true;
     public bool loopBlock = false;
@@ -653,7 +656,13 @@ public class TrialBlockRunner : MonoBehaviour
         _responseFrameIndex = 0;
 
         if (targetResponseController != null)
+        {
             targetResponseController.BeginResponseWindow(0);
+
+            // Start real-time tracking for directional feedback
+            if (directionalFeedback != null)
+                directionalFeedback.BeginTracking();
+        }
         else
             FinalizeTrialAndAdvance_NoResponse();
     }
@@ -674,6 +683,12 @@ public class TrialBlockRunner : MonoBehaviour
 
         bool requeue = (resp.status == ResponseStatus.Canceled || resp.status == ResponseStatus.TimedOut);
         if (resp.status == ResponseStatus.Confirmed) requeue = false;
+
+        // End real-time tracking when response window closes
+        if (directionalFeedback != null)
+        {
+            directionalFeedback.EndTracking();
+        }
 
         FinalizeTrialAndAdvance_WithResponse(resp, requeue);
     }
