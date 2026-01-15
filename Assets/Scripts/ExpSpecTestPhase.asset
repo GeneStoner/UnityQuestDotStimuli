@@ -15,7 +15,7 @@ MonoBehaviour:
   simHz: 75
   viewDistance_m: 2
   apertureRadius_deg: 3.5
-  dotSize_deg: 0.04
+  dotSize_deg: 0.08
   rotationSpeed_degPerSec: 81
   translationSpeed_degPerSec: 2.26
   translationDuration_ms: 300

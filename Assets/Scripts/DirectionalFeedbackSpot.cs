@@ -74,6 +74,8 @@ public class DirectionalFeedbackSpot : MonoBehaviour
     // Real-time tracking mode
     private bool _isTracking = false;
     private bool _clickPlayedThisWindow = false;
+    private float _maxDistanceReached = 0f;
+    private Vector2 _lastValidDirection = Vector2.up;
 
     // XR Input
     private InputAction _thumbstickLeft;
@@ -192,11 +194,12 @@ public class DirectionalFeedbackSpot : MonoBehaviour
         _isTracking = true;
         _isAnimating = false;
         _clickPlayedThisWindow = false;
+        _maxDistanceReached = 0f;
+        _lastValidDirection = Vector2.up;
 
         if (_spotQuad != null)
         {
-            UpdateSpotPosition(0f);
-            _spotQuad.SetActive(true);
+            _spotQuad.SetActive(false); // Hidden until thumbstick moves
         }
     }
 
@@ -213,33 +216,43 @@ public class DirectionalFeedbackSpot : MonoBehaviour
 
         if (magnitude < deadzone)
         {
-            // Below deadzone - hide or show at center
-            UpdateSpotPositionDirect(Vector2.zero, 0f);
-            _spotQuad.SetActive(false);
+            // Below deadzone - hold at max distance in last direction
+            if (_maxDistanceReached > 0f)
+            {
+                _spotQuad.SetActive(true);
+                UpdateSpotPositionDirect(_lastValidDirection, _maxDistanceReached);
+            }
             return;
         }
 
         _spotQuad.SetActive(true);
 
-        // Normalize direction
-        Vector2 direction = thumbstick.normalized;
+        // Normalize direction and snap to nearest of 8 directions
+        Vector2 direction = SnapToEightDirections(thumbstick.normalized);
 
         // Map magnitude (deadzone to 1) → (0 to travelDistance)
         float normalizedMag = Mathf.InverseLerp(deadzone, 1f, magnitude);
         float distance_deg = normalizedMag * travelDistance_deg;
 
-        UpdateSpotPositionDirect(direction, distance_deg);
+        // Track maximum distance reached
+        if (distance_deg > _maxDistanceReached)
+        {
+            _maxDistanceReached = distance_deg;
+        }
+
+        // Always update direction when thumbstick is active
+        _lastValidDirection = direction;
+
+        // Use current direction but at least the max distance reached
+        // (so distance only grows, but direction always follows thumbstick)
+        float displayDistance = Mathf.Max(distance_deg, _maxDistanceReached);
+        UpdateSpotPositionDirect(direction, displayDistance);
 
         // Play click when crossing threshold (only once per window)
-        if (!_clickPlayedThisWindow && distance_deg >= clickThreshold_deg)
+        if (!_clickPlayedThisWindow && _maxDistanceReached >= clickThreshold_deg)
         {
             PlayClick();
             _clickPlayedThisWindow = true;
-        }
-        // Reset click if they pull back below threshold
-        else if (_clickPlayedThisWindow && distance_deg < clickThreshold_deg * 0.8f)
-        {
-            _clickPlayedThisWindow = false;
         }
     }
 
@@ -422,6 +435,25 @@ public class DirectionalFeedbackSpot : MonoBehaviour
     {
         if (_thumbstickLeft != null) _thumbstickLeft.Disable();
         if (_thumbstickRight != null) _thumbstickRight.Disable();
+    }
+
+    /// <summary>
+    /// Snap a direction vector to the nearest of 8 cardinal/ordinal directions
+    /// </summary>
+    Vector2 SnapToEightDirections(Vector2 dir)
+    {
+        if (dir.sqrMagnitude < 0.001f)
+            return Vector2.up;
+
+        // Get angle in degrees (0 = right, 90 = up)
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+        // Snap to nearest 45-degree increment
+        float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+
+        // Convert back to vector
+        float rad = snappedAngle * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
     }
 
     Vector2 GetThumbstickValue()

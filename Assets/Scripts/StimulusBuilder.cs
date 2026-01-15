@@ -106,7 +106,10 @@ public class StimulusBuilder : MonoBehaviour
 
                 var r = dot.GetComponent<Renderer>();
                 if (r != null)
+                {
                     r.material = sf.material;
+                    r.enabled = false; // Start hidden; ApplyConditionFrame will enable as needed
+                }
 
                 Vector2 p = UniformDisk(rng, ApertureRadiusMeters);
                 dot.transform.position =
@@ -158,7 +161,7 @@ public class StimulusBuilder : MonoBehaviour
                 if (t == null) continue;
                 var r = t.GetComponent<Renderer>();
                 if (r != null)
-                    r.enabled = true; // keep always visible for now (as in your current file)
+                    r.enabled = visible; // respect visibleByFrame setting
             }
         }
     }
