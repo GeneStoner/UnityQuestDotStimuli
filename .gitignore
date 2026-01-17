@@ -56,3 +56,4 @@ sysinfo.txt
 
 # ========== TextMesh Pro generated ==========
 Assets/TextMesh Pro/*/Resources/*.asset
+.utmp/

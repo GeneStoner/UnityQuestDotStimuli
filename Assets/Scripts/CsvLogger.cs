@@ -9,6 +9,10 @@ using CondLib = StimulusConditionsLibrary;
 [DisallowMultipleComponent]
 public class CsvLogger : MonoBehaviour
 {
+    [Header("Android/Quest Storage")]
+    [Tooltip("On Android/Quest, write to external storage (accessible via ADB) instead of internal app storage.")]
+    public bool useExternalStorageOnAndroid = true;
+
     [Header("Subject (optional but recommended)")]
     public string subjectId = "S000";
     public string subjectNotes = "";
@@ -105,6 +109,12 @@ public class CsvLogger : MonoBehaviour
     // Sidecar write guard (once per session/file)
     private bool _sidecarWritten = false;
 
+    void Awake()
+    {
+        Debug.Log($"[CsvLogger] Awake: useExternalStorageOnAndroid={useExternalStorageOnAndroid}, platform={Application.platform}");
+        Debug.Log($"[CsvLogger] persistentDataPath={Application.persistentDataPath}");
+    }
+
     // -------- Trajectory library (64 entries expected) --------
     private struct TrajDef
     {
@@ -152,13 +162,30 @@ public class CsvLogger : MonoBehaviour
         _tsvPath = ResolvePath(path);
         _metaPath = _tsvPath + ".meta.json";
 
-        var dir = Path.GetDirectoryName(_tsvPath);
-        if (string.IsNullOrEmpty(dir))
-            dir = Application.persistentDataPath;
-        Directory.CreateDirectory(dir);
+        Debug.Log($"[CsvLogger] BeginSession: platform={_platform}, path={_tsvPath}");
 
-        _tsv = new StreamWriter(_tsvPath, append: false, encoding: new UTF8Encoding(false));
-        _headerWritten = false;
+        try
+        {
+            var dir = Path.GetDirectoryName(_tsvPath);
+            if (string.IsNullOrEmpty(dir))
+                dir = Application.persistentDataPath;
+
+            Debug.Log($"[CsvLogger] Creating directory: {dir}");
+            Directory.CreateDirectory(dir);
+
+            Debug.Log($"[CsvLogger] Opening file for writing: {_tsvPath}");
+            _tsv = new StreamWriter(_tsvPath, append: false, encoding: new UTF8Encoding(false));
+            _headerWritten = false;
+
+            Debug.Log($"[CsvLogger] File opened successfully: {_tsvPath}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CsvLogger] FAILED to create session file: {_tsvPath}\nError: {e}");
+            _tsv = null;
+            _sessionOpen = false;
+            throw; // Re-throw so TrialBlockRunner knows logging failed
+        }
 
         ResetTrialState();
 
@@ -199,6 +226,17 @@ public class CsvLogger : MonoBehaviour
         {
             _tsv?.Flush();
             _tsv?.Close();
+
+            // Verify file exists and log final status
+            if (!string.IsNullOrEmpty(_tsvPath) && File.Exists(_tsvPath))
+            {
+                var fileInfo = new FileInfo(_tsvPath);
+                Debug.Log($"[CsvLogger] SESSION COMPLETE: {_completedTrials} trials saved to:\n  {_tsvPath}\n  File size: {fileInfo.Length} bytes");
+            }
+            else
+            {
+                Debug.LogError($"[CsvLogger] SESSION ENDED but file not found: {_tsvPath}");
+            }
         }
         catch (Exception e)
         {
@@ -360,11 +398,24 @@ public class CsvLogger : MonoBehaviour
             mkOut + "\t" +
             colOut;
 
-        _tsv.WriteLine(line);
-        _tsv.Flush();
+        try
+        {
+            _tsv.WriteLine(line);
+            _tsv.Flush();
 
-        _completedTrials++;
-        _metaDirty = true;
+            _completedTrials++;
+            _metaDirty = true;
+
+            // Log progress every 10 trials
+            if (_completedTrials % 10 == 0 || _completedTrials == 1)
+            {
+                Debug.Log($"[CsvLogger] Trial {_completedTrials} written to: {_tsvPath}");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CsvLogger] FAILED to write trial {_curTrialIndex}: {e}");
+        }
 
         _trialOpen = false;
     }
@@ -701,17 +752,74 @@ public class CsvLogger : MonoBehaviour
         return sb.ToString();
     }
 
-    private static string ResolvePath(string path)
+    private string ResolvePath(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
             path = "vr_dots_session.tsv";
 
         bool hasDir = path.Contains("/") || path.Contains("\\");
-        if (!hasDir)
-            return Path.Combine(Application.persistentDataPath, path);
 
+        #if UNITY_ANDROID && !UNITY_EDITOR
+        // On Android, always use Android-appropriate path regardless of what was passed in
+        // This handles the case where outputFileName in Inspector contains a Mac path
+        string filename = hasDir ? Path.GetFileName(path) : path;
+        string basePath = GetDataPath();
+        string resolvedPath = Path.Combine(basePath, filename);
+        Debug.Log($"[CsvLogger] ResolvePath: input='{path}' -> Android output='{resolvedPath}'");
+        return resolvedPath;
+        #else
+        if (!hasDir)
+        {
+            string basePath = GetDataPath();
+            return Path.Combine(basePath, path);
+        }
         return path;
+        #endif
     }
+
+    private string GetDataPath()
+    {
+        // On Android/Quest, optionally use external storage for easier ADB access
+        #if UNITY_ANDROID && !UNITY_EDITOR
+        if (useExternalStorageOnAndroid)
+        {
+            // Use external files directory: /sdcard/Android/data/<package>/files/
+            // This is accessible via ADB without root
+            string externalPath = GetAndroidExternalFilesDir();
+            if (!string.IsNullOrEmpty(externalPath))
+            {
+                Debug.Log($"[CsvLogger] Using Android external storage: {externalPath}");
+                return externalPath;
+            }
+            Debug.LogWarning("[CsvLogger] Failed to get Android external files dir, falling back to persistentDataPath");
+        }
+        #endif
+
+        return Application.persistentDataPath;
+    }
+
+    #if UNITY_ANDROID && !UNITY_EDITOR
+    private static string GetAndroidExternalFilesDir()
+    {
+        try
+        {
+            using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+            using (var externalFilesDir = activity.Call<AndroidJavaObject>("getExternalFilesDir", (string)null))
+            {
+                if (externalFilesDir != null)
+                {
+                    return externalFilesDir.Call<string>("getAbsolutePath");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CsvLogger] GetAndroidExternalFilesDir failed: {e}");
+        }
+        return null;
+    }
+    #endif
 
     private static string MakeSessionIdFromPath(string path)
     {

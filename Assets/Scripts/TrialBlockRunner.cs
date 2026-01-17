@@ -191,7 +191,7 @@ public class TrialBlockRunner : MonoBehaviour
     private void OnXRTriggerPressed(InputAction.CallbackContext context)
     {
         _xrTriggerPressedThisFrame = true;
-        Debug.Log("[TrialBlockRunner] XR Trigger pressed!");
+        Debug.Log("[TrialBlockRunner] *** TRIGGER *** Build 2026-01-17");
     }
 
     void Start()
@@ -205,6 +205,7 @@ public class TrialBlockRunner : MonoBehaviour
 
     public void BeginBlock()
     {
+        Debug.Log("[TrialBlockRunner] *** BEGINBLOCK CALLED ***");
         _allPlannedTrials = spec.GetPlannedTrials(_rng);
 
         if (_allPlannedTrials == null || _allPlannedTrials.Count == 0)
@@ -221,11 +222,14 @@ public class TrialBlockRunner : MonoBehaviour
         int targetN = spec.GetTargetNumberTrialsEstimate();
         int generatedN = _allPlannedTrials.Count;
 
+        Debug.Log($"[TrialBlockRunner] StartLoop: csvLogger={(csvLogger != null ? "assigned" : "NULL")}, targetN={targetN}, generatedN={generatedN}");
+
         if (csvLogger != null)
         {
             try
             {
                 string path = BuildSessionPathSimple();
+                Debug.Log($"[TrialBlockRunner] Calling BeginSession with path: {path}");
                 csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
 
                 // Set counts AFTER BeginSession so meta writes reflect them immediately
@@ -263,6 +267,10 @@ public class TrialBlockRunner : MonoBehaviour
                 Debug.LogError("[TrialBlockRunner] CsvLogger.BeginSession failed - logging disabled for this session: " + e, this);
                 csvLogger = null; // Disable logging but allow trials to continue
             }
+        }
+        else
+        {
+            Debug.LogWarning("[TrialBlockRunner] csvLogger is NOT assigned! No data will be logged. Please assign CsvLogger in Inspector.");
         }
 
         if (hud != null)
