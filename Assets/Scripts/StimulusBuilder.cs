@@ -1,4 +1,9 @@
 // FILE: StimulusBuilder.cs
+//
+// RECEIVES values from TrialBlockRunner at trial start.
+// Do not edit these Inspector fields to change experiment parameters.
+// Edit ExperimentSpec asset (e.g., ExpSpecTestPhase.asset) instead.
+//
 using System.Collections.Generic;
 using UnityEngine;
 using CondLib = StimulusConditionsLibrary;

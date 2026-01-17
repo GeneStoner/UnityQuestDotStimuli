@@ -24,7 +24,8 @@ public class TargetResponseController : MonoBehaviour
 
     [Header("Timing")]
     [Tooltip("Maximum number of response frames to wait after BeginResponseWindow.\n" +
-             "If <= 0, there is no timeout and the window only ends on confirm/cancel.")]
+             "If <= 0, there is no timeout and the window only ends on confirm/cancel.\n" +
+             "NOTE: This is synced from TrialBlockRunner.maxResponseFrames at trial start.")]
     public int maxResponseFrames = 0;
 
     [Header("XR Controller Input")]

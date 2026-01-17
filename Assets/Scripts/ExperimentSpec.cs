@@ -1,4 +1,14 @@
 // FILE: ExperimentSpec.cs
+//
+// SOURCE OF TRUTH for experiment parameters.
+// ------------------------------------
+// All stimulus geometry, timing, and kinematic parameters are defined here.
+// TrialBlockRunner reads from this asset and copies values to StimulusBuilder,
+// Fixation_Controller, and other components at trial start.
+//
+// To change experiment parameters: Edit the ExperimentSpec asset (e.g., ExpSpecTestPhase.asset)
+// Inspector fields on TrialBlockRunner are for preview scaling and runtime control only.
+//
 using System;
 using System.Collections.Generic;
 using UnityEngine;

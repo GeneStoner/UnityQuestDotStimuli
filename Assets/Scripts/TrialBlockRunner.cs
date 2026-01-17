@@ -1,4 +1,20 @@
 // FILE: TrialBlockRunner.cs
+//
+// PARAMETER AUTHORITY:
+// --------------------
+// ExperimentSpec (ScriptableObject) is the SOURCE OF TRUTH for experiment parameters:
+//   - viewDistance_m, apertureRadius_deg, dotSize_deg, dotsPerField
+//   - rotation/translation speeds, fixation geometry, colors
+//
+// This script's Inspector fields are for:
+//   - References to scene objects (spec, builder, fixation, csvLogger, etc.)
+//   - Preview scaling (monitorPreviewMode, previewScale) - render-only, does NOT change truth
+//   - Runtime control (startKey, maxResponseFrames, looping, logging options)
+//
+// At trial start, ExperimentSpec values are copied to StimulusBuilder and other components.
+// Changing values in ExperimentSpec asset will affect the experiment.
+// Changing preview scales here only affects monitor visibility, not the actual stimulus.
+//
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -50,6 +66,8 @@ public class TrialBlockRunner : MonoBehaviour
 
     [Header("Trial start / response")]
     public KeyCode startKey = KeyCode.Space;
+
+    [Tooltip("Max frames to wait for response (0 = unlimited). Synced to TargetResponseController at trial start.")]
     public int maxResponseFrames = 0;
 
     [Header("XR Controller Input")]
