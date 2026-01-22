@@ -558,6 +558,19 @@ public class CsvLogger : MonoBehaviour
             sb.Append("    \"planned_trials\": ").Append(plannedN).Append("\n");
             sb.Append("  },\n");
 
+            sb.Append("  \"calibration_colors\": {\n");
+            if (spec != null)
+            {
+                sb.Append("    \"rgba_red\": [").Append(f(spec.rgbaRed.r)).Append(", ").Append(f(spec.rgbaRed.g)).Append(", ").Append(f(spec.rgbaRed.b)).Append(", ").Append(f(spec.rgbaRed.a)).Append("],\n");
+                sb.Append("    \"rgba_green\": [").Append(f(spec.rgbaGreen.r)).Append(", ").Append(f(spec.rgbaGreen.g)).Append(", ").Append(f(spec.rgbaGreen.b)).Append(", ").Append(f(spec.rgbaGreen.a)).Append("]\n");
+            }
+            else
+            {
+                sb.Append("    \"rgba_red\": null,\n");
+                sb.Append("    \"rgba_green\": null\n");
+            }
+            sb.Append("  },\n");
+
             sb.Append("  \"preview\": {\n");
             sb.Append("    \"monitor_preview_mode\": ").Append(monitorPreviewMode ? "true" : "false").Append(",\n");
             sb.Append("    \"preview_scale\": ").Append(f(previewScale)).Append(",\n");

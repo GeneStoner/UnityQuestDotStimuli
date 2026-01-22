@@ -120,6 +120,9 @@ public class TrialBlockRunner : MonoBehaviour
             return;
         }
 
+        // Load isoluminance calibration if available
+        LoadCalibrationColors();
+
         _simDt = spec.SimDt;
         _rng = new System.Random(1234567);
 
@@ -127,6 +130,25 @@ public class TrialBlockRunner : MonoBehaviour
         SetupXRInput();
 
         Debug.Log($"[TBR {GetInstanceID()}] Awake. fixationRef={(fixation ? fixation.GetInstanceID() : -1)}", this);
+    }
+
+    /// <summary>
+    /// Load isoluminance calibration from flicker fusion and apply to ExperimentSpec colors.
+    /// </summary>
+    private void LoadCalibrationColors()
+    {
+        var cal = CalibrationData.Load();
+        if (cal != null)
+        {
+            // Apply calibrated pure red and green (no cross-channel contamination)
+            spec.rgbaRed = cal.GetRedColor();
+            spec.rgbaGreen = cal.GetGreenColor();
+            Debug.Log($"[TrialBlockRunner] Applied calibration: Red={cal.redIntensity:F3}, Green={cal.greenIntensity:F3} (mean from {cal.trialCount} trials)");
+        }
+        else
+        {
+            Debug.Log("[TrialBlockRunner] No calibration found. Using default ExperimentSpec colors.");
+        }
     }
 
     void OnDestroy()

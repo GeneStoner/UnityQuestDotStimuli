@@ -28,7 +28,7 @@ public class FlickerStimulus : MonoBehaviour
     public bool flickerEnabled = true;
 
     [Header("Colors")]
-    public Color colorA = new Color(0.9f, 0f, 0f, 1f);  // Red
+    public Color colorA = new Color(1.0f, 0f, 0f, 1f);  // Red (max intensity)
     public Color colorB = new Color(0f, 0.5f, 0f, 1f);  // Green (adjustable)
 
     [Header("Shader Settings")]
@@ -113,6 +113,15 @@ public class FlickerStimulus : MonoBehaviour
         // Quad needs to be large enough that outer radius (0.5 in UV) maps to actual size
         // Since UV outer radius is at 0.5 from center, quad width = 2 * outerSize
         transform.localScale = new Vector3(quadSize, quadSize, 1f);
+    }
+
+    /// <summary>
+    /// Call after changing geometry properties at runtime to refresh the display.
+    /// </summary>
+    public void RefreshGeometry()
+    {
+        SetupGeometry();
+        UpdateShaderProperties();
     }
 
     /// <summary>

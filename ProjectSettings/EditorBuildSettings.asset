@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/FlickerCalibration.unity
+    guid: f7c0d6a0b9da9402fb6abf042ebadd6f
+  - enabled: 1
     path: Assets/Scenes/UpToDateScene.unity
     guid: 1a350bd74c5654dd2a3afec49fc4c98c
   m_configObjects:
