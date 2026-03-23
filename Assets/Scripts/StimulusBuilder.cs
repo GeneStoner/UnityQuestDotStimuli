@@ -61,6 +61,8 @@ public class StimulusBuilder : MonoBehaviour
 
     public List<TrajectorySample> trajectoryLog = new List<TrajectorySample>();
 
+    [HideInInspector] public float exclusionRadiusMeters = 0f;
+
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
     // ========================================================================
@@ -116,7 +118,7 @@ public class StimulusBuilder : MonoBehaviour
                     r.enabled = false; // Start hidden; ApplyConditionFrame will enable as needed
                 }
 
-                Vector2 p = UniformDisk(rng, ApertureRadiusMeters);
+                Vector2 p = UniformAnnulus(rng, ApertureRadiusMeters, exclusionRadiusMeters);
                 dot.transform.position =
                     transform.position + transform.right * p.x + transform.up * p.y;
 
@@ -303,7 +305,7 @@ public class StimulusBuilder : MonoBehaviour
         int seed = Hash(Subfields[subfieldIndex].seedBase, dotIndex, frame);
         System.Random rng = new System.Random(seed);
 
-        Vector2 p = UniformDisk(rng, R);
+        Vector2 p = UniformAnnulus(rng, R, exclusionRadiusMeters);
         lp.x = p.x;
         lp.y = p.y;
     }
@@ -326,6 +328,21 @@ public class StimulusBuilder : MonoBehaviour
     {
         float u  = (float)rng.NextDouble();
         float r  = R * Mathf.Sqrt(u);
+        float th = (float)rng.NextDouble() * (2f * Mathf.PI);
+        return new Vector2(r * Mathf.Cos(th), r * Mathf.Sin(th));
+    }
+
+    /// <summary>
+    /// Sample uniformly from an annulus (ring) with inner radius R_in and outer radius R_out.
+    /// Falls back to UniformDisk when R_in &lt;= 0 or R_in &gt;= R_out.
+    /// </summary>
+    static Vector2 UniformAnnulus(System.Random rng, float R_out, float R_in)
+    {
+        if (R_in <= 0f || R_in >= R_out)
+            return UniformDisk(rng, R_out);
+
+        float u  = (float)rng.NextDouble();
+        float r  = Mathf.Sqrt(u * (R_out * R_out - R_in * R_in) + R_in * R_in);
         float th = (float)rng.NextDouble() * (2f * Mathf.PI);
         return new Vector2(r * Mathf.Cos(th), r * Mathf.Sin(th));
     }

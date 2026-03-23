@@ -511,6 +511,7 @@ public class TrialBlockRunner : MonoBehaviour
         builder.dotSizeMeters = dotDiam_m_truth * dotScale;
         builder.dotsPerField = spec.dotsPerField;
         builder.randomSeed = _currentTrial.seedA0;
+        builder.exclusionRadiusMeters = spec.fixationExclusionRadius_deg * mPerDeg;
 
         // ---------------- Fixation preview scaling ----------------
         if (fixation != null)

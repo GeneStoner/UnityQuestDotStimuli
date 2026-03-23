@@ -593,7 +593,8 @@ public class CsvLogger : MonoBehaviour
             sb.Append("    \"dots_per_field\": ").Append(builder != null ? builder.dotsPerField : -1).Append(",\n");
             sb.Append("    \"aperture_diameter_deg\": ").Append(f(builder != null ? builder.apertureDeg : float.NaN)).Append(",\n");
             sb.Append("    \"dot_size_m\": ").Append(f(builder != null ? builder.dotSizeMeters : float.NaN)).Append(",\n");
-            sb.Append("    \"respawn_when_out_of_bounds\": ").Append((builder != null && builder.respawnWhenOutOfBounds) ? "true" : "false").Append("\n");
+            sb.Append("    \"respawn_when_out_of_bounds\": ").Append((builder != null && builder.respawnWhenOutOfBounds) ? "true" : "false").Append(",\n");
+            sb.Append("    \"exclusion_radius_m\": ").Append(f(builder != null ? builder.exclusionRadiusMeters : float.NaN)).Append("\n");
             sb.Append("  },\n");
 
             sb.Append("  \"fixation\": {\n");
