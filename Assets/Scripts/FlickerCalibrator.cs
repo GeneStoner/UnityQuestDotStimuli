@@ -83,7 +83,7 @@ public class FlickerCalibrator : MonoBehaviour
     private InputAction _activateRight;
 
     // Trial state
-    private enum State { WaitingToStart, Adjusting, BetweenTrials, AllDone }
+    private enum State { WaitingToStart, Adjusting, BetweenTrials, AllDone, SkipMenu }
     private State _state = State.WaitingToStart;
     private int _currentTrial = 0;
     private List<float> _trialResults = new List<float>();
@@ -95,6 +95,10 @@ public class FlickerCalibrator : MonoBehaviour
     private int _endMenuSelection = 0;  // 0=Main Experiment, 1=Redo Calibration, 2=Quit
     private float _endMenuReadyTime = 0f;  // Time when menu becomes responsive
     private const float END_MENU_DELAY = 2.0f;  // 2 second delay before menu accepts input
+
+    // Skip menu (shown when existing calibration found on disk)
+    private int _skipMenuSelection = 0;  // 0=Use Existing → Start Experiment, 1=Redo Calibration
+    private CalibrationData _existingCalibration = null;
 
     // Input state
     private bool _triggerPressedLastFrame = false;
@@ -142,6 +146,19 @@ public class FlickerCalibrator : MonoBehaviour
             stimulus.flickerEnabled = false;
         }
 
+        // Check for existing calibration data on disk
+        if (CalibrationData.Exists())
+        {
+            _existingCalibration = CalibrationData.Load();
+            if (_existingCalibration != null)
+            {
+                _state = State.SkipMenu;
+                _skipMenuSelection = 0;
+                Debug.Log($"[FlickerCalibrator] Found existing calibration from {_existingCalibration.calibrationDate}. Showing skip menu.");
+                return;
+            }
+        }
+
         Debug.Log($"[FlickerCalibrator] Ready. {numberOfTrials} trials planned. showHUD={showHUD}");
         Debug.Log("[FlickerCalibrator] Press TRIGGER or SPACE to start first trial.");
     }
@@ -184,6 +201,10 @@ public class FlickerCalibrator : MonoBehaviour
             case State.AllDone:
                 // End menu navigation
                 HandleEndMenuInput();
+                break;
+
+            case State.SkipMenu:
+                HandleSkipMenuInput();
                 break;
         }
 
@@ -301,6 +322,57 @@ public class FlickerCalibrator : MonoBehaviour
                 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
                 #endif
+                break;
+        }
+    }
+
+    private void HandleSkipMenuInput()
+    {
+        // Thumbstick navigation
+        Vector2 thumbstick = GetThumbstickValue();
+        if (Mathf.Abs(thumbstick.y) > thumbstickDeadzone)
+        {
+            if (Time.time - _lastAdjustmentTime > 0.2f)
+            {
+                if (thumbstick.y > 0)
+                    _skipMenuSelection = Mathf.Max(0, _skipMenuSelection - 1);
+                else
+                    _skipMenuSelection = Mathf.Min(1, _skipMenuSelection + 1);
+                _lastAdjustmentTime = Time.time;
+            }
+        }
+
+        // Keyboard navigation
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+            _skipMenuSelection = Mathf.Max(0, _skipMenuSelection - 1);
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+            _skipMenuSelection = Mathf.Min(1, _skipMenuSelection + 1);
+
+        // Trigger/key to select
+        bool triggerPressed = IsTriggerPressed();
+        bool keyConfirm = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space);
+
+        if ((triggerPressed && !_triggerPressedLastFrame) || keyConfirm)
+        {
+            ExecuteSkipMenuSelection();
+        }
+    }
+
+    private void ExecuteSkipMenuSelection()
+    {
+        Debug.Log($"[FlickerCalibrator] ExecuteSkipMenuSelection called! selection={_skipMenuSelection}");
+
+        switch (_skipMenuSelection)
+        {
+            case 0:  // Use Existing → Start Experiment
+                Debug.Log("[FlickerCalibrator] >>> Using existing calibration, loading main experiment <<<");
+                UnityEngine.SceneManagement.SceneManager.LoadScene("UpToDateScene");
+                break;
+
+            case 1:  // Redo Calibration
+                Debug.Log("[FlickerCalibrator] User chose to redo calibration.");
+                _existingCalibration = null;
+                _state = State.WaitingToStart;
                 break;
         }
     }
@@ -558,6 +630,9 @@ public class FlickerCalibrator : MonoBehaviour
     public int GetMenuSelection() => _endMenuSelection;
     public bool IsMenuReady() => _state == State.AllDone && Time.time >= _endMenuReadyTime;
 
+    public int GetSkipMenuSelection() => _skipMenuSelection;
+    public CalibrationData GetExistingCalibration() => _existingCalibration;
+
     public (float mean, float median, float stdDev) GetResults()
     {
         return (_averageGreen, _greenMedian, _greenStdDev);
@@ -630,6 +705,32 @@ public class FlickerCalibrator : MonoBehaviour
                 GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Trial {_currentTrial} recorded: {_trialResults[_trialResults.Count - 1]:F3}", valueStyle);
                 y += lineHeight;
                 GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), "Press TRIGGER for next trial", instructStyle);
+                break;
+
+            case State.SkipMenu:
+                GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), "EXISTING CALIBRATION FOUND", resultStyle);
+                y += lineHeight * 1.2f;
+                if (_existingCalibration != null)
+                {
+                    GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Date: {_existingCalibration.calibrationDate}", valueStyle);
+                    y += lineHeight;
+                    GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Green (mean): {_existingCalibration.greenIntensity:F4}", resultStyle);
+                    y += lineHeight;
+                    GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Trials: {_existingCalibration.trialCount}  StdDev: {_existingCalibration.greenStdDev:F4}", valueStyle);
+                    y += lineHeight * 1.5f;
+                }
+                {
+                    string[] menuItems = { "Use Existing \u2192 Start Experiment", "Redo Calibration" };
+                    for (int i = 0; i < menuItems.Length; i++)
+                    {
+                        GUIStyle menuStyle = (i == _skipMenuSelection) ? resultStyle : valueStyle;
+                        string prefix = (i == _skipMenuSelection) ? "> " : "  ";
+                        GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), prefix + menuItems[i], menuStyle);
+                        y += lineHeight;
+                    }
+                    y += lineHeight * 0.5f;
+                    GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), "Thumbstick: Select | Trigger: Confirm", instructStyle);
+                }
                 break;
 
             case State.AllDone:

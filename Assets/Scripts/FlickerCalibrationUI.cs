@@ -105,7 +105,7 @@ public class FlickerCalibrationUI : MonoBehaviour
         var state = calibrator.GetState();
 
         // Hide UI during trials (Adjusting=1, BetweenTrials=2)
-        bool shouldShow = (state == 0 || state == 3);  // WaitingToStart or AllDone
+        bool shouldShow = (state == 0 || state == 3 || state == 4);  // WaitingToStart, AllDone, or SkipMenu
         _canvas.gameObject.SetActive(shouldShow);
 
         if (!shouldShow) return;
@@ -140,6 +140,29 @@ public class FlickerCalibrationUI : MonoBehaviour
                 text += "Thumbstick UP/DOWN: Adjust green\n";
                 text += "TRIGGER: Confirm each trial\n\n";
                 text += "<color=#00FF00>Press TRIGGER to begin</color>";
+                break;
+
+            case 4:  // SkipMenu
+                text += "<size=120%><b>EXISTING CALIBRATION FOUND</b></size>\n\n";
+                var existingCal = calibrator.GetExistingCalibration();
+                if (existingCal != null)
+                {
+                    text += $"Date: {existingCal.calibrationDate}\n";
+                    text += $"<color=#00FF00>Green (mean): {existingCal.greenIntensity:F4}</color>\n";
+                    text += $"Trials: {existingCal.trialCount}  StdDev: {existingCal.greenStdDev:F4}\n\n";
+                }
+                {
+                    int skipSel = calibrator.GetSkipMenuSelection();
+                    string[] skipItems = { "Use Existing \u2192 Start Experiment", "Redo Calibration" };
+                    for (int i = 0; i < skipItems.Length; i++)
+                    {
+                        if (i == skipSel)
+                            text += $"<color=#00FF00>> {skipItems[i]}</color>\n";
+                        else
+                            text += $"  {skipItems[i]}\n";
+                    }
+                    text += "\n<color=#AAAAAA>Thumbstick: Select | Trigger: Confirm</color>";
+                }
                 break;
 
             case 3:  // AllDone
