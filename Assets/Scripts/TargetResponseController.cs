@@ -34,7 +34,7 @@ public class TargetResponseController : MonoBehaviour
 
     [Tooltip("Thumbstick deadzone - stick must exceed this magnitude to register direction.")]
     [Range(0.1f, 0.9f)]
-    public float thumbstickDeadzone = 0.5f;
+    public float thumbstickDeadzone = 0.3f;
 
     [Tooltip("Which hand's thumbstick to use for direction selection.")]
     public XRHandSelection directionHand = XRHandSelection.Right;

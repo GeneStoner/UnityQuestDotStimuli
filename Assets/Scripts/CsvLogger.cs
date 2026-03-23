@@ -21,7 +21,7 @@ public class CsvLogger : MonoBehaviour
     public string subjectHandedness = "";
 
     [Header("Build (optional)")]
-    public string applicationVersion = "0.1.4";
+    public string applicationVersion = "0.2.0";
     public string gitCommit = "";
     public string gitBranch = "";
     public string experimentVersion = "";
@@ -553,6 +553,9 @@ public class CsvLogger : MonoBehaviour
             sb.Append("  \"data_file\": \"").Append(esc(Path.GetFileName(_tsvPath))).Append("\",\n");
             sb.Append("  \"sidecar_file\": \"").Append(esc(Path.GetFileName(sidecarPath))).Append("\",\n");
             sb.Append("  \"session_seed\": ").Append(sessionSeed).Append(",\n");
+            sb.Append("  \"application_version\": \"").Append(esc(applicationVersion)).Append("\",\n");
+            sb.Append("  \"git_commit\": \"").Append(esc(gitCommit)).Append("\",\n");
+            sb.Append("  \"git_branch\": \"").Append(esc(gitBranch)).Append("\",\n");
 
             sb.Append("  \"experiment_spec\": {\n");
             sb.Append("    \"spec_name\": \"").Append(esc(spec != null ? spec.name : "")).Append("\",\n");
@@ -742,6 +745,7 @@ public class CsvLogger : MonoBehaviour
         var sb = new StringBuilder(4096);
         sb.Append("{\n");
         sb.Append("  \"schema_version\": \"vrdots.meta.v2\",\n");
+        sb.Append("  \"application_version\": \"").Append(applicationVersion ?? "").Append("\",\n");
         sb.Append("  \"logging\": {\n");
         sb.Append("    \"tsv_delimiter\": \"\\t\",\n");
         sb.Append("    \"write_payloads_in_tsv\": ").Append(writeTrajectoryPayloads ? "true" : "false").Append(",\n");
