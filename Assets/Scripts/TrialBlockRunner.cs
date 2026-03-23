@@ -102,6 +102,7 @@ public class TrialBlockRunner : MonoBehaviour
 
     private int _frameInStimulus;
     private System.Random _rng;
+    private int _sessionSeed;
 
     private StringBuilder _mkPayloadBuilder;
     private StringBuilder _colorPayloadBuilder;
@@ -124,7 +125,9 @@ public class TrialBlockRunner : MonoBehaviour
         LoadCalibrationColors();
 
         _simDt = spec.SimDt;
-        _rng = new System.Random(1234567);
+        _sessionSeed = Environment.TickCount;
+        _rng = new System.Random(_sessionSeed);
+        Debug.Log($"[TrialBlockRunner] Session seed: {_sessionSeed}");
 
         // Setup XR input actions
         SetupXRInput();
@@ -294,7 +297,8 @@ public class TrialBlockRunner : MonoBehaviour
                         previewDotScale,
                         previewFixationScale,
                         previewApertureScale,
-                        cam
+                        cam,
+                        _sessionSeed
                     );
                 }
                 catch (Exception e)
@@ -447,7 +451,8 @@ public class TrialBlockRunner : MonoBehaviour
                             previewDotScale,
                             previewFixationScale,
                             previewApertureScale,
-                            cam
+                            cam,
+                            _sessionSeed
                         );
                     }
                     catch (Exception e)

@@ -501,7 +501,8 @@ public class CsvLogger : MonoBehaviour
         float previewDotScale,
         float previewFixationScale,
         float previewApertureScale,
-        Camera cam
+        Camera cam,
+        int sessionSeed = 0
     )
     {
         if (_sidecarWritten) return;
@@ -551,6 +552,7 @@ public class CsvLogger : MonoBehaviour
             sb.Append("  \"created_iso8601\": \"").Append(esc(DateTimeOffset.Now.ToString("o"))).Append("\",\n");
             sb.Append("  \"data_file\": \"").Append(esc(Path.GetFileName(_tsvPath))).Append("\",\n");
             sb.Append("  \"sidecar_file\": \"").Append(esc(Path.GetFileName(sidecarPath))).Append("\",\n");
+            sb.Append("  \"session_seed\": ").Append(sessionSeed).Append(",\n");
 
             sb.Append("  \"experiment_spec\": {\n");
             sb.Append("    \"spec_name\": \"").Append(esc(spec != null ? spec.name : "")).Append("\",\n");
