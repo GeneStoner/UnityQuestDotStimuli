@@ -72,6 +72,10 @@ public class FlickerCalibrator : MonoBehaviour
 
     public enum HandSelection { Left, Right, Either }
 
+    [Header("Subject")]
+    [Tooltip("Subject identifier (displayed at session start for verification).")]
+    public string subjectId = "S000";
+
     [Header("UI")]
     [Tooltip("Show on-screen instructions and current value.")]
     public bool showHUD = true;
@@ -99,6 +103,7 @@ public class FlickerCalibrator : MonoBehaviour
     // Skip menu (shown when existing calibration found on disk)
     private int _skipMenuSelection = 0;  // 0=Use Existing → Start Experiment, 1=Redo Calibration
     private CalibrationData _existingCalibration = null;
+    private float _skipMenuReadyTime = 0f;  // Delay before skip menu accepts input
 
     // Input state
     private bool _triggerPressedLastFrame = false;
@@ -154,6 +159,7 @@ public class FlickerCalibrator : MonoBehaviour
             {
                 _state = State.SkipMenu;
                 _skipMenuSelection = 0;
+                _skipMenuReadyTime = Time.time + END_MENU_DELAY;
                 Debug.Log($"[FlickerCalibrator] Found existing calibration from {_existingCalibration.calibrationDate}. Showing skip menu.");
                 return;
             }
@@ -328,6 +334,10 @@ public class FlickerCalibrator : MonoBehaviour
 
     private void HandleSkipMenuInput()
     {
+        // Wait for delay before accepting any input
+        if (Time.time < _skipMenuReadyTime)
+            return;
+
         // Thumbstick navigation
         Vector2 thumbstick = GetThumbstickValue();
         if (Mathf.Abs(thumbstick.y) > thumbstickDeadzone)
@@ -632,6 +642,8 @@ public class FlickerCalibrator : MonoBehaviour
 
     public int GetSkipMenuSelection() => _skipMenuSelection;
     public CalibrationData GetExistingCalibration() => _existingCalibration;
+    public bool IsSkipMenuReady() => _state == State.SkipMenu && Time.time >= _skipMenuReadyTime;
+    public string GetSubjectId() => subjectId;
 
     public (float mean, float median, float stdDev) GetResults()
     {
@@ -676,7 +688,10 @@ public class FlickerCalibrator : MonoBehaviour
         float lineHeight = baseFontSize * 1.4f;
 
         GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), "FLICKER FUSION CALIBRATION", titleStyle);
-        y += lineHeight * 1.5f;
+        y += lineHeight;
+
+        GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Subject: {subjectId}", valueStyle);
+        y += lineHeight * 1.2f;
 
         GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Trial: {_currentTrial} / {numberOfTrials}", valueStyle);
         y += lineHeight;
@@ -709,6 +724,8 @@ public class FlickerCalibrator : MonoBehaviour
 
             case State.SkipMenu:
                 GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), "EXISTING CALIBRATION FOUND", resultStyle);
+                y += lineHeight;
+                GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Subject: {subjectId}", valueStyle);
                 y += lineHeight * 1.2f;
                 if (_existingCalibration != null)
                 {
@@ -719,6 +736,11 @@ public class FlickerCalibrator : MonoBehaviour
                     GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), $"Trials: {_existingCalibration.trialCount}  StdDev: {_existingCalibration.greenStdDev:F4}", valueStyle);
                     y += lineHeight * 1.5f;
                 }
+                if (Time.time < _skipMenuReadyTime)
+                {
+                    GUI.Label(new Rect(labelX, y, labelWidth, lineHeight), "Loading menu...", instructStyle);
+                }
+                else
                 {
                     string[] menuItems = { "Use Existing \u2192 Start Experiment", "Redo Calibration" };
                     for (int i = 0; i < menuItems.Length; i++)

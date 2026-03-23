@@ -92,7 +92,7 @@ public abstract class ExperimentSpec : ScriptableObject
     public float fixationCrosshairThickness_deg = 0.03f;
 
     [Tooltip("Exclusion zone RADIUS around fixation (degrees). Dots will not spawn within this radius.")]
-    public float fixationExclusionRadius_deg = 0.5f;
+    public float fixationExclusionRadius_deg = 1.1f;
 
     //temmp color fudging to get closer to red/green isoluminance
     // [Header("Color Palette")]

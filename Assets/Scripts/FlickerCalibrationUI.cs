@@ -136,6 +136,7 @@ public class FlickerCalibrationUI : MonoBehaviour
         {
             case 0:  // WaitingToStart
                 text += "<size=120%><b>FLICKER FUSION CALIBRATION</b></size>\n\n";
+                text += $"Subject: {calibrator.GetSubjectId()}\n";
                 text += $"{totalTrials} trials\n\n";
                 text += "Thumbstick UP/DOWN: Adjust green\n";
                 text += "TRIGGER: Confirm each trial\n\n";
@@ -144,6 +145,7 @@ public class FlickerCalibrationUI : MonoBehaviour
 
             case 4:  // SkipMenu
                 text += "<size=120%><b>EXISTING CALIBRATION FOUND</b></size>\n\n";
+                text += $"Subject: {calibrator.GetSubjectId()}\n";
                 var existingCal = calibrator.GetExistingCalibration();
                 if (existingCal != null)
                 {
@@ -151,6 +153,7 @@ public class FlickerCalibrationUI : MonoBehaviour
                     text += $"<color=#00FF00>Green (mean): {existingCal.greenIntensity:F4}</color>\n";
                     text += $"Trials: {existingCal.trialCount}  StdDev: {existingCal.greenStdDev:F4}\n\n";
                 }
+                if (calibrator.IsSkipMenuReady())
                 {
                     int skipSel = calibrator.GetSkipMenuSelection();
                     string[] skipItems = { "Use Existing \u2192 Start Experiment", "Redo Calibration" };
@@ -162,6 +165,10 @@ public class FlickerCalibrationUI : MonoBehaviour
                             text += $"  {skipItems[i]}\n";
                     }
                     text += "\n<color=#AAAAAA>Thumbstick: Select | Trigger: Confirm</color>";
+                }
+                else
+                {
+                    text += "<color=#AAAAAA>Loading menu...</color>";
                 }
                 break;
 
