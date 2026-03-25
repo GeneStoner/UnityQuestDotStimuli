@@ -21,6 +21,9 @@ public class ExpSpecTestPhase : ExperimentSpec
     [Tooltip("Include color-swap trials (field colors swap at translation onset).")]
     public bool includeColorSwaps = false;
 
+    [Tooltip("Include 50%% dot-swap trials (sub1↔sub3 exchange field membership at translation onset).")]
+    public bool includeDots50Swaps = false;
+
     // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
@@ -32,6 +35,7 @@ public class ExpSpecTestPhase : ExperimentSpec
         int swapFactor = 1;
         if (includeMotionSwaps) swapFactor *= 2;
         if (includeColorSwaps)  swapFactor *= 2;
+        if (includeDots50Swaps) swapFactor *= 2;
 
         return condFactor * headingFactor * rotFactor * colorFactor * swapFactor;
     }
@@ -45,14 +49,19 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         int[] rotCfgs = includeBothRotationConfigs ? new[] { 0, 1 } : new[] { 0 };
 
-        // Build list of active swap flag values
+        // Build all combinations (power set) of active swap flags
+        var activeFlags = new List<int>();
+        if (includeMotionSwaps) activeFlags.Add((int)SwapFlags.Motion);
+        if (includeColorSwaps)  activeFlags.Add((int)SwapFlags.Color);
+        if (includeDots50Swaps) activeFlags.Add((int)SwapFlags.Dots50);
+
         var swapValues = new List<int> { 0 }; // None always included
-        if (includeMotionSwaps)
-            swapValues.Add((int)SwapFlags.Motion);
-        if (includeColorSwaps)
-            swapValues.Add((int)SwapFlags.Color);
-        if (includeMotionSwaps && includeColorSwaps)
-            swapValues.Add((int)SwapFlags.Motion | (int)SwapFlags.Color);
+        foreach (int flag in activeFlags)
+        {
+            int count = swapValues.Count;
+            for (int i = 0; i < count; i++)
+                swapValues.Add(swapValues[i] | flag);
+        }
 
         // This is now the ONLY repetition knob.
         int reps = Mathf.Max(1, repeatsPerStimulus);
@@ -178,6 +187,7 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         bool motionSwap = (t.swapFlags & (int)SwapFlags.Motion) != 0;
         bool colorSwap  = (t.swapFlags & (int)SwapFlags.Color)  != 0;
+        bool dots50Swap = (t.swapFlags & (int)SwapFlags.Dots50) != 0;
 
         // Rotation assignment depends on rotationConfig
         CondLib.MotionKind aRot = (t.rotationConfig == 0) ? CondLib.MotionKind.RotationCW  : CondLib.MotionKind.RotationCCW;
@@ -192,35 +202,50 @@ public class ExpSpecTestPhase : ExperimentSpec
             CondLib.MotionKind curARot = (motionSwap && afterSwap) ? bRot : aRot;
             CondLib.MotionKind curBRot = (motionSwap && afterSwap) ? aRot : bRot;
 
-            cond.subfields[0].motionKindByFrame[f] = curARot;
-            cond.subfields[1].motionKindByFrame[f] = curARot;
-            cond.subfields[2].motionKindByFrame[f] = curBRot;
-            cond.subfields[3].motionKindByFrame[f] = curBRot;
-
             // Colors: swap at tStart if colorSwap
             Color fieldAColor = (colorSwap && afterSwap) ? delayedColor    : nonDelayedColor;
             Color fieldBColor = (colorSwap && afterSwap) ? nonDelayedColor : delayedColor;
 
-            // Field A (non-delayed): visible always
-            cond.subfields[0].colorByFrame[f]   = fieldAColor;
-            cond.subfields[1].colorByFrame[f]   = fieldAColor;
-            cond.subfields[0].visibleByFrame[f] = true;
-            cond.subfields[1].visibleByFrame[f] = true;
+            // Field membership per subfield.
+            // Default: [A, A, B, B]. With dots50 swap at tStart: [A, B, B, A].
+            bool sub1isA = !(dots50Swap && afterSwap);
+            bool sub3isA =  (dots50Swap && afterSwap);
 
-            // Field B (delayed): invisible pre-onset
-            if (!afterOnset)
+            // Sub0: always Field A
+            cond.subfields[0].motionKindByFrame[f] = curARot;
+            cond.subfields[0].colorByFrame[f]   = fieldAColor;
+            cond.subfields[0].visibleByFrame[f] = true;
+
+            // Sub1: Field A by default, Field B if dots50 swapped
+            cond.subfields[1].motionKindByFrame[f] = sub1isA ? curARot : curBRot;
+            if (sub1isA)
             {
-                cond.subfields[2].colorByFrame[f]   = rgbaBlack;
-                cond.subfields[3].colorByFrame[f]   = rgbaBlack;
-                cond.subfields[2].visibleByFrame[f] = false;
-                cond.subfields[3].visibleByFrame[f] = false;
+                cond.subfields[1].colorByFrame[f]   = fieldAColor;
+                cond.subfields[1].visibleByFrame[f] = true;
             }
             else
             {
-                cond.subfields[2].colorByFrame[f]   = fieldBColor;
-                cond.subfields[3].colorByFrame[f]   = fieldBColor;
-                cond.subfields[2].visibleByFrame[f] = true;
+                cond.subfields[1].colorByFrame[f]   = afterOnset ? fieldBColor : rgbaBlack;
+                cond.subfields[1].visibleByFrame[f] = afterOnset;
+            }
+
+            // Sub2: always Field B
+            cond.subfields[2].motionKindByFrame[f] = curBRot;
+            cond.subfields[2].colorByFrame[f]   = afterOnset ? fieldBColor : rgbaBlack;
+            cond.subfields[2].visibleByFrame[f] = afterOnset;
+
+            // Sub3: Field B by default, Field A if dots50 swapped
+            if (sub3isA)
+            {
+                cond.subfields[3].motionKindByFrame[f] = curARot;
+                cond.subfields[3].colorByFrame[f]   = fieldAColor;
                 cond.subfields[3].visibleByFrame[f] = true;
+            }
+            else
+            {
+                cond.subfields[3].motionKindByFrame[f] = curBRot;
+                cond.subfields[3].colorByFrame[f]   = afterOnset ? fieldBColor : rgbaBlack;
+                cond.subfields[3].visibleByFrame[f] = afterOnset;
             }
 
             // Eye/depth fixed
@@ -231,23 +256,39 @@ public class ExpSpecTestPhase : ExperimentSpec
             }
         }
 
-        // Translation window: 50% coherence within selected field
-        // This overrides rotation for the translating subfields during [tStart, tEnd),
-        // which correctly masks any motion swap for those subfields during translation.
+        // Translation window: coherent/non-coherent within translating field.
+        // With dots50 swap, field membership changes: A={sub0,sub3}, B={sub2,sub1}.
+        // Original member → Linear, swapped-in member → NonCoherent.
         int fStart = Mathf.Max(0, tStart);
         int fEndClamped = Mathf.Min(N, tEnd);
 
         for (int f = fStart; f < fEndClamped; f++)
         {
-            if (isCued)
+            if (dots50Swap)
             {
-                cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
-                cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                if (isCued)  // Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent
+                {
+                    cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+                else  // Field A={sub0,sub3}: sub0=Linear, sub3=NonCoherent
+                {
+                    cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
             }
             else
             {
-                cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
-                cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                if (isCued)
+                {
+                    cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+                else
+                {
+                    cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
             }
         }
 

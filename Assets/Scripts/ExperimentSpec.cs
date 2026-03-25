@@ -121,8 +121,8 @@ public abstract class ExperimentSpec : ScriptableObject
         None   = 0,
         Motion = 1 << 0,   // rotation directions swap at tStart
         Color  = 1 << 1,   // field colors swap at tStart
+        Dots50 = 1 << 2,   // 50% of dots swap field membership (sub1↔sub3)
         // Future:
-        // Dots50 = 1 << 2, // 50% of dots swap field membership
         // Depth  = 1 << 3, // depth planes swap
     }
 
@@ -132,6 +132,7 @@ public abstract class ExperimentSpec : ScriptableObject
         var parts = new List<string>();
         if ((flags & (int)SwapFlags.Motion) != 0) parts.Add("M");
         if ((flags & (int)SwapFlags.Color)  != 0) parts.Add("C");
+        if ((flags & (int)SwapFlags.Dots50) != 0) parts.Add("D");
         return string.Join("", parts);
     }
 

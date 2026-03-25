@@ -99,9 +99,10 @@ def generate_trajectory(cond, rot_cfg, delayed_color, swap_type,
 
     motion_swap = ("M" in swap_type) if swap_type != "N" else False
     color_swap  = ("C" in swap_type) if swap_type != "N" else False
+    dots50_swap = ("D" in swap_type) if swap_type != "N" else False
 
-    mk_rows   = []   # list of "1|1|2|2" strings
-    col_rows  = []   # list of "R|R|G|G" strings
+    mk_rows   = []   # list of [1,1,2,2] int lists
+    col_rows  = []   # list of ["R","R","G","G"] string lists
 
     for f in range(N):
         after_onset = (f >= onset)
@@ -110,7 +111,6 @@ def generate_trajectory(cond, rot_cfg, delayed_color, swap_type,
         # ── rotation (may be swapped) ────────────────────────────
         cur_a = b_rot if (motion_swap and after_swap) else a_rot
         cur_b = a_rot if (motion_swap and after_swap) else b_rot
-        mk = [cur_a, cur_a, cur_b, cur_b]
 
         # ── color (may be swapped) ───────────────────────────────
         if color_swap and after_swap:
@@ -118,24 +118,44 @@ def generate_trajectory(cond, rot_cfg, delayed_color, swap_type,
         else:
             fa_col, fb_col = nd_col, d_col
 
-        if not after_onset:
-            col = [fa_col, fa_col, "K", "K"]
+        # ── field membership (dots50: sub1↔sub3 at tStart) ──────
+        if dots50_swap and after_swap:
+            # sub0=A, sub1=B, sub2=B, sub3=A
+            mk = [cur_a, cur_b, cur_b, cur_a]
+            if not after_onset:
+                col = [fa_col, "K", "K", fa_col]
+            else:
+                col = [fa_col, fb_col, fb_col, fa_col]
         else:
-            col = [fa_col, fa_col, fb_col, fb_col]
+            # default: sub0,1=A  sub2,3=B
+            mk = [cur_a, cur_a, cur_b, cur_b]
+            if not after_onset:
+                col = [fa_col, fa_col, "K", "K"]
+            else:
+                col = [fa_col, fa_col, fb_col, fb_col]
 
         mk_rows.append(mk)
         col_rows.append(col)
 
     # ── translation override (applied AFTER rotation, matches C#) ─
+    # With dots50: field membership changes translation targets.
     f_start = max(0, t_start)
     f_end   = min(N, t_end)
     for f in range(f_start, f_end):
-        if is_cued:
-            mk_rows[f][2] = LINEAR
-            mk_rows[f][3] = NONCOH
+        if dots50_swap:
+            if is_cued:   # Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent
+                mk_rows[f][2] = LINEAR
+                mk_rows[f][1] = NONCOH
+            else:         # Field A={sub0,sub3}: sub0=Linear, sub3=NonCoherent
+                mk_rows[f][0] = LINEAR
+                mk_rows[f][3] = NONCOH
         else:
-            mk_rows[f][0] = LINEAR
-            mk_rows[f][1] = NONCOH
+            if is_cued:
+                mk_rows[f][2] = LINEAR
+                mk_rows[f][3] = NONCOH
+            else:
+                mk_rows[f][0] = LINEAR
+                mk_rows[f][1] = NONCOH
 
     # ── format as payload strings ─────────────────────────────────
     mk_payload  = ";".join("|".join(str(v) for v in row) for row in mk_rows)
