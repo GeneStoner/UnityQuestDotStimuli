@@ -14,7 +14,14 @@ public class ExpSpecTestPhase : ExperimentSpec
     [Tooltip("If true, include BOTH rotation configurations (A and B). If false, use only config A.")]
     public bool includeBothRotationConfigs = true;
 
-    // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor)
+    [Header("Swap conditions (Stoner & Blanc 2010)")]
+    [Tooltip("Include motion-swap trials (rotation directions swap at translation onset).")]
+    public bool includeMotionSwaps = false;
+
+    [Tooltip("Include color-swap trials (field colors swap at translation onset).")]
+    public bool includeColorSwaps = false;
+
+    // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
         int condFactor = 2;
@@ -22,7 +29,11 @@ public class ExpSpecTestPhase : ExperimentSpec
         int rotFactor = includeBothRotationConfigs ? 2 : 1;
         int colorFactor = balanceDelayedFieldColor ? 2 : 1;
 
-        return condFactor * headingFactor * rotFactor * colorFactor;
+        int swapFactor = 1;
+        if (includeMotionSwaps) swapFactor *= 2;
+        if (includeColorSwaps)  swapFactor *= 2;
+
+        return condFactor * headingFactor * rotFactor * colorFactor * swapFactor;
     }
 
     public override List<PlannedTrial> GetPlannedTrials(System.Random rng)
@@ -33,6 +44,15 @@ public class ExpSpecTestPhase : ExperimentSpec
         float[] headings = { 0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f };
 
         int[] rotCfgs = includeBothRotationConfigs ? new[] { 0, 1 } : new[] { 0 };
+
+        // Build list of active swap flag values
+        var swapValues = new List<int> { 0 }; // None always included
+        if (includeMotionSwaps)
+            swapValues.Add((int)SwapFlags.Motion);
+        if (includeColorSwaps)
+            swapValues.Add((int)SwapFlags.Color);
+        if (includeMotionSwaps && includeColorSwaps)
+            swapValues.Add((int)SwapFlags.Motion | (int)SwapFlags.Color);
 
         // This is now the ONLY repetition knob.
         int reps = Mathf.Max(1, repeatsPerStimulus);
@@ -45,21 +65,24 @@ public class ExpSpecTestPhase : ExperimentSpec
             {
                 foreach (int rotCfg in rotCfgs)
                 {
-                    if (balanceDelayedFieldColor)
+                    foreach (int swap in swapValues)
                     {
-                        // Two distinct stimuli (DelR, DelG) per (cond × heading × rotCfg)
-                        for (int r = 0; r < reps; r++)
+                        if (balanceDelayedFieldColor)
                         {
-                            trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED));
-                            trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN));
+                            // Two distinct stimuli (DelR, DelG) per (cond × heading × rotCfg × swap)
+                            for (int r = 0; r < reps; r++)
+                            {
+                                trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED, swap));
+                                trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap));
+                            }
                         }
-                    }
-                    else
-                    {
-                        // One distinct stimulus per (cond × heading × rotCfg)
-                        for (int r = 0; r < reps; r++)
+                        else
                         {
-                            trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN));
+                            // One distinct stimulus per (cond × heading × rotCfg × swap)
+                            for (int r = 0; r < reps; r++)
+                            {
+                                trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap));
+                            }
                         }
                     }
                 }
@@ -85,15 +108,17 @@ public class ExpSpecTestPhase : ExperimentSpec
                                    string condID,
                                    float headingDeg,
                                    int rotationConfig,
-                                   int delayedColorCode)
+                                   int delayedColorCode,
+                                   int swapFlags = 0)
     {
         var t = new PlannedTrial
         {
             index = idx++,
             conditionID = condID,
             headingDeg = headingDeg,
-            rotationConfig = rotationConfig,          // requires PlannedTrial to include this int
-            delayedFieldColorCode = delayedColorCode
+            rotationConfig = rotationConfig,
+            delayedFieldColorCode = delayedColorCode,
+            swapFlags = swapFlags
         };
 
         // Timing in frames
@@ -121,9 +146,10 @@ public class ExpSpecTestPhase : ExperimentSpec
         int N = t.totalFrames;
 
         string rotTag = (t.rotationConfig == 0) ? "RotA" : "RotB";
+        string swapTag = SwapFlagsToCode(t.swapFlags);
         var cond = new CondLib.StimulusCondition
         {
-            name = $"Trial_{t.index}_{t.conditionID}_{rotTag}_Del{(t.delayedFieldColorCode == COLOR_RED ? "R" : "G")}"
+            name = $"Trial_{t.index}_{t.conditionID}_{rotTag}_Del{(t.delayedFieldColorCode == COLOR_RED ? "R" : "G")}_Sw{swapTag}"
         };
 
         cond.timeline.totalFrames = N;
@@ -150,6 +176,9 @@ public class ExpSpecTestPhase : ExperimentSpec
         Color delayedColor    = ColorFromCode(t.delayedFieldColorCode);
         Color nonDelayedColor = ColorFromCode(OppositeColorCode(t.delayedFieldColorCode));
 
+        bool motionSwap = (t.swapFlags & (int)SwapFlags.Motion) != 0;
+        bool colorSwap  = (t.swapFlags & (int)SwapFlags.Color)  != 0;
+
         // Rotation assignment depends on rotationConfig
         CondLib.MotionKind aRot = (t.rotationConfig == 0) ? CondLib.MotionKind.RotationCW  : CondLib.MotionKind.RotationCCW;
         CondLib.MotionKind bRot = (t.rotationConfig == 0) ? CondLib.MotionKind.RotationCCW : CondLib.MotionKind.RotationCW;
@@ -157,20 +186,28 @@ public class ExpSpecTestPhase : ExperimentSpec
         for (int f = 0; f < N; f++)
         {
             bool afterOnset = f >= onset;
+            bool afterSwap  = f >= tStart;
 
-            // Baseline rotations
-            cond.subfields[0].motionKindByFrame[f] = aRot;
-            cond.subfields[1].motionKindByFrame[f] = aRot;
-            cond.subfields[2].motionKindByFrame[f] = bRot;
-            cond.subfields[3].motionKindByFrame[f] = bRot;
+            // Rotation: swap directions at tStart if motionSwap
+            CondLib.MotionKind curARot = (motionSwap && afterSwap) ? bRot : aRot;
+            CondLib.MotionKind curBRot = (motionSwap && afterSwap) ? aRot : bRot;
 
-            // Field A (non-delayed): visible always, opposite color
-            cond.subfields[0].colorByFrame[f]   = nonDelayedColor;
-            cond.subfields[1].colorByFrame[f]   = nonDelayedColor;
+            cond.subfields[0].motionKindByFrame[f] = curARot;
+            cond.subfields[1].motionKindByFrame[f] = curARot;
+            cond.subfields[2].motionKindByFrame[f] = curBRot;
+            cond.subfields[3].motionKindByFrame[f] = curBRot;
+
+            // Colors: swap at tStart if colorSwap
+            Color fieldAColor = (colorSwap && afterSwap) ? delayedColor    : nonDelayedColor;
+            Color fieldBColor = (colorSwap && afterSwap) ? nonDelayedColor : delayedColor;
+
+            // Field A (non-delayed): visible always
+            cond.subfields[0].colorByFrame[f]   = fieldAColor;
+            cond.subfields[1].colorByFrame[f]   = fieldAColor;
             cond.subfields[0].visibleByFrame[f] = true;
             cond.subfields[1].visibleByFrame[f] = true;
 
-            // Field B (delayed): invisible pre-onset, delayedColor post-onset
+            // Field B (delayed): invisible pre-onset
             if (!afterOnset)
             {
                 cond.subfields[2].colorByFrame[f]   = rgbaBlack;
@@ -180,8 +217,8 @@ public class ExpSpecTestPhase : ExperimentSpec
             }
             else
             {
-                cond.subfields[2].colorByFrame[f]   = delayedColor;
-                cond.subfields[3].colorByFrame[f]   = delayedColor;
+                cond.subfields[2].colorByFrame[f]   = fieldBColor;
+                cond.subfields[3].colorByFrame[f]   = fieldBColor;
                 cond.subfields[2].visibleByFrame[f] = true;
                 cond.subfields[3].visibleByFrame[f] = true;
             }
@@ -195,6 +232,8 @@ public class ExpSpecTestPhase : ExperimentSpec
         }
 
         // Translation window: 50% coherence within selected field
+        // This overrides rotation for the translating subfields during [tStart, tEnd),
+        // which correctly masks any motion swap for those subfields during translation.
         int fStart = Mathf.Max(0, tStart);
         int fEndClamped = Mathf.Min(N, tEnd);
 

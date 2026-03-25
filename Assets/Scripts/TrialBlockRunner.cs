@@ -248,7 +248,12 @@ public class TrialBlockRunner : MonoBehaviour
 
     public void BeginBlock()
     {
-        Debug.Log("[TrialBlockRunner] *** BEGINBLOCK CALLED ***");
+        string expName = string.IsNullOrWhiteSpace(spec.experimentName) ? "(unnamed)" : spec.experimentName;
+        Debug.Log($"[TrialBlockRunner] ========================================");
+        Debug.Log($"[TrialBlockRunner]  EXPERIMENT: {expName}");
+        Debug.Log($"[TrialBlockRunner]  Spec asset: {spec.name}");
+        Debug.Log($"[TrialBlockRunner]  Unique stimuli: {spec.GetUniqueStimulusCount()}");
+        Debug.Log($"[TrialBlockRunner] ========================================");
         _allPlannedTrials = spec.GetPlannedTrials(_rng);
 
         if (_allPlannedTrials == null || _allPlannedTrials.Count == 0)
@@ -273,7 +278,7 @@ public class TrialBlockRunner : MonoBehaviour
             {
                 string path = BuildSessionPathSimple();
                 Debug.Log($"[TrialBlockRunner] Calling BeginSession with path: {path}");
-                csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
+                csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m, spec.experimentName);
 
                 // Set counts AFTER BeginSession so meta writes reflect them immediately
                 csvLogger.SetTargetNumberTrials(targetN);
@@ -340,8 +345,9 @@ public class TrialBlockRunner : MonoBehaviour
             string delCol = (t.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
             int rotCfg = t.rotationConfig;
             float heading = t.headingDeg;
+            string swapCode = ExperimentSpec.SwapFlagsToCode(t.swapFlags);
 
-            string stimKey = CsvLogger.MakeStimKey(cond, rotCfg, heading, delCol);
+            string stimKey = CsvLogger.MakeStimKey(cond, rotCfg, heading, delCol, swapCode);
             if (!seen.Add(stimKey))
                 continue;
 
@@ -387,7 +393,8 @@ public class TrialBlockRunner : MonoBehaviour
                 heading,
                 delCol,
                 mk.ToString(),
-                col.ToString()
+                col.ToString(),
+                swapCode
             );
         }
     }
@@ -427,7 +434,7 @@ public class TrialBlockRunner : MonoBehaviour
                 if (csvLogger != null)
                 {
                     string path = BuildSessionPathSimple();
-                    csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m);
+                    csvLogger.BeginSession(path, spec.translationSpeed_degPerSec, spec.viewDistance_m, spec.experimentName);
 
                     int loopTargetN = spec.GetTargetNumberTrialsEstimate();
                     int loopGeneratedN = (_allPlannedTrials != null) ? _allPlannedTrials.Count : 0;
@@ -747,6 +754,25 @@ public class TrialBlockRunner : MonoBehaviour
         FinalizeTrialAndAdvance_WithResponse(resp, requeue);
     }
 
+    /// <summary>
+    /// Method B audit: compare runtime-built payload hashes against registered trajectory.
+    /// </summary>
+    private void AuditTrajectory()
+    {
+        if (csvLogger == null || _currentTrial == null) return;
+        if (_mkPayloadBuilder == null || _colorPayloadBuilder == null) return;
+
+        string cond    = _currentTrial.conditionID ?? "";
+        string delCol  = (_currentTrial.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+        string swapCode = ExperimentSpec.SwapFlagsToCode(_currentTrial.swapFlags);
+        string stimKey  = CsvLogger.MakeStimKey(cond, _currentTrial.rotationConfig,
+                                                 _currentTrial.headingDeg, delCol, swapCode);
+
+        csvLogger.VerifyTrialTrajectory(stimKey,
+                                         _mkPayloadBuilder.ToString(),
+                                         _colorPayloadBuilder.ToString());
+    }
+
     private void FinalizeTrialAndAdvance_NoResponse()
     {
         if (csvLogger != null)
@@ -756,6 +782,8 @@ public class TrialBlockRunner : MonoBehaviour
 
             if (_colorPayloadBuilder.Length > 0)
                 csvLogger.LogColorRows(_currentTrial.index, _colorPayloadBuilder.ToString());
+
+            AuditTrajectory();
 
             csvLogger.LogResponse(-1, -1, "", -1, "", "Keyboard");
             csvLogger.EndTrial();
@@ -774,6 +802,8 @@ public class TrialBlockRunner : MonoBehaviour
 
             if (_colorPayloadBuilder.Length > 0)
                 csvLogger.LogColorRows(_currentTrial.index, _colorPayloadBuilder.ToString());
+
+            AuditTrajectory();
 
             int responseIndex = (resp.status == ResponseStatus.Confirmed) ? resp.choiceIndex : -1;
             int rtFrames = resp.rtFrames;

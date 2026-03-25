@@ -36,6 +36,19 @@ public class TargetResponseController : MonoBehaviour
     [Range(0.1f, 0.9f)]
     public float thumbstickDeadzone = 0.3f;
 
+    [Tooltip("Angular hysteresis (degrees). Once a direction is latched, stick must move this far from its center to switch. " +
+             "Normal boundary is 22.5°; higher values add stickiness. 33° adds ~10° of extra stability.")]
+    [Range(22.5f, 40f)]
+    public float hysteresisAngleDeg = 33f;
+
+    [Header("Two-Stage Confirm (XR only)")]
+    [Tooltip("If true, first trigger press locks direction (visual feedback), second confirms. Prevents last-instant drift.")]
+    public bool twoStageConfirm = true;
+
+    [Tooltip("Minimum frames between lock and confirm to prevent accidental double-tap.")]
+    [Min(1)]
+    public int lockMinFrames = 10;
+
     [Tooltip("Which hand's thumbstick to use for direction selection.")]
     public XRHandSelection directionHand = XRHandSelection.Right;
 
@@ -68,6 +81,17 @@ public class TargetResponseController : MonoBehaviour
 
     // Track if XR was used for this response (for device labeling)
     private bool _usedXRForDirection = false;
+
+    // Hysteresis: latched XR direction (-1 = none). Only switches when angle exceeds threshold.
+    private int _xrHysteresisDir = -1;
+
+    // Two-stage confirm state
+    private bool _directionLocked = false;
+    private int _lockFrame = -1;
+
+    // Public read-only state for feedback visuals
+    public int CurrentChoiceIndex => _lastDirectionChoice;
+    public bool IsDirectionLocked => _directionLocked;
 
     void Awake()
     {
@@ -190,8 +214,9 @@ public class TargetResponseController : MonoBehaviour
     }
 
     /// <summary>
-    /// Polls the XR thumbstick and converts to 8-way direction (0..7).
-    /// Returns true if a valid direction is detected above deadzone.
+    /// Polls the XR thumbstick and converts to 8-way direction (0..7) with hysteresis.
+    /// Once a direction is latched, the stick must move hysteresisAngleDeg from that
+    /// direction's center before switching. Returns true if a valid direction is detected.
     /// </summary>
     private bool TryPollXRThumbstickDirection(out int choiceIndex)
     {
@@ -220,27 +245,40 @@ public class TargetResponseController : MonoBehaviour
             }
         }
 
-        // Check deadzone
+        // Check deadzone — don't reset hysteresis latch (subject just centered stick)
         if (stick.magnitude < thumbstickDeadzone)
             return false;
 
-        // Convert angle to 8-way direction
-        // Angle 0 = right (+X), 90 = up (+Y)
+        // Convert to adjusted angle: 0° = Up, clockwise positive
         float angle = Mathf.Atan2(stick.y, stick.x) * Mathf.Rad2Deg;
         if (angle < 0) angle += 360f;
+        float adjustedAngle = (90f - angle + 360f) % 360f;
 
-        // Map angle to choiceIndex (0=Up, 1=UpRight, 2=Right, etc.)
-        // Each sector is 45 degrees, offset by 22.5 degrees
-        // Up (90°) = 0, UpRight (45°) = 1, Right (0°) = 2, etc.
-        //
-        // choiceIndex mapping: 0=Up(8), 1=UpRight(9), 2=Right(6), 3=DownRight(3),
-        //                      4=Down(2), 5=DownLeft(1), 6=Left(4), 7=UpLeft(7)
+        // Raw sector (no hysteresis)
+        int rawSector = Mathf.FloorToInt((adjustedAngle + 22.5f) / 45f) % 8;
 
-        // Normalize angle to start from Up and go clockwise
-        float adjustedAngle = (90f - angle + 360f) % 360f;  // 0° = Up, clockwise positive
-        int sector = Mathf.FloorToInt((adjustedAngle + 22.5f) / 45f) % 8;
+        // Apply hysteresis
+        if (_xrHysteresisDir < 0)
+        {
+            // No latch yet — accept raw
+            _xrHysteresisDir = rawSector;
+        }
+        else
+        {
+            // Check angular distance from latched center (sector * 45° in adjusted space)
+            float latchedCenter = _xrHysteresisDir * 45f;
+            float dist = Mathf.Abs(adjustedAngle - latchedCenter);
+            if (dist > 180f) dist = 360f - dist;
 
-        choiceIndex = sector;
+            if (dist >= hysteresisAngleDeg)
+            {
+                // Far enough from latched center — switch to raw sector
+                _xrHysteresisDir = rawSector;
+            }
+            // else: stay on latched direction (hysteresis holds)
+        }
+
+        choiceIndex = _xrHysteresisDir;
         return true;
     }
 
@@ -254,6 +292,9 @@ public class TargetResponseController : MonoBehaviour
         _lastEndKey           = KeyCode.None;
         _usedXRForDirection   = false;
         _xrConfirmPressedThisFrame = false;
+        _xrHysteresisDir      = -1;
+        _directionLocked       = false;
+        _lockFrame             = -1;
 
         if (ringRoot != null)
             ringRoot.SetActive(true);
@@ -288,6 +329,10 @@ public class TargetResponseController : MonoBehaviour
         // 1b) XR thumbstick direction? latch candidate; does NOT end window.
         if (TryPollXRThumbstickDirection(out int xrChoiceIndex))
         {
+            // If direction changed and we were locked, unlock
+            if (_directionLocked && xrChoiceIndex != _lastDirectionChoice)
+                _directionLocked = false;
+
             _lastDirectionChoice = xrChoiceIndex;  // 0..7
             _lastSelectionKey    = KeyCode.None;   // No key for XR
             _usedXRForDirection  = true;
@@ -322,6 +367,23 @@ public class TargetResponseController : MonoBehaviour
 
         if (keyboardConfirm || xrConfirm)
         {
+            // Two-stage confirm gate (XR only — keyboard already has separate direction keys)
+            if (twoStageConfirm && xrConfirm && !keyboardConfirm && _lastDirectionChoice >= 0)
+            {
+                if (!_directionLocked)
+                {
+                    // Stage 1: lock the direction
+                    _directionLocked = true;
+                    _lockFrame = currentResponseFrame;
+                    return false; // Don't end window — wait for second press
+                }
+
+                // Stage 2: already locked — check minimum delay
+                if (currentResponseFrame - _lockFrame < lockMinFrames)
+                    return false; // Too fast (double-tap guard), ignore
+            }
+
+            // === Confirm or cancel (original logic) ===
             _lastEndKey = keyboardConfirm ? confirmKey : KeyCode.None;
 
             response.rtFrames     = currentResponseFrame - _responseOnsetFrame;

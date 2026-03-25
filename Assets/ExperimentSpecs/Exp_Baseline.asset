@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6b2bce2bb36a4c26bd3ffebf54318e4, type: 3}
-  m_Name: ExpSpecTestPhase
+  m_Name: Exp_Baseline
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
   experimentName: Baseline
   simHz: 75
@@ -32,7 +32,10 @@ MonoBehaviour:
   fixationRingThickness_deg: 0.3
   fixationCrosshairArmLength_deg: 1
   fixationCrosshairThickness_deg: 0.12
+  fixationExclusionRadius_deg: 1.1
   rgbaRed: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   rgbaGreen: {r: 0.2, g: 0.85, b: 0.2, a: 1}
   rgbaBlack: {r: 0, g: 0, b: 0, a: 1}
   includeBothRotationConfigs: 1
+  includeMotionSwaps: 0
+  includeColorSwaps: 0

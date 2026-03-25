@@ -16,6 +16,10 @@ using CondLib = StimulusConditionsLibrary;
 
 public abstract class ExperimentSpec : ScriptableObject
 {
+    [Header("Experiment Identity")]
+    [Tooltip("Short name for this experiment (e.g., 'Baseline', 'MotionSwap'). Logged in TSV, meta, and sidecar.")]
+    public string experimentName = "";
+
     [Header("Simulation Clock (decoupled from display refresh)")]
     [Tooltip("Simulation steps per second (e.g., 75 to approximate S&B timing).")]
     public int simHz = 75;
@@ -38,7 +42,7 @@ public abstract class ExperimentSpec : ScriptableObject
     public float translationSpeed_degPerSec = 2.26f;
 
     [Tooltip("Duration of the translation window (ms).")]
-    public float translationDuration_ms = 40f;
+    public float translationDuration_ms = 80f;
 
     [Tooltip("Onset delay (ms) for the second (cued) field.")]
     public float delayedOnset_ms = 750f;
@@ -110,6 +114,27 @@ public abstract class ExperimentSpec : ScriptableObject
     protected Color ColorFromCode(int code) => (code == COLOR_RED) ? rgbaRed : rgbaGreen;
     protected int OppositeColorCode(int code) => (code == COLOR_RED) ? COLOR_GREEN : COLOR_RED;
 
+    // ---- Swap conditions (Stoner & Blanc 2010) ----
+    [Flags]
+    public enum SwapFlags
+    {
+        None   = 0,
+        Motion = 1 << 0,   // rotation directions swap at tStart
+        Color  = 1 << 1,   // field colors swap at tStart
+        // Future:
+        // Dots50 = 1 << 2, // 50% of dots swap field membership
+        // Depth  = 1 << 3, // depth planes swap
+    }
+
+    public static string SwapFlagsToCode(int flags)
+    {
+        if (flags == 0) return "N";
+        var parts = new List<string>();
+        if ((flags & (int)SwapFlags.Motion) != 0) parts.Add("M");
+        if ((flags & (int)SwapFlags.Color)  != 0) parts.Add("C");
+        return string.Join("", parts);
+    }
+
     [Serializable]
     public class PlannedTrial
     {
@@ -137,6 +162,9 @@ public abstract class ExperimentSpec : ScriptableObject
         // which color is the DELAYED-ONSET field (field B) AFTER onset.
         // 0 = red, 1 = green.
         public int delayedFieldColorCode;
+
+        // Swap condition at translation onset (cast of SwapFlags).
+        public int swapFlags = 0;
     }
 
     // ---------- Helpers ----------

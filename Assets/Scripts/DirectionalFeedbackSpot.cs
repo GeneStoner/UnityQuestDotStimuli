@@ -53,6 +53,14 @@ public class DirectionalFeedbackSpot : MonoBehaviour
     [Min(0.1f)]
     public float previewScale = 1f;
 
+    [Header("Response Controller (optional)")]
+    [Tooltip("If assigned, direction is read from controller (with hysteresis) instead of raw thumbstick. " +
+             "Ensures the feedback spot always matches the direction that will be confirmed.")]
+    public TargetResponseController responseController;
+
+    [Tooltip("Spot color when direction is locked (two-stage confirm active).")]
+    public Color lockedSpotColor = Color.yellow;
+
     [Header("XR Input (for real-time tracking)")]
     [Tooltip("Input Action Asset for XR controller bindings")]
     public InputActionAsset xrInputActions;
@@ -221,14 +229,24 @@ public class DirectionalFeedbackSpot : MonoBehaviour
             {
                 _spotQuad.SetActive(true);
                 UpdateSpotPositionDirect(_lastValidDirection, _maxDistanceReached);
+                ApplyLockColor();
             }
             return;
         }
 
         _spotQuad.SetActive(true);
 
-        // Normalize direction and snap to nearest of 8 directions
-        Vector2 direction = SnapToEightDirections(thumbstick.normalized);
+        // Direction: use controller's hysteresis-filtered direction if available,
+        // otherwise fall back to raw thumbstick snap
+        Vector2 direction;
+        if (responseController != null && responseController.CurrentChoiceIndex >= 0)
+        {
+            direction = DirectionVectors[responseController.CurrentChoiceIndex];
+        }
+        else
+        {
+            direction = SnapToEightDirections(thumbstick.normalized);
+        }
 
         // Map magnitude (deadzone to 1) → (0 to travelDistance)
         float normalizedMag = Mathf.InverseLerp(deadzone, 1f, magnitude);
@@ -247,6 +265,7 @@ public class DirectionalFeedbackSpot : MonoBehaviour
         // (so distance only grows, but direction always follows thumbstick)
         float displayDistance = Mathf.Max(distance_deg, _maxDistanceReached);
         UpdateSpotPositionDirect(direction, displayDistance);
+        ApplyLockColor();
 
         // Play click when crossing threshold (only once per window)
         if (!_clickPlayedThisWindow && _maxDistanceReached >= clickThreshold_deg)
@@ -254,6 +273,17 @@ public class DirectionalFeedbackSpot : MonoBehaviour
             PlayClick();
             _clickPlayedThisWindow = true;
         }
+    }
+
+    /// <summary>
+    /// Sets spot color based on whether the direction is locked (two-stage confirm).
+    /// </summary>
+    private void ApplyLockColor()
+    {
+        if (_spotMaterial == null) return;
+
+        bool locked = responseController != null && responseController.IsDirectionLocked;
+        _spotMaterial.SetColor(ColorId, locked ? lockedSpotColor : spotColor);
     }
 
     /// <summary>
