@@ -272,6 +272,9 @@ public class TrialBlockRunner : MonoBehaviour
 
         Debug.Log($"[TrialBlockRunner] StartLoop: csvLogger={(csvLogger != null ? "assigned" : "NULL")}, targetN={targetN}, generatedN={generatedN}");
 
+        // ── Condition summary: log all factor levels from actual planned trials ──
+        LogConditionSummary(_allPlannedTrials);
+
         if (csvLogger != null)
         {
             try
@@ -326,6 +329,62 @@ public class TrialBlockRunner : MonoBehaviour
             hud.Bind(this);
 
         NextTrial();
+    }
+
+    /// <summary>
+    /// Logs a human-readable summary of all experimental conditions in the Unity console.
+    /// Tallies factor levels from the actual planned trials so the experimenter can confirm
+    /// the design before running subjects.
+    /// </summary>
+    private void LogConditionSummary(List<ExperimentSpec.PlannedTrial> planned)
+    {
+        if (planned == null || planned.Count == 0) return;
+
+        var conditions = new HashSet<string>();
+        var rotCfgs = new HashSet<int>();
+        var headings = new SortedSet<float>();
+        var delColors = new HashSet<string>();
+        var swapTypes = new HashSet<string>();
+        var swapCounts = new Dictionary<string, int>();
+        var condCounts = new Dictionary<string, int>();
+
+        foreach (var t in planned)
+        {
+            string cond = t.conditionID ?? "";
+            string delCol = (t.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+            string swap = ExperimentSpec.SwapFlagsToCode(t.swapFlags);
+
+            conditions.Add(cond);
+            rotCfgs.Add(t.rotationConfig);
+            headings.Add(t.headingDeg);
+            delColors.Add(delCol);
+            swapTypes.Add(swap);
+
+            if (!swapCounts.ContainsKey(swap)) swapCounts[swap] = 0;
+            swapCounts[swap]++;
+
+            string condSwap = $"{cond}+Sw{swap}";
+            if (!condCounts.ContainsKey(condSwap)) condCounts[condSwap] = 0;
+            condCounts[condSwap]++;
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine("[TrialBlockRunner] ── CONDITION SUMMARY ──");
+        sb.AppendLine($"  Total trials: {planned.Count}");
+        sb.AppendLine($"  Conditions: {string.Join(", ", conditions)}");
+        sb.AppendLine($"  RotConfigs: {string.Join(", ", rotCfgs)}");
+        sb.AppendLine($"  Headings: {string.Join(", ", headings)}");
+        sb.AppendLine($"  DelayedFieldColors: {string.Join(", ", delColors)}");
+        sb.AppendLine($"  SwapTypes: {string.Join(", ", swapTypes)}");
+        sb.AppendLine("  Trials per swap type:");
+        foreach (var kv in swapCounts)
+            sb.AppendLine($"    Swap={kv.Key}: {kv.Value}");
+        sb.AppendLine("  Trials per condition × swap:");
+        foreach (var kv in condCounts)
+            sb.AppendLine($"    {kv.Key}: {kv.Value}");
+        sb.Append("[TrialBlockRunner] ── END CONDITION SUMMARY ──");
+
+        Debug.Log(sb.ToString());
     }
 
     /// <summary>
