@@ -64,6 +64,11 @@ public class TrialBlockRunner : MonoBehaviour
     [Header("Diagnostics")]
     public bool logRealizedGeometryEachTrial = true;
 
+    [Header("Field A Preview")]
+    [Tooltip("If true, show Field A (sub0, sub1) static at frame-0 positions and correct depth during WaitingForStart, " +
+             "so vergence is established before trial onset. Field B remains hidden until its normal delayed onset.")]
+    public bool showFieldAPreview = true;
+
     [Header("Trial start / response")]
     public KeyCode startKey = KeyCode.Space;
 
@@ -621,6 +626,16 @@ public class TrialBlockRunner : MonoBehaviour
         builder.BuildFromCondition(_currentCond);
         builder.SetDotsActive(false);
 
+        // If preview is enabled, show Field A (sub0, sub1) immediately so depth is
+        // established before the subject triggers the trial.
+        if (showFieldAPreview)
+        {
+            builder.SetSubfieldActive(0, true);
+            builder.SetSubfieldActive(1, true);
+            builder.ApplyAppearance(_currentCond, 0);
+            builder.ApplyDepthOffsets(_currentCond, 0);
+        }
+
         // ---------------- One-line realized geometry log ----------------
         if (logRealizedGeometryEachTrial)
         {
@@ -665,9 +680,12 @@ public class TrialBlockRunner : MonoBehaviour
             if (startTrialInput)
             {
                 _phase = TrialPhase.Stimulus;
+                _accum = 0f; // don't carry preview accumulation into first stimulus step
                 builder.SetDotsActive(true);
                 Debug.Log("[TrialBlockRunner] Trial started!");
             }
+            // Field A is shown static at frame-0 positions (set in NextTrial).
+            // No per-frame update needed during WaitingForStart.
 
             if (hud != null) hud.Tick();
             return;

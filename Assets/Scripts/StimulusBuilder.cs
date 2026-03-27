@@ -451,6 +451,17 @@ public class StimulusBuilder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Enable/disable a single subfield by index (used for Field A preview during WaitingForStart).
+    /// </summary>
+    public void SetSubfieldActive(int index, bool active)
+    {
+        if (Subfields == null || index < 0 || index >= Subfields.Length) return;
+        var sf = Subfields[index];
+        if (sf == null || sf.root == null) return;
+        sf.root.gameObject.SetActive(active);
+    }
+
     private bool IsValid(int i)
     {
         return Subfields != null

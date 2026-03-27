@@ -35,15 +35,43 @@ public class Fixation_Controller : MonoBehaviour
     private Material _crossMaterialH;
     private Material _crossMaterialV;
 
+    // Nonius line objects (binocular — both eyes see both lines)
+    // Note: true dichoptic rendering is not achievable via Unity APIs with the
+    // Oculus XR Plugin on Android (stereoTargetEye, unity_StereoEyeIndex, and
+    // beginCameraRendering stereoActiveEye are all ignored/unavailable). Lines
+    // serve as a binocular fixation reference rather than a vergence error indicator.
+    private GameObject _noniusLeft;
+    private GameObject _noniusRight;
+    private Material _noniusMaterialL;
+    private Material _noniusMaterialR;
+
     private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
     private static readonly int InnerRadiusId = Shader.PropertyToID("_InnerRadius");
     private static readonly int OuterRadiusId = Shader.PropertyToID("_OuterRadius");
-    private static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
+    private static readonly int SmoothnessId  = Shader.PropertyToID("_Smoothness");
 
     [Header("Visibility (script overrides while playing)")]
     public bool showDot = false;
     public bool showRings = true;
     public bool showCross = true;
+
+    [Header("Nonius Lines (dichoptic vergence aid)")]
+    [Tooltip("Show dichoptic nonius lines: left eye sees line above fixation, right eye below. " +
+             "Horizontal misalignment indicates vergence error. Requires Custom/NoniusLine shader.")]
+    public bool showNoniusLines = false;
+
+    [Tooltip("Length of each nonius line in degrees.")]
+    [Min(0.05f)] public float noniusLength_deg = 0.40f;
+
+    [Tooltip("Stroke width of each nonius line in degrees.")]
+    [Min(0.01f)] public float noniusWidth_deg = 0.06f;
+
+    [Tooltip("Distance from fixation center to the near edge of each nonius line (degrees). " +
+             "Should be just outside the bullseye outer ring to avoid overlap.")]
+    [Min(0.05f)] public float noniusGap_deg = 0.60f;
+
+    [Tooltip("Color of the nonius lines.")]
+    public Color noniusColor = Color.white;
 
     [Header("Depth ordering (meters, perspective-friendly)")]
     [Tooltip("Use small separations (mm). More negative Z may be closer in your setup—use values that work for you.")]
@@ -338,6 +366,20 @@ public class Fixation_Controller : MonoBehaviour
         _shaderHCross = CreateShaderQuad("ShaderHCross", _crossMaterialH);
         _shaderVCross = CreateShaderQuad("ShaderVCross", _crossMaterialV);
 
+        // Nonius line quads (binocular reference lines above and below fixation)
+        Shader noniusShader = Shader.Find("Custom/NoniusLine");
+        if (noniusShader != null)
+        {
+            _noniusMaterialL = new Material(noniusShader) { name = "NoniusTop"    };
+            _noniusMaterialR = new Material(noniusShader) { name = "NoniusBottom" };
+            _noniusLeft  = CreateShaderQuad("NoniusTop",    _noniusMaterialL);
+            _noniusRight = CreateShaderQuad("NoniusBottom", _noniusMaterialR);
+        }
+        else
+        {
+            Debug.LogWarning("[Fixation_Controller] Custom/NoniusLine shader not found. Nonius lines disabled.");
+        }
+
         // Hide old cylinder-based objects if assigned
         if (ringOuter) ringOuter.SetActive(false);
         if (ringInner) ringInner.SetActive(false);
@@ -365,6 +407,15 @@ public class Fixation_Controller : MonoBehaviour
         _centerMaterial = null;
         _crossMaterialH = null;
         _crossMaterialV = null;
+
+        SafeDestroyObj(_noniusLeft);
+        SafeDestroyObj(_noniusRight);
+        SafeDestroyObj(_noniusMaterialL);
+        SafeDestroyObj(_noniusMaterialR);
+        _noniusLeft = null;
+        _noniusRight = null;
+        _noniusMaterialL = null;
+        _noniusMaterialR = null;
     }
 
     void SafeDestroyObj(Object obj)
@@ -460,6 +511,33 @@ public class Fixation_Controller : MonoBehaviour
                 _crossMaterialH.SetColor("_Color", crossColor);
                 _crossMaterialV.SetColor("_Color", crossColor);
             }
+        }
+
+        // --- Nonius lines (dichoptic) ---
+        bool noniusReady = showNoniusLines && _noniusLeft != null && _noniusRight != null;
+        if (_noniusLeft  != null) _noniusLeft.SetActive(noniusReady);
+        if (_noniusRight != null) _noniusRight.SetActive(noniusReady);
+
+        if (noniusReady)
+        {
+            float nLen_m  = Mathf.Max(1e-5f, noniusLength_deg * mPerDeg) * s;
+            float nWidth_m = Mathf.Max(1e-5f, noniusWidth_deg  * mPerDeg) * s;
+            float nGap_m   = Mathf.Max(0f,    noniusGap_deg    * mPerDeg) * s;
+
+            // Center of each line: gap + half-length above/below fixation center
+            float centerY = nGap_m + nLen_m * 0.5f;
+
+            // Left eye: line ABOVE center (positive Y)
+            _noniusLeft.transform.localPosition  = new Vector3(0f,  centerY, zCross);
+            _noniusLeft.transform.localScale      = new Vector3(nWidth_m, nLen_m, 1f);
+            _noniusLeft.transform.localRotation   = Quaternion.identity;
+            _noniusMaterialL.SetColor(ShaderColorId, noniusColor);
+
+            // Right eye: line BELOW center (negative Y)
+            _noniusRight.transform.localPosition = new Vector3(0f, -centerY, zCross);
+            _noniusRight.transform.localScale     = new Vector3(nWidth_m, nLen_m, 1f);
+            _noniusRight.transform.localRotation  = Quaternion.identity;
+            _noniusMaterialR.SetColor(ShaderColorId, noniusColor);
         }
     }
 }
