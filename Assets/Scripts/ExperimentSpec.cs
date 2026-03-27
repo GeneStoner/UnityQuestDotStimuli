@@ -60,6 +60,16 @@ public abstract class ExperimentSpec : ScriptableObject
     [Tooltip("If true: delayed-onset field color is exactly balanced Red vs Green across generated trials.")]
     public bool balanceDelayedFieldColor = true;
 
+    [Tooltip("If true: delayed-onset field depth is exactly balanced Near vs Far across generated trials.")]
+    public bool balanceDelayedFieldDepth = false;
+
+    [Tooltip("If true: BOTH dot fields are placed in the same depth plane (Near or Far), rather than opposite planes. Use with balanceDelayedFieldDepth to run equal numbers of BothNear and BothFar trials within one session.")]
+    public bool bothFieldsSamePlane = false;
+
+    [Header("Stereo Depth")]
+    [Tooltip("Depth offset in meters from fixation plane. Each field is offset ±this amount along the viewing axis. 0 = no depth separation (all dots at fixation plane). Near = toward viewer, Far = away from viewer.")]
+    public float depthSeparation_m = 0f;
+
     [Header("Dot Layout")]
     [Tooltip("Dots per perceptual FIELD (so ~dotsPerField/2 per subfield).")]
     public int dotsPerField = 200;
@@ -111,6 +121,10 @@ public abstract class ExperimentSpec : ScriptableObject
     public const int COLOR_RED = 0;
     public const int COLOR_GREEN = 1;
 
+    // ---- Depth coding for balancing ----
+    public const int DEPTH_NEAR = 0;
+    public const int DEPTH_FAR = 1;
+
     protected Color ColorFromCode(int code) => (code == COLOR_RED) ? rgbaRed : rgbaGreen;
     protected int OppositeColorCode(int code) => (code == COLOR_RED) ? COLOR_GREEN : COLOR_RED;
 
@@ -118,21 +132,23 @@ public abstract class ExperimentSpec : ScriptableObject
     [Flags]
     public enum SwapFlags
     {
-        None   = 0,
-        Motion = 1 << 0,   // rotation directions swap at tStart
-        Color  = 1 << 1,   // field colors swap at tStart
-        Dots50 = 1 << 2,   // 50% of dots swap field membership (sub1↔sub3)
-        // Future:
-        // Depth  = 1 << 3, // depth planes swap
+        None    = 0,
+        Motion  = 1 << 0,   // rotation directions swap at tStart
+        Color   = 1 << 1,   // field colors swap at tStart
+        Dots50  = 1 << 2,   // 50% of dots swap field membership (sub1↔sub3)
+        Depth   = 1 << 3,   // depth planes swap at tStart (100%)
+        Depth50 = 1 << 4,   // S0↔S2 swap depth planes at tStart (50%); color follows plane
     }
 
     public static string SwapFlagsToCode(int flags)
     {
         if (flags == 0) return "N";
         var parts = new List<string>();
-        if ((flags & (int)SwapFlags.Motion) != 0) parts.Add("M");
-        if ((flags & (int)SwapFlags.Color)  != 0) parts.Add("C");
-        if ((flags & (int)SwapFlags.Dots50) != 0) parts.Add("D");
+        if ((flags & (int)SwapFlags.Motion)  != 0) parts.Add("M");
+        if ((flags & (int)SwapFlags.Color)   != 0) parts.Add("C");
+        if ((flags & (int)SwapFlags.Dots50)  != 0) parts.Add("D");
+        if ((flags & (int)SwapFlags.Depth)   != 0) parts.Add("Z");
+        if ((flags & (int)SwapFlags.Depth50) != 0) parts.Add("Zd");
         return string.Join("", parts);
     }
 
@@ -166,6 +182,10 @@ public abstract class ExperimentSpec : ScriptableObject
 
         // Swap condition at translation onset (cast of SwapFlags).
         public int swapFlags = 0;
+
+        // which depth plane is the DELAYED-ONSET field (field B).
+        // 0 = Near, 1 = Far.
+        public int delayedFieldDepthCode;
     }
 
     // ---------- Helpers ----------

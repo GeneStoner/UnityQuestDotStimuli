@@ -65,8 +65,11 @@ public class CsvLogger : MonoBehaviour
     // delayed-field color (R/G)
     private string _curDelayedFieldColor = "";
 
-    // swap type code (N, M, C, MC)
+    // swap type code (N, M, C, MC, Z, etc.)
     private string _curSwapType = "";
+
+    // delayed-field depth (N/F)
+    private string _curDelayedFieldDepth = "";
 
     // response stash until EndTrial writes the final row
     private float _curRespDeg = -1f;
@@ -79,10 +82,12 @@ public class CsvLogger : MonoBehaviour
     // payloads (per-frame, per-subfield)
     private string _curMotionTypeRows = "";
     private string _curColorRows = "";
+    private string _curDepthRows = "";
 
     // per-trial hashes
     private uint _curMkHash32 = 0;
     private uint _curColorHash32 = 0;
+    private uint _curDepthHash32 = 0;
 
     // trial timing / seeds
     private int _curOn = -1, _curTS = -1, _curTE = -1, _curN = -1;
@@ -129,11 +134,14 @@ public class CsvLogger : MonoBehaviour
         public int rotCfg;
         public float transDeg;
         public string delayedColor;  // "R" or "G"
-        public string swapType;      // "N", "M", "C", "MC"
+        public string delayedDepth;  // "N" or "F"
+        public string swapType;      // "N", "M", "C", "MC", "Z", etc.
         public string mkPayload;
         public string colorPayload;
+        public string depthPayload;
         public uint mkHash32;
         public uint colorHash32;
+        public uint depthHash32;
     }
 
     // Keyed by stimKey
@@ -146,9 +154,9 @@ public class CsvLogger : MonoBehaviour
         "RespDeg","RespIndex","RespDigit","RTf",
         "OnsetFrame","TransStartFrame","TransEndFrame","TotalFrames",
         "SeedA0","SeedA1","SeedB2","SeedB3",
-        "DelayedFieldColor","SwapType","EndKey","Device",
-        "MkHash32","ColorHash32",
-        "MotionTypeByFrame_SubfieldCodes","ColorByFrame_SubfieldCodes"
+        "DelayedFieldColor","DelayedFieldDepth","SwapType","EndKey","Device",
+        "MkHash32","ColorHash32","DepthHash32",
+        "MotionTypeByFrame_SubfieldCodes","ColorByFrame_SubfieldCodes","DepthByFrame_SubfieldCodes"
     };
 
     // ---------- public API (called by TrialBlockRunner) ----------
@@ -309,6 +317,7 @@ public class CsvLogger : MonoBehaviour
         _curSeedB3 = trial.seedB3;
 
         _curDelayedFieldColor = (trial.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+        _curDelayedFieldDepth = (trial.delayedFieldDepthCode == ExperimentSpec.DEPTH_NEAR) ? "N" : "F";
         _curSwapType = ExperimentSpec.SwapFlagsToCode(trial.swapFlags);
 
         _trialOpen = true;
@@ -362,6 +371,12 @@ public class CsvLogger : MonoBehaviour
         _curColorHash32 = Fnv1a32(_curColorRows);
     }
 
+    public void LogDepthRows(int trialIndex, string depthPayload)
+    {
+        _curDepthRows = depthPayload ?? "";
+        _curDepthHash32 = Fnv1a32(_curDepthRows);
+    }
+
     public void LogResponse(int respIndex, int respDigit, string respDir, int rtFrames, string endKey, string device)
     {
         _curRespIndex = respIndex;
@@ -381,6 +396,7 @@ public class CsvLogger : MonoBehaviour
 
         string mkOut = writeTrajectoryPayloads ? Sanitize(_curMotionTypeRows) : "";
         string colOut = writeTrajectoryPayloads ? Sanitize(_curColorRows) : "";
+        string depthOut = writeTrajectoryPayloads ? Sanitize(_curDepthRows) : "";
 
         string line =
             _curTrialIndex + "\t" +
@@ -401,13 +417,16 @@ public class CsvLogger : MonoBehaviour
             _curSeedB2 + "\t" +
             _curSeedB3 + "\t" +
             _curDelayedFieldColor + "\t" +
+            _curDelayedFieldDepth + "\t" +
             _curSwapType + "\t" +
             Sanitize(_curEndKey) + "\t" +
             Sanitize(_curDevice) + "\t" +
             _curMkHash32.ToString("X8") + "\t" +
             _curColorHash32.ToString("X8") + "\t" +
+            _curDepthHash32.ToString("X8") + "\t" +
             mkOut + "\t" +
-            colOut;
+            colOut + "\t" +
+            depthOut;
 
         try
         {
@@ -462,9 +481,9 @@ public class CsvLogger : MonoBehaviour
 
     // -------- trajectory library API (called by TrialBlockRunner) --------
 
-    public static string MakeStimKey(string cond, int rotCfg, float transDeg, string delayedColor, string swapCode = "N")
+    public static string MakeStimKey(string cond, int rotCfg, float transDeg, string delayedColor, string swapCode = "N", string delayedDepth = "N")
     {
-        return $"{cond}|Rot{rotCfg}|H{transDeg:0.###}|Del{delayedColor}|Sw{swapCode}";
+        return $"{cond}|Rot{rotCfg}|H{transDeg:0.###}|Del{delayedColor}|Dp{delayedDepth}|Sw{swapCode}";
     }
 
     public void RegisterTrajectoryDefinition(
@@ -475,13 +494,16 @@ public class CsvLogger : MonoBehaviour
         string delayedColor,
         string mkPayload,
         string colorPayload,
-        string swapType = "N"
+        string swapType = "N",
+        string delayedDepth = "N",
+        string depthPayload = ""
     )
     {
         if (string.IsNullOrEmpty(stimKey)) return;
 
         mkPayload = mkPayload ?? "";
         colorPayload = colorPayload ?? "";
+        depthPayload = depthPayload ?? "";
 
         var td = new TrajDef
         {
@@ -490,11 +512,14 @@ public class CsvLogger : MonoBehaviour
             rotCfg = rotCfg,
             transDeg = transDeg,
             delayedColor = delayedColor ?? "",
+            delayedDepth = delayedDepth ?? "N",
             swapType = swapType ?? "N",
             mkPayload = mkPayload,
             colorPayload = colorPayload,
+            depthPayload = depthPayload,
             mkHash32 = Fnv1a32(mkPayload),
-            colorHash32 = Fnv1a32(colorPayload)
+            colorHash32 = Fnv1a32(colorPayload),
+            depthHash32 = Fnv1a32(depthPayload)
         };
 
         if (!_trajLib.ContainsKey(stimKey))
@@ -505,7 +530,7 @@ public class CsvLogger : MonoBehaviour
     /// Runtime audit: compare per-trial payload hashes against the pre-registered trajectory.
     /// Called after each trial's payload is fully built. Logs an error on mismatch.
     /// </summary>
-    public bool VerifyTrialTrajectory(string stimKey, string runtimeMkPayload, string runtimeColorPayload)
+    public bool VerifyTrialTrajectory(string stimKey, string runtimeMkPayload, string runtimeColorPayload, string runtimeDepthPayload = "")
     {
         if (_trajLib == null || !_trajLib.ContainsKey(stimKey))
         {
@@ -514,18 +539,21 @@ public class CsvLogger : MonoBehaviour
         }
 
         var td = _trajLib[stimKey];
-        uint rtMkHash  = Fnv1a32(runtimeMkPayload ?? "");
-        uint rtColHash = Fnv1a32(runtimeColorPayload ?? "");
+        uint rtMkHash    = Fnv1a32(runtimeMkPayload ?? "");
+        uint rtColHash   = Fnv1a32(runtimeColorPayload ?? "");
+        uint rtDepthHash = Fnv1a32(runtimeDepthPayload ?? "");
 
-        bool mkOk  = (rtMkHash == td.mkHash32);
-        bool colOk = (rtColHash == td.colorHash32);
+        bool mkOk    = (rtMkHash == td.mkHash32);
+        bool colOk   = (rtColHash == td.colorHash32);
+        bool depthOk = (rtDepthHash == td.depthHash32);
 
-        if (!mkOk || !colOk)
+        if (!mkOk || !colOk || !depthOk)
         {
             Debug.LogError(
                 $"[CsvLogger] TRAJECTORY AUDIT FAILED: {stimKey}\n" +
-                $"  mk_hash:  runtime={rtMkHash:X8} expected={td.mkHash32:X8} {(mkOk ? "OK" : "MISMATCH")}\n" +
-                $"  col_hash: runtime={rtColHash:X8} expected={td.colorHash32:X8} {(colOk ? "OK" : "MISMATCH")}");
+                $"  mk_hash:    runtime={rtMkHash:X8} expected={td.mkHash32:X8} {(mkOk ? "OK" : "MISMATCH")}\n" +
+                $"  col_hash:   runtime={rtColHash:X8} expected={td.colorHash32:X8} {(colOk ? "OK" : "MISMATCH")}\n" +
+                $"  depth_hash: runtime={rtDepthHash:X8} expected={td.depthHash32:X8} {(depthOk ? "OK" : "MISMATCH")}");
             return false;
         }
         return true;
@@ -591,7 +619,7 @@ public class CsvLogger : MonoBehaviour
 
             var sb = new StringBuilder(16384);
             sb.Append("{\n");
-            sb.Append("  \"schema_version\": \"vrdots.sidecar.v4\",\n");
+            sb.Append("  \"schema_version\": \"vrdots.sidecar.v5\",\n");
             sb.Append("  \"experiment_name\": \"").Append(esc(_curExperiment)).Append("\",\n");
             sb.Append("  \"created_iso8601\": \"").Append(esc(DateTimeOffset.Now.ToString("o"))).Append("\",\n");
             sb.Append("  \"data_file\": \"").Append(esc(Path.GetFileName(_tsvPath))).Append("\",\n");
@@ -616,7 +644,8 @@ public class CsvLogger : MonoBehaviour
                 sb.Append("    \"view_distance_m\": ").Append(f(spec.viewDistance_m)).Append(",\n");
                 sb.Append("    \"aperture_radius_deg\": ").Append(f(spec.apertureRadius_deg)).Append(",\n");
                 sb.Append("    \"dot_size_deg\": ").Append(f(spec.dotSize_deg)).Append(",\n");
-                sb.Append("    \"dots_per_field\": ").Append(spec.dotsPerField).Append("\n");
+                sb.Append("    \"dots_per_field\": ").Append(spec.dotsPerField).Append(",\n");
+                sb.Append("    \"depth_separation_m\": ").Append(f(spec.depthSeparation_m)).Append("\n");
             }
             sb.Append("  },\n");
 
@@ -684,11 +713,14 @@ public class CsvLogger : MonoBehaviour
                 sb.Append("        \"rot_cfg\": ").Append(td.rotCfg).Append(",\n");
                 sb.Append("        \"trans_deg\": ").Append(f(td.transDeg)).Append(",\n");
                 sb.Append("        \"delayed_field_color\": \"").Append(esc(td.delayedColor)).Append("\",\n");
+                sb.Append("        \"delayed_field_depth\": \"").Append(esc(td.delayedDepth)).Append("\",\n");
                 sb.Append("        \"swap_type\": \"").Append(esc(td.swapType)).Append("\",\n");
                 sb.Append("        \"mk_hash32\": \"").Append(td.mkHash32.ToString("X8")).Append("\",\n");
                 sb.Append("        \"color_hash32\": \"").Append(td.colorHash32.ToString("X8")).Append("\",\n");
+                sb.Append("        \"depth_hash32\": \"").Append(td.depthHash32.ToString("X8")).Append("\",\n");
                 sb.Append("        \"mk_payload\": \"").Append(esc(td.mkPayload)).Append("\",\n");
-                sb.Append("        \"color_payload\": \"").Append(esc(td.colorPayload)).Append("\"\n");
+                sb.Append("        \"color_payload\": \"").Append(esc(td.colorPayload)).Append("\",\n");
+                sb.Append("        \"depth_payload\": \"").Append(esc(td.depthPayload)).Append("\"\n");
                 sb.Append("      }");
                 k++;
                 sb.Append(k < _trajLib.Count ? ",\n" : "\n");
@@ -767,6 +799,7 @@ public class CsvLogger : MonoBehaviour
 
         _curRotCfg = -1;
         _curDelayedFieldColor = "";
+        _curDelayedFieldDepth = "";
         _curSwapType = "";
 
         _curRespDeg = -1f;
@@ -778,9 +811,11 @@ public class CsvLogger : MonoBehaviour
 
         _curMotionTypeRows = "";
         _curColorRows = "";
+        _curDepthRows = "";
 
         _curMkHash32 = 0;
         _curColorHash32 = 0;
+        _curDepthHash32 = 0;
 
         _curOn = _curTS = _curTE = _curN = -1;
         _curSeedA0 = _curSeedA1 = _curSeedB2 = _curSeedB3 = 0;

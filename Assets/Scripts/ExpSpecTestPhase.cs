@@ -24,6 +24,12 @@ public class ExpSpecTestPhase : ExperimentSpec
     [Tooltip("Include 50%% dot-swap trials (sub1↔sub3 exchange field membership at translation onset).")]
     public bool includeDots50Swaps = false;
 
+    [Tooltip("Include depth-swap trials (depth planes swap at translation onset).")]
+    public bool includeDepthSwaps = false;
+
+    [Tooltip("Include 50% depth-swap trials (S0↔S2 exchange depth planes at tStart; color follows plane membership).")]
+    public bool includeDepthPartialSwaps = false;
+
     // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
@@ -32,12 +38,16 @@ public class ExpSpecTestPhase : ExperimentSpec
         int rotFactor = includeBothRotationConfigs ? 2 : 1;
         int colorFactor = balanceDelayedFieldColor ? 2 : 1;
 
-        int swapFactor = 1;
-        if (includeMotionSwaps) swapFactor *= 2;
-        if (includeColorSwaps)  swapFactor *= 2;
-        if (includeDots50Swaps) swapFactor *= 2;
+        int depthFactor = balanceDelayedFieldDepth ? 2 : 1;
 
-        return condFactor * headingFactor * rotFactor * colorFactor * swapFactor;
+        int swapFactor = 1;
+        if (includeMotionSwaps)        swapFactor *= 2;
+        if (includeColorSwaps)         swapFactor *= 2;
+        if (includeDots50Swaps)        swapFactor *= 2;
+        if (includeDepthSwaps)         swapFactor *= 2;
+        if (includeDepthPartialSwaps)  swapFactor *= 2;
+
+        return condFactor * headingFactor * rotFactor * colorFactor * depthFactor * swapFactor;
     }
 
     public override List<PlannedTrial> GetPlannedTrials(System.Random rng)
@@ -51,9 +61,11 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         // Build all combinations (power set) of active swap flags
         var activeFlags = new List<int>();
-        if (includeMotionSwaps) activeFlags.Add((int)SwapFlags.Motion);
-        if (includeColorSwaps)  activeFlags.Add((int)SwapFlags.Color);
-        if (includeDots50Swaps) activeFlags.Add((int)SwapFlags.Dots50);
+        if (includeMotionSwaps)        activeFlags.Add((int)SwapFlags.Motion);
+        if (includeColorSwaps)         activeFlags.Add((int)SwapFlags.Color);
+        if (includeDots50Swaps)        activeFlags.Add((int)SwapFlags.Dots50);
+        if (includeDepthSwaps)         activeFlags.Add((int)SwapFlags.Depth);
+        if (includeDepthPartialSwaps)  activeFlags.Add((int)SwapFlags.Depth50);
 
         var swapValues = new List<int> { 0 }; // None always included
         foreach (int flag in activeFlags)
@@ -66,6 +78,10 @@ public class ExpSpecTestPhase : ExperimentSpec
         // This is now the ONLY repetition knob.
         int reps = Mathf.Max(1, repeatsPerStimulus);
 
+        int[] depthValues = balanceDelayedFieldDepth
+            ? new[] { DEPTH_NEAR, DEPTH_FAR }
+            : new[] { DEPTH_NEAR };
+
         int idx = 0;
 
         foreach (var condID in condIDs)
@@ -76,21 +92,22 @@ public class ExpSpecTestPhase : ExperimentSpec
                 {
                     foreach (int swap in swapValues)
                     {
-                        if (balanceDelayedFieldColor)
+                        foreach (int depth in depthValues)
                         {
-                            // Two distinct stimuli (DelR, DelG) per (cond × heading × rotCfg × swap)
-                            for (int r = 0; r < reps; r++)
+                            if (balanceDelayedFieldColor)
                             {
-                                trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED, swap));
-                                trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap));
+                                for (int r = 0; r < reps; r++)
+                                {
+                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED, swap, depth));
+                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap, depth));
+                                }
                             }
-                        }
-                        else
-                        {
-                            // One distinct stimulus per (cond × heading × rotCfg × swap)
-                            for (int r = 0; r < reps; r++)
+                            else
                             {
-                                trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap));
+                                for (int r = 0; r < reps; r++)
+                                {
+                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap, depth));
+                                }
                             }
                         }
                     }
@@ -118,7 +135,8 @@ public class ExpSpecTestPhase : ExperimentSpec
                                    float headingDeg,
                                    int rotationConfig,
                                    int delayedColorCode,
-                                   int swapFlags = 0)
+                                   int swapFlags = 0,
+                                   int delayedDepthCode = 0)
     {
         var t = new PlannedTrial
         {
@@ -127,7 +145,8 @@ public class ExpSpecTestPhase : ExperimentSpec
             headingDeg = headingDeg,
             rotationConfig = rotationConfig,
             delayedFieldColorCode = delayedColorCode,
-            swapFlags = swapFlags
+            swapFlags = swapFlags,
+            delayedFieldDepthCode = delayedDepthCode
         };
 
         // Timing in frames
@@ -156,9 +175,10 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         string rotTag = (t.rotationConfig == 0) ? "RotA" : "RotB";
         string swapTag = SwapFlagsToCode(t.swapFlags);
+        string depthTag = (t.delayedFieldDepthCode == DEPTH_NEAR) ? "N" : "F";
         var cond = new CondLib.StimulusCondition
         {
-            name = $"Trial_{t.index}_{t.conditionID}_{rotTag}_Del{(t.delayedFieldColorCode == COLOR_RED ? "R" : "G")}_Sw{swapTag}"
+            name = $"Trial_{t.index}_{t.conditionID}_{rotTag}_Del{(t.delayedFieldColorCode == COLOR_RED ? "R" : "G")}_Dp{depthTag}_Sw{swapTag}"
         };
 
         cond.timeline.totalFrames = N;
@@ -185,9 +205,20 @@ public class ExpSpecTestPhase : ExperimentSpec
         Color delayedColor    = ColorFromCode(t.delayedFieldColorCode);
         Color nonDelayedColor = ColorFromCode(OppositeColorCode(t.delayedFieldColorCode));
 
-        bool motionSwap = (t.swapFlags & (int)SwapFlags.Motion) != 0;
-        bool colorSwap  = (t.swapFlags & (int)SwapFlags.Color)  != 0;
-        bool dots50Swap = (t.swapFlags & (int)SwapFlags.Dots50) != 0;
+        bool motionSwap   = (t.swapFlags & (int)SwapFlags.Motion)  != 0;
+        bool colorSwap    = (t.swapFlags & (int)SwapFlags.Color)   != 0;
+        bool dots50Swap   = (t.swapFlags & (int)SwapFlags.Dots50)  != 0;
+        bool depthSwap    = (t.swapFlags & (int)SwapFlags.Depth)   != 0;
+        bool depth50Swap  = (t.swapFlags & (int)SwapFlags.Depth50) != 0;
+
+        // Depth planes: by default delayed field (B) and non-delayed (A) get opposite planes.
+        // If bothFieldsSamePlane, both fields share the same plane (DelayedFieldDepth codes which one).
+        bool useDepthPlanes = (depthSeparation_m > 0f);
+        CondLib.DepthPlane fieldBDepth = (t.delayedFieldDepthCode == DEPTH_NEAR)
+            ? CondLib.DepthPlane.Near : CondLib.DepthPlane.Far;
+        CondLib.DepthPlane fieldADepth = bothFieldsSamePlane
+            ? fieldBDepth
+            : ((fieldBDepth == CondLib.DepthPlane.Near) ? CondLib.DepthPlane.Far : CondLib.DepthPlane.Near);
 
         // Rotation assignment depends on rotationConfig
         CondLib.MotionKind aRot = (t.rotationConfig == 0) ? CondLib.MotionKind.RotationCW  : CondLib.MotionKind.RotationCCW;
@@ -248,11 +279,50 @@ public class ExpSpecTestPhase : ExperimentSpec
                 cond.subfields[3].visibleByFrame[f] = afterOnset;
             }
 
-            // Eye/depth fixed
+            // Eye always binocular
             for (int s = 0; s < 4; s++)
+                cond.subfields[s].eyeByFrame[f] = CondLib.Eye.Both;
+
+            // Depth planes: follow field membership, swap at tStart if depthSwap
+            if (useDepthPlanes)
             {
-                cond.subfields[s].eyeByFrame[f]   = CondLib.Eye.Both;
-                cond.subfields[s].depthByFrame[f] = CondLib.DepthPlane.Fixation;
+                CondLib.DepthPlane curADepth = (depthSwap && afterSwap) ? fieldBDepth : fieldADepth;
+                CondLib.DepthPlane curBDepth = (depthSwap && afterSwap) ? fieldADepth : fieldBDepth;
+
+                cond.subfields[0].depthByFrame[f] = curADepth;                      // sub0: always Field A
+                cond.subfields[1].depthByFrame[f] = sub1isA ? curADepth : curBDepth; // sub1: follows membership
+                cond.subfields[2].depthByFrame[f] = curBDepth;                      // sub2: always Field B
+                cond.subfields[3].depthByFrame[f] = sub3isA ? curADepth : curBDepth; // sub3: follows membership
+            }
+            else
+            {
+                for (int s = 0; s < 4; s++)
+                    cond.subfields[s].depthByFrame[f] = CondLib.DepthPlane.Fixation;
+            }
+
+            // ── Zd (50% depth swap): S0↔S2 exchange depth planes at tStart ──────────
+            // Near-group (S0,S3 at fieldBDepth): rotation=curARot, color=nonDelayedColor
+            // Far-group  (S1,S2 at fieldADepth): rotation=curBRot, color=delayedColor
+            if (depth50Swap && afterSwap)
+            {
+                // Rotation follows depth-plane group
+                cond.subfields[0].motionKindByFrame[f] = curARot;
+                cond.subfields[1].motionKindByFrame[f] = curBRot;  // reversed
+                cond.subfields[2].motionKindByFrame[f] = curBRot;
+                cond.subfields[3].motionKindByFrame[f] = curARot;  // reversed
+
+                // Color follows depth-plane group (sub2/sub3 maintain visibility gating)
+                cond.subfields[1].colorByFrame[f] = delayedColor;
+                cond.subfields[3].colorByFrame[f] = afterOnset ? nonDelayedColor : rgbaBlack;
+
+                // Depth: S0→fieldBDepth, S2→fieldADepth; S1 stays fieldADepth, S3 stays fieldBDepth
+                if (useDepthPlanes)
+                {
+                    cond.subfields[0].depthByFrame[f] = fieldBDepth;
+                    cond.subfields[1].depthByFrame[f] = fieldADepth;
+                    cond.subfields[2].depthByFrame[f] = fieldADepth;
+                    cond.subfields[3].depthByFrame[f] = fieldBDepth;
+                }
             }
         }
 
@@ -264,6 +334,8 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         for (int f = fStart; f < fEndClamped; f++)
         {
+            // depth50Swap (Zd): translation follows dots (sub2/sub3 = delayed field),
+            // regardless of depth plane — falls through to standard assignment below.
             if (dots50Swap)
             {
                 if (isCued)  // Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent

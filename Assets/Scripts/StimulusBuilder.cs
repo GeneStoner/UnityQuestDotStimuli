@@ -62,6 +62,7 @@ public class StimulusBuilder : MonoBehaviour
     public List<TrajectorySample> trajectoryLog = new List<TrajectorySample>();
 
     [HideInInspector] public float exclusionRadiusMeters = 0f;
+    [HideInInspector] public float depthOffset_m = 0f;
 
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
@@ -169,6 +170,44 @@ public class StimulusBuilder : MonoBehaviour
                 var r = t.GetComponent<Renderer>();
                 if (r != null)
                     r.enabled = visible; // respect visibleByFrame setting
+            }
+        }
+    }
+
+    // ========================================================================
+    // Stereo depth offset — call AFTER motion stepping each frame
+    // ========================================================================
+    /// <summary>
+    /// Shift dots along the viewing axis based on their depth plane assignment.
+    /// Must be called after all motion stepping for the frame, since motion steps
+    /// reset dot positions to the fixation plane (Z=0 in local coords).
+    /// </summary>
+    public void ApplyDepthOffsets(CondLib.StimulusCondition cond, int frame)
+    {
+        if (cond == null || Subfields == null || depthOffset_m == 0f) return;
+        if (frame < 0 || frame >= cond.timeline.totalFrames) return;
+
+        int count = Mathf.Min(Subfields.Length, cond.subfields.Length);
+        for (int s = 0; s < count; s++)
+        {
+            if (Subfields[s] == null || Subfields[s].dots == null) continue;
+            var tracks = cond.subfields[s];
+            if (tracks.depthByFrame == null || frame >= tracks.depthByFrame.Length) continue;
+
+            var dp = tracks.depthByFrame[frame];
+            float z = 0f;
+            if (dp == CondLib.DepthPlane.Near) z = -depthOffset_m;
+            else if (dp == CondLib.DepthPlane.Far) z = depthOffset_m;
+            if (z == 0f) continue;
+
+            // Project each dot to local XY (zeroing any prior Z offset),
+            // then reconstruct at fixation plane + depth offset along forward axis.
+            Vector3 zVec = transform.forward * z;
+            foreach (var dot in Subfields[s].dots)
+            {
+                if (dot == null) continue;
+                Vector3 local = ToLocalPlane(dot.position);
+                dot.position = FromLocalPlane(local) + zVec;
             }
         }
     }

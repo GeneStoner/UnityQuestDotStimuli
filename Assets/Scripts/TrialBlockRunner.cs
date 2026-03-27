@@ -86,7 +86,7 @@ public class TrialBlockRunner : MonoBehaviour
 
     // ----------------- internal state -----------------
     private List<ExperimentSpec.PlannedTrial> _allPlannedTrials;
-    private Queue<ExperimentSpec.PlannedTrial> _trialQueue;
+    private List<ExperimentSpec.PlannedTrial> _trialQueue;
 
     // XR input actions
     private InputAction _activateLeft;
@@ -106,6 +106,7 @@ public class TrialBlockRunner : MonoBehaviour
 
     private StringBuilder _mkPayloadBuilder;
     private StringBuilder _colorPayloadBuilder;
+    private StringBuilder _depthPayloadBuilder;
 
     private enum TrialPhase { WaitingForStart, Stimulus, TargetsResponse, Done }
     private TrialPhase _phase = TrialPhase.Done;
@@ -253,6 +254,8 @@ public class TrialBlockRunner : MonoBehaviour
         Debug.Log($"[TrialBlockRunner]  EXPERIMENT: {expName}");
         Debug.Log($"[TrialBlockRunner]  Spec asset: {spec.name}");
         Debug.Log($"[TrialBlockRunner]  Unique stimuli: {spec.GetUniqueStimulusCount()}");
+        if (spec.depthSeparation_m > 0f)
+            Debug.Log($"[TrialBlockRunner]  DEPTH: separation={spec.depthSeparation_m:F3}m, balanced={spec.balanceDelayedFieldDepth}");
         Debug.Log($"[TrialBlockRunner] ========================================");
         _allPlannedTrials = spec.GetPlannedTrials(_rng);
 
@@ -263,7 +266,7 @@ public class TrialBlockRunner : MonoBehaviour
             return;
         }
 
-        _trialQueue = new Queue<ExperimentSpec.PlannedTrial>(_allPlannedTrials);
+        _trialQueue = new List<ExperimentSpec.PlannedTrial>(_allPlannedTrials);
         _startedTrialCount = 0;
 
         // Precompute counts for this block run
@@ -344,6 +347,7 @@ public class TrialBlockRunner : MonoBehaviour
         var rotCfgs = new HashSet<int>();
         var headings = new SortedSet<float>();
         var delColors = new HashSet<string>();
+        var delDepths = new HashSet<string>();
         var swapTypes = new HashSet<string>();
         var swapCounts = new Dictionary<string, int>();
         var condCounts = new Dictionary<string, int>();
@@ -352,12 +356,14 @@ public class TrialBlockRunner : MonoBehaviour
         {
             string cond = t.conditionID ?? "";
             string delCol = (t.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+            string delDp = (t.delayedFieldDepthCode == ExperimentSpec.DEPTH_NEAR) ? "Near" : "Far";
             string swap = ExperimentSpec.SwapFlagsToCode(t.swapFlags);
 
             conditions.Add(cond);
             rotCfgs.Add(t.rotationConfig);
             headings.Add(t.headingDeg);
             delColors.Add(delCol);
+            delDepths.Add(delDp);
             swapTypes.Add(swap);
 
             if (!swapCounts.ContainsKey(swap)) swapCounts[swap] = 0;
@@ -375,6 +381,7 @@ public class TrialBlockRunner : MonoBehaviour
         sb.AppendLine($"  RotConfigs: {string.Join(", ", rotCfgs)}");
         sb.AppendLine($"  Headings: {string.Join(", ", headings)}");
         sb.AppendLine($"  DelayedFieldColors: {string.Join(", ", delColors)}");
+        sb.AppendLine($"  DelayedFieldDepths: {string.Join(", ", delDepths)}");
         sb.AppendLine($"  SwapTypes: {string.Join(", ", swapTypes)}");
         sb.AppendLine("  Trials per swap type:");
         foreach (var kv in swapCounts)
@@ -402,11 +409,12 @@ public class TrialBlockRunner : MonoBehaviour
         {
             string cond = t.conditionID ?? "";
             string delCol = (t.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+            string delDepth = (t.delayedFieldDepthCode == ExperimentSpec.DEPTH_NEAR) ? "N" : "F";
             int rotCfg = t.rotationConfig;
             float heading = t.headingDeg;
             string swapCode = ExperimentSpec.SwapFlagsToCode(t.swapFlags);
 
-            string stimKey = CsvLogger.MakeStimKey(cond, rotCfg, heading, delCol, swapCode);
+            string stimKey = CsvLogger.MakeStimKey(cond, rotCfg, heading, delCol, swapCode, delDepth);
             if (!seen.Add(stimKey))
                 continue;
 
@@ -417,11 +425,13 @@ public class TrialBlockRunner : MonoBehaviour
 
             var mk = new StringBuilder(N * 8);
             var col = new StringBuilder(N * 8);
+            var dp = new StringBuilder(N * 8);
 
             for (int f = 0; f < N; f++)
             {
                 int[] mkCodes = new int[subCount];
                 string[] colCodes = new string[subCount];
+                int[] dpCodes = new int[subCount];
 
                 for (int s = 0; s < subCount; s++)
                 {
@@ -436,6 +446,10 @@ public class TrialBlockRunner : MonoBehaviour
                         : Color.black;
 
                     colCodes[s] = EncodeColorLetter(cc);
+
+                    dpCodes[s] = (sf.depthByFrame != null && f < sf.depthByFrame.Length)
+                        ? (int)sf.depthByFrame[f]
+                        : 0;
                 }
 
                 if (mk.Length > 0) mk.Append(";");
@@ -443,6 +457,9 @@ public class TrialBlockRunner : MonoBehaviour
 
                 if (col.Length > 0) col.Append(";");
                 col.Append(string.Join("|", colCodes));
+
+                if (dp.Length > 0) dp.Append(";");
+                dp.Append(string.Join("|", dpCodes));
             }
 
             csvLogger.RegisterTrajectoryDefinition(
@@ -453,7 +470,9 @@ public class TrialBlockRunner : MonoBehaviour
                 delCol,
                 mk.ToString(),
                 col.ToString(),
-                swapCode
+                swapCode,
+                delDepth,
+                dp.ToString()
             );
         }
     }
@@ -487,7 +506,7 @@ public class TrialBlockRunner : MonoBehaviour
 
             if (loopBlock)
             {
-                _trialQueue = new Queue<ExperimentSpec.PlannedTrial>(_allPlannedTrials);
+                _trialQueue = new List<ExperimentSpec.PlannedTrial>(_allPlannedTrials);
                 _startedTrialCount = 0;
 
                 if (csvLogger != null)
@@ -536,7 +555,8 @@ public class TrialBlockRunner : MonoBehaviour
             return;
         }
 
-        _currentTrial = _trialQueue.Dequeue();
+        _currentTrial = _trialQueue[0];
+        _trialQueue.RemoveAt(0);
         _currentCond = spec.BuildEffectiveCondition(_currentTrial);
 
         _frameInStimulus = 0;
@@ -547,6 +567,7 @@ public class TrialBlockRunner : MonoBehaviour
 
         _mkPayloadBuilder = new StringBuilder();
         _colorPayloadBuilder = new StringBuilder();
+        _depthPayloadBuilder = new StringBuilder();
 
         // ---------------- Spec truth ----------------
         float mPerDeg = spec.GetMetersPerDegree();
@@ -583,6 +604,7 @@ public class TrialBlockRunner : MonoBehaviour
         builder.dotsPerField = spec.dotsPerField;
         builder.randomSeed = _currentTrial.seedA0;
         builder.exclusionRadiusMeters = spec.fixationExclusionRadius_deg * mPerDeg;
+        builder.depthOffset_m = spec.depthSeparation_m;
 
         // ---------------- Fixation preview scaling ----------------
         if (fixation != null)
@@ -735,12 +757,16 @@ public class TrialBlockRunner : MonoBehaviour
             }
         }
 
-        // Accumulate mkrows + colorrows into single TSV fields
+        // Apply stereo depth offsets AFTER motion stepping
+        builder.ApplyDepthOffsets(_currentCond, _frameInStimulus);
+
+        // Accumulate mkrows + colorrows + depthrows into single TSV fields
         if (_currentCond.subfields != null)
         {
             int subCount = _currentCond.subfields.Length;
             int[] mkCodes = new int[subCount];
             string[] colorCodes = new string[subCount];
+            int[] depthCodes = new int[subCount];
 
             for (int i = 0; i < subCount; i++)
             {
@@ -754,6 +780,10 @@ public class TrialBlockRunner : MonoBehaviour
                     colorCodes[i] = EncodeColorLetter(sf.colorByFrame[_frameInStimulus]);
                 else
                     colorCodes[i] = "K";
+
+                depthCodes[i] = (sf.depthByFrame != null && _frameInStimulus < sf.depthByFrame.Length)
+                    ? (int)sf.depthByFrame[_frameInStimulus]
+                    : 0;
             }
 
             if (_mkPayloadBuilder.Length > 0) _mkPayloadBuilder.Append(";");
@@ -761,6 +791,9 @@ public class TrialBlockRunner : MonoBehaviour
 
             if (_colorPayloadBuilder.Length > 0) _colorPayloadBuilder.Append(";");
             _colorPayloadBuilder.Append(string.Join("|", colorCodes));
+
+            if (_depthPayloadBuilder.Length > 0) _depthPayloadBuilder.Append(";");
+            _depthPayloadBuilder.Append(string.Join("|", depthCodes));
         }
 
         _frameInStimulus++;
@@ -821,15 +854,17 @@ public class TrialBlockRunner : MonoBehaviour
         if (csvLogger == null || _currentTrial == null) return;
         if (_mkPayloadBuilder == null || _colorPayloadBuilder == null) return;
 
-        string cond    = _currentTrial.conditionID ?? "";
-        string delCol  = (_currentTrial.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+        string cond     = _currentTrial.conditionID ?? "";
+        string delCol   = (_currentTrial.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
+        string delDepth = (_currentTrial.delayedFieldDepthCode == ExperimentSpec.DEPTH_NEAR) ? "N" : "F";
         string swapCode = ExperimentSpec.SwapFlagsToCode(_currentTrial.swapFlags);
         string stimKey  = CsvLogger.MakeStimKey(cond, _currentTrial.rotationConfig,
-                                                 _currentTrial.headingDeg, delCol, swapCode);
+                                                 _currentTrial.headingDeg, delCol, swapCode, delDepth);
 
         csvLogger.VerifyTrialTrajectory(stimKey,
                                          _mkPayloadBuilder.ToString(),
-                                         _colorPayloadBuilder.ToString());
+                                         _colorPayloadBuilder.ToString(),
+                                         _depthPayloadBuilder != null ? _depthPayloadBuilder.ToString() : "");
     }
 
     private void FinalizeTrialAndAdvance_NoResponse()
@@ -842,14 +877,31 @@ public class TrialBlockRunner : MonoBehaviour
             if (_colorPayloadBuilder.Length > 0)
                 csvLogger.LogColorRows(_currentTrial.index, _colorPayloadBuilder.ToString());
 
+            if (_depthPayloadBuilder != null && _depthPayloadBuilder.Length > 0)
+                csvLogger.LogDepthRows(_currentTrial.index, _depthPayloadBuilder.ToString());
+
             AuditTrajectory();
 
             csvLogger.LogResponse(-1, -1, "", -1, "", "Keyboard");
             csvLogger.EndTrial();
         }
 
+        csvLogger?.AddRequeuedTrial();
+        RequeueTrial(_currentTrial);
+
         _phase = TrialPhase.Done;
         NextTrial();
+    }
+
+    /// <summary>
+    /// Insert trial at a random position in the remaining queue (never position 0,
+    /// to avoid an immediate repeat of the same stimulus).
+    /// </summary>
+    private void RequeueTrial(ExperimentSpec.PlannedTrial trial)
+    {
+        if (_trialQueue == null) _trialQueue = new List<ExperimentSpec.PlannedTrial>();
+        int insertAt = (_trialQueue.Count > 0) ? _rng.Next(1, _trialQueue.Count + 1) : 0;
+        _trialQueue.Insert(insertAt, trial);
     }
 
     private void FinalizeTrialAndAdvance_WithResponse(TargetResponse resp, bool requeue)
@@ -861,6 +913,9 @@ public class TrialBlockRunner : MonoBehaviour
 
             if (_colorPayloadBuilder.Length > 0)
                 csvLogger.LogColorRows(_currentTrial.index, _colorPayloadBuilder.ToString());
+
+            if (_depthPayloadBuilder != null && _depthPayloadBuilder.Length > 0)
+                csvLogger.LogDepthRows(_currentTrial.index, _depthPayloadBuilder.ToString());
 
             AuditTrajectory();
 
@@ -878,8 +933,7 @@ public class TrialBlockRunner : MonoBehaviour
         if (requeue)
         {
             csvLogger?.AddRequeuedTrial();
-            if (_trialQueue == null) _trialQueue = new Queue<ExperimentSpec.PlannedTrial>();
-            _trialQueue.Enqueue(_currentTrial);
+            RequeueTrial(_currentTrial);
         }
 
         _phase = TrialPhase.Done;
