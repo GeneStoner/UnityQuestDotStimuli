@@ -137,18 +137,22 @@ public abstract class ExperimentSpec : ScriptableObject
         Color   = 1 << 1,   // field colors swap at tStart
         Dots50  = 1 << 2,   // 50% of dots swap field membership (sub1↔sub3)
         Depth   = 1 << 3,   // depth planes swap at tStart (100%)
-        Depth50 = 1 << 4,   // S0↔S2 swap depth planes at tStart (50%); color follows plane
+        Depth50  = 1 << 4,  // S0↔S2 swap depth planes at tStart (50%); color follows plane (legacy)
+        Depth50A = 1 << 5,  // S0↔S2 swap; both translators same plane (Far); cued dot moves plane
+        Depth50B = 1 << 6,  // S1↔S3 swap; both translators same plane (Near); cued dot stays in plane
     }
 
     public static string SwapFlagsToCode(int flags)
     {
         if (flags == 0) return "N";
         var parts = new List<string>();
-        if ((flags & (int)SwapFlags.Motion)  != 0) parts.Add("M");
-        if ((flags & (int)SwapFlags.Color)   != 0) parts.Add("C");
-        if ((flags & (int)SwapFlags.Dots50)  != 0) parts.Add("D");
-        if ((flags & (int)SwapFlags.Depth)   != 0) parts.Add("Z");
-        if ((flags & (int)SwapFlags.Depth50) != 0) parts.Add("Zd");
+        if ((flags & (int)SwapFlags.Motion)   != 0) parts.Add("M");
+        if ((flags & (int)SwapFlags.Color)    != 0) parts.Add("C");
+        if ((flags & (int)SwapFlags.Dots50)   != 0) parts.Add("D");
+        if ((flags & (int)SwapFlags.Depth)    != 0) parts.Add("Z");
+        if ((flags & (int)SwapFlags.Depth50)  != 0) parts.Add("Zd");
+        if ((flags & (int)SwapFlags.Depth50A) != 0) parts.Add("ZdA");
+        if ((flags & (int)SwapFlags.Depth50B) != 0) parts.Add("ZdB");
         return string.Join("", parts);
     }
 

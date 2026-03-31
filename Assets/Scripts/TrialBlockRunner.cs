@@ -240,7 +240,7 @@ public class TrialBlockRunner : MonoBehaviour
     private void OnXRTriggerPressed(InputAction.CallbackContext context)
     {
         _xrTriggerPressedThisFrame = true;
-        Debug.Log("[TrialBlockRunner] *** TRIGGER *** Build 2026-01-17");
+        Debug.Log("[TrialBlockRunner] *** TRIGGER *** Build 2026-03-30");
     }
 
     void Start()
@@ -563,6 +563,7 @@ public class TrialBlockRunner : MonoBehaviour
         _currentTrial = _trialQueue[0];
         _trialQueue.RemoveAt(0);
         _currentCond = spec.BuildEffectiveCondition(_currentTrial);
+
 
         _frameInStimulus = 0;
         _accum = 0f;

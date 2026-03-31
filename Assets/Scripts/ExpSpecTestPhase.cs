@@ -30,6 +30,12 @@ public class ExpSpecTestPhase : ExperimentSpec
     [Tooltip("Include 50% depth-swap trials (S0↔S2 exchange depth planes at tStart; color follows plane membership).")]
     public bool includeDepthPartialSwaps = false;
 
+    [Tooltip("Include ZdA trials (S0↔S2 depth swap; both translators in Far; cued dot moves plane). Mutually exclusive with ZdB per trial.")]
+    public bool includeDepth50ASwaps = false;
+
+    [Tooltip("Include ZdB trials (S1↔S3 depth swap; both translators in Near; cued dot stays in plane). Mutually exclusive with ZdA per trial.")]
+    public bool includeDepth50BSwaps = false;
+
     // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
@@ -46,6 +52,9 @@ public class ExpSpecTestPhase : ExperimentSpec
         if (includeDots50Swaps)        swapFactor *= 2;
         if (includeDepthSwaps)         swapFactor *= 2;
         if (includeDepthPartialSwaps)  swapFactor *= 2;
+        // ZdA and ZdB are mutually exclusive per trial; enabling both adds 2 conditions (not 3)
+        if (includeDepth50ASwaps && includeDepth50BSwaps) swapFactor *= 3;
+        else if (includeDepth50ASwaps || includeDepth50BSwaps) swapFactor *= 2;
 
         return condFactor * headingFactor * rotFactor * colorFactor * depthFactor * swapFactor;
     }
@@ -66,6 +75,8 @@ public class ExpSpecTestPhase : ExperimentSpec
         if (includeDots50Swaps)        activeFlags.Add((int)SwapFlags.Dots50);
         if (includeDepthSwaps)         activeFlags.Add((int)SwapFlags.Depth);
         if (includeDepthPartialSwaps)  activeFlags.Add((int)SwapFlags.Depth50);
+        if (includeDepth50ASwaps)      activeFlags.Add((int)SwapFlags.Depth50A);
+        if (includeDepth50BSwaps)      activeFlags.Add((int)SwapFlags.Depth50B);
 
         var swapValues = new List<int> { 0 }; // None always included
         foreach (int flag in activeFlags)
@@ -74,6 +85,10 @@ public class ExpSpecTestPhase : ExperimentSpec
             for (int i = 0; i < count; i++)
                 swapValues.Add(swapValues[i] | flag);
         }
+
+        // ZdA and ZdB are mutually exclusive: remove any trial that has both set
+        int bothAB = (int)SwapFlags.Depth50A | (int)SwapFlags.Depth50B;
+        swapValues.RemoveAll(v => (v & bothAB) == bothAB);
 
         // This is now the ONLY repetition knob.
         int reps = Mathf.Max(1, repeatsPerStimulus);
@@ -106,7 +121,7 @@ public class ExpSpecTestPhase : ExperimentSpec
                             {
                                 for (int r = 0; r < reps; r++)
                                 {
-                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_GREEN, swap, depth));
+                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED, swap, depth));
                                 }
                             }
                         }
@@ -203,13 +218,18 @@ public class ExpSpecTestPhase : ExperimentSpec
         int tEnd   = t.translationEndFrame; // [tStart, tEnd)
 
         Color delayedColor    = ColorFromCode(t.delayedFieldColorCode);
-        Color nonDelayedColor = ColorFromCode(OppositeColorCode(t.delayedFieldColorCode));
+        // When not balancing colors, both fields use the same color (bypasses any stale rgbaGreen cache)
+        Color nonDelayedColor = balanceDelayedFieldColor
+            ? ColorFromCode(OppositeColorCode(t.delayedFieldColorCode))
+            : delayedColor;
 
-        bool motionSwap   = (t.swapFlags & (int)SwapFlags.Motion)  != 0;
-        bool colorSwap    = (t.swapFlags & (int)SwapFlags.Color)   != 0;
-        bool dots50Swap   = (t.swapFlags & (int)SwapFlags.Dots50)  != 0;
-        bool depthSwap    = (t.swapFlags & (int)SwapFlags.Depth)   != 0;
-        bool depth50Swap  = (t.swapFlags & (int)SwapFlags.Depth50) != 0;
+        bool motionSwap   = (t.swapFlags & (int)SwapFlags.Motion)   != 0;
+        bool colorSwap    = (t.swapFlags & (int)SwapFlags.Color)    != 0;
+        bool dots50Swap   = (t.swapFlags & (int)SwapFlags.Dots50)   != 0;
+        bool depthSwap    = (t.swapFlags & (int)SwapFlags.Depth)    != 0;
+        bool depth50Swap  = (t.swapFlags & (int)SwapFlags.Depth50)  != 0;
+        bool depth50ASwap = (t.swapFlags & (int)SwapFlags.Depth50A) != 0;
+        bool depth50BSwap = (t.swapFlags & (int)SwapFlags.Depth50B) != 0;
 
         // Depth planes: by default delayed field (B) and non-delayed (A) get opposite planes.
         // If bothFieldsSamePlane, both fields share the same plane (DelayedFieldDepth codes which one).
@@ -324,6 +344,46 @@ public class ExpSpecTestPhase : ExperimentSpec
                     cond.subfields[3].depthByFrame[f] = fieldBDepth;
                 }
             }
+
+            // ── ZdA: S0↔S2 depth swap; both translators land in fieldADepth (Far) ──
+            // Cued dot (S2) moves from fieldBDepth→fieldADepth.
+            // Near-group (S0,S3): rotation=curARot. Far-group (S1,S2): rotation=curBRot.
+            // Translation: CUED→S2(Coh,Far)+S1(NonCoh,Far); UNCUED→S0(Coh,Near)+S3(NonCoh,Near).
+            if (depth50ASwap && afterSwap)
+            {
+                cond.subfields[0].motionKindByFrame[f] = curARot;
+                cond.subfields[1].motionKindByFrame[f] = curBRot;  // reversed
+                cond.subfields[2].motionKindByFrame[f] = curBRot;
+                cond.subfields[3].motionKindByFrame[f] = curARot;  // reversed
+
+                if (useDepthPlanes)
+                {
+                    cond.subfields[0].depthByFrame[f] = fieldBDepth; // S0: Far→Near
+                    cond.subfields[1].depthByFrame[f] = fieldADepth; // S1: stays Far
+                    cond.subfields[2].depthByFrame[f] = fieldADepth; // S2: Near→Far
+                    cond.subfields[3].depthByFrame[f] = fieldBDepth; // S3: stays Near
+                }
+            }
+
+            // ── ZdB: S1↔S3 depth swap; both translators stay in fieldBDepth (Near) ──
+            // Cued dot (S2) stays in fieldBDepth (Near).
+            // Near-group (S1,S2): rotation=curBRot. Far-group (S0,S3): rotation=curARot.
+            // Translation: CUED→S2(Coh,Near)+S1(NonCoh,Near); UNCUED→S0(Coh,Far)+S3(NonCoh,Far).
+            if (depth50BSwap && afterSwap)
+            {
+                cond.subfields[0].motionKindByFrame[f] = curARot;   // stays Far
+                cond.subfields[1].motionKindByFrame[f] = curBRot;   // reversed (Far→Near)
+                cond.subfields[2].motionKindByFrame[f] = curBRot;   // stays Near
+                cond.subfields[3].motionKindByFrame[f] = curARot;   // reversed (Near→Far)
+
+                if (useDepthPlanes)
+                {
+                    cond.subfields[0].depthByFrame[f] = fieldADepth; // S0: stays Far
+                    cond.subfields[1].depthByFrame[f] = fieldBDepth; // S1: Far→Near
+                    cond.subfields[2].depthByFrame[f] = fieldBDepth; // S2: stays Near
+                    cond.subfields[3].depthByFrame[f] = fieldADepth; // S3: Near→Far
+                }
+            }
         }
 
         // Translation window: coherent/non-coherent within translating field.
@@ -334,16 +394,32 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         for (int f = fStart; f < fEndClamped; f++)
         {
-            // depth50Swap (Zd): translation follows dots (sub2/sub3 = delayed field),
-            // regardless of depth plane — falls through to standard assignment below.
             if (dots50Swap)
             {
-                if (isCued)  // Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent
+                // Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent
+                if (isCued)
                 {
                     cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
                     cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
                 }
                 else  // Field A={sub0,sub3}: sub0=Linear, sub3=NonCoherent
+                {
+                    cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+            }
+            else if (depth50ASwap || depth50BSwap)
+            {
+                // ZdA: translators are Far-group (S1,S2). ZdB: translators are Near-group (S1,S2).
+                // In both cases the same subfields translate: S2(coh) and S1(noncoh) for CUED,
+                // S0(coh) and S3(noncoh) for UNCUED. Depth plane differs between ZdA and ZdB
+                // but is already set correctly in the per-frame loop above.
+                if (isCued)
+                {
+                    cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+                else
                 {
                     cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
                     cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
