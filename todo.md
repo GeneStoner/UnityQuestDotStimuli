@@ -26,6 +26,7 @@
 ### Trial Structure
 - [ ] **Both-field preview during WaitingForStart** — show S2/S3 at frame-0 positions (alongside existing Field A preview) to allow vergence/depth stabilization before onset; delayed field then vanishes at frame 0 as usual
 - [ ] **Practice trials** — add `numPracticeTrials` to ExperimentSpec; mark first N trials as `isPractice`; log `is_practice=1` in TSV; exclude from analysis automatically
+- [ ] **Matched CUED/UNCUED dot layouts** — use same seed for CUED and UNCUED within each (heading × swap × depth × rotation) tuple so dot positions from delayed onset onward are identical; only which sub-array carries coherent translation differs. Pro: removes chance variation in translation difficulty between CUED and UNCUED. Con (observer exploitation): weak — trials are randomly interleaved and the translation burst is too brief to consciously track. **Deeper problem**: matching is appropriate for N but not cleanly applicable across ZdA/ZdB where swap mechanics act on the dot field itself — applying it selectively to N only would introduce an inconsistency in the noise floor across swap conditions, which could confound the N vs ZdA vs ZdB comparison. Uniform noise across all conditions is preferable to selectively reduced noise in a subset. **Tentative verdict: don't do it.** Keep as a note; revisit only if a clean implementation across all swap types can be designed.
 
 ### Gamification (for "wild" / home use)
 - [ ] **Stage 1 — Fixation calibration game**: contrast-threshold task with central/peripheral targets; pass/retry gate; maps onto Catak training funnel
@@ -42,6 +43,12 @@
 - [ ] Add depth column support to `analyze_vr_dots_v2.py` (backburner — low priority)
 - [ ] Consider session-level mixed-effects model once n-per-session is large enough
 - [ ] Update `Agents/Literature/experiment_status.md` after each new session
+
+## Visualization (`plot_dot_traces.py`)
+
+- [ ] **Match Unity RNG exactly** — implement Xorshift128 in Python with `session_seed` from sidecar (S0/S1 seed = session_seed, S2/S3 seed = session_seed + 99991) so traces show exact dot layouts from real trials, not representative ones
+- [ ] **Multi-panel figure** — extend to 3×2 grid (N/ZdA/ZdB × CUED/UNCUED) as a single script output
+- [ ] **Split by depth plane** — optional two-aperture layout (Near | Far) as `--layout split` flag
 
 ---
 

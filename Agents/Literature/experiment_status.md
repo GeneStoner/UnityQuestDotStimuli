@@ -70,43 +70,45 @@ Correctness: `TransDeg == RespDeg (mod 360)`. Chance = 12.5% (1/8).
 | 260331_1734 | 2026-03-31 | L-eye (R closed) | 43.2% | Mono L #2 |
 | 260401_1313 | 2026-04-01 | Binocular | 51.0% | Session 3; ZdA trend |
 | 260401_1349 | 2026-04-01 | Binocular | 44.3% | Session 4; ZdB weak this session |
+| 260401_1541 | 2026-04-01 | R-eye (L closed) | 33.9% | Mono R #3; weak session, +5.2pp n.s. |
 
 All sessions: 192/192 trials completed, 192/192 trajectories verified (mk + color + depth hashes).
 
 **Current n per cell:**
 - Binocular: n=128 per swap × cued cell (4 sessions × 32)
-- Monocular R-eye: n=64 per cell (2 sessions × 32)
+- Monocular R-eye: n=96 per cell (3 sessions × 32)
 - Monocular L-eye: n=64 per cell (2 sessions × 32)
-- All mono pooled: n=128 per cell
+- All mono pooled: n=160 per cell
 
 ---
 
 ## 3. Results
 
-### 3.1 Binocular — swap × cueing (pooled 3 sessions, n=576)
+### 3.1 Binocular — swap × cueing (pooled 4 sessions, n=768)
 
 | Swap | CUED | UNCUED | Δ | p |
 |------|------|--------|---|---|
-| N | 54.7% | 41.4% | +13.3pp | * |
+| N | 55.5% | 42.2% | +13.3pp | * |
 | ZdA | 48.4% | 32.8% | +15.6pp | * |
-| ZdB | 54.7% | 34.4% | +20.3pp | ** |
+| ZdB | 55.5% | 35.2% | +20.3pp | ** |
 
 Note: session-to-session variability is large (ZdB ranged from +3pp to +56pp across 4 sessions).
 
 ### 3.2 Master summary — three factors
 
-| Factor | Binocular (n=768) | All mono (n=769) |
-|--------|-------------------|------------------|
-| 1. Dot cueing (CUED vs UNCUED) | +16.4pp *** | +7.1pp * |
-| 2. Depth-field cueing (same vs diff plane) | +6.0pp † | +7.1pp * |
-| 3. Depth plane (Far vs Near translation) | +10.7pp ** | +1.2pp n.s. |
+| Factor | Binocular (n=768) | Mono R-eye (n=577) | Mono L-eye (n=384) | All mono (n=961) |
+|--------|-------------------|--------------------|--------------------|------------------|
+| 1. Dot cueing (CUED vs UNCUED) | +16.4pp *** | +8.4pp * | +4.2pp n.s. | +6.7pp * |
+| 2. Depth-field cueing (same vs diff plane) | +6.0pp † | +3.6pp n.s. | +7.3pp n.s. | +5.1pp n.s. |
+| 3. Depth plane (Far vs Near translation) | +10.7pp ** | −2.2pp n.s. | +2.1pp n.s. | −0.5pp n.s. |
 
 ### 3.3 Key interpretive points
-- **Dot cueing** (factor 1): attenuated but survives monocularly — temporal onset advantage is not purely stereoscopic
-- **Depth-field cueing** (factor 2): survives monocularly (*) — the advantage of translating in the delayed-onset plane has both a stereoscopic and a non-stereoscopic component
-- **Depth plane / Near vs Far** (factor 3): entirely stereoscopic — absent monocularly
-- **ZdB > N binocularly**: cued dot staying in plane AND companion moving into cued plane boosts performance above no-swap baseline — active depth-grouping benefit, not merely absence of disruption
-- **ZdA now significant binocularly** (with n=96/cell): cueing reduced relative to ZdB but not eliminated; cued dot moving planes is costly but not catastrophic
+- **Dot cueing** (factor 1): survives monocularly (*) — temporal onset advantage is not purely stereoscopic; attenuated vs binocular
+- **Depth-field cueing** (factor 2): was * at n=769 mono; now n.s. at n=961 with added R-eye session pulling against it — status uncertain, awaiting final L-eye session
+- **Depth plane / Near vs Far** (factor 3): entirely stereoscopic — absent monocularly in all subgroups
+- **ZdB > N binocularly**: cued dot staying in plane AND companion moving into cued plane boosts performance above no-swap baseline
+- **ZdA significant binocularly**: cueing reduced relative to ZdB but not eliminated; cued dot moving planes is costly but not catastrophic
+- **R-eye sessions weaker overall** (35.4%) vs L-eye (44.3%) — consistent with floaters in R eye; R-eye mono data noisier
 - **Session 2 (260331_0621) was anomalous**: near-zero cueing across all conditions; possibly fatigue, vergence instability, or random variation at n=32/cell
 
 ---
