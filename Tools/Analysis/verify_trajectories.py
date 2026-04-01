@@ -22,6 +22,11 @@ CCW      = 2   # RotationCCW
 LINEAR   = 3
 NONCOH   = 4   # NonCoherent
 
+# ── Depth plane codes (match StimulusConditionsLibrary.DepthPlane) ───
+FIXATION = 0
+NEAR     = 1
+FAR      = 2
+
 # ── Default spec timing (must match ExperimentSpec asset values) ──────
 DEFAULT_SIM_HZ              = 75
 DEFAULT_DELAYED_ONSET_MS    = 750.0
@@ -43,10 +48,10 @@ def compute_timing(sim_hz=DEFAULT_SIM_HZ,
                    pre_ms=DEFAULT_PRE_TRANSLATION_MS,
                    trans_ms=DEFAULT_TRANSLATION_DUR_MS,
                    post_ms=DEFAULT_POST_TRANSLATION_MS):
-    onset  = ms_to_frames(onset_ms, sim_hz)
-    pre    = ms_to_frames(pre_ms, sim_hz)
-    trans  = ms_to_frames(trans_ms, sim_hz)
-    post   = ms_to_frames(post_ms, sim_hz)
+    onset   = ms_to_frames(onset_ms, sim_hz)
+    pre     = ms_to_frames(pre_ms, sim_hz)
+    trans   = ms_to_frames(trans_ms, sim_hz)
+    post    = ms_to_frames(post_ms, sim_hz)
     t_start = onset + pre
     t_end   = t_start + trans
     total   = t_end + post
@@ -77,14 +82,33 @@ def fnv1a_32_hex(s):
 #  ExpSpecTestPhase.BuildEffectiveCondition)
 # ══════════════════════════════════════════════════════════════════════
 
-def generate_trajectory(cond, rot_cfg, delayed_color, swap_type,
-                        onset, t_start, t_end, total):
-    """
-    Return (mk_payload, color_payload) strings in the same format as
-    the C# sidecar writer.
+def parse_swap_flags(swap_type):
+    """Parse swap_type string into boolean flags."""
+    s = swap_type if swap_type else "N"
+    return {
+        "motion":   "M"   in s and s != "N",
+        "color":    "C"   in s and s != "N",
+        "dots50":   "D"   in s and s != "N",
+        "depth":    s == "Z" or (s != "N" and "Z" in s and "Zd" not in s and "ZdA" not in s and "ZdB" not in s),
+        "depth50":  "Zd"  in s and "ZdA" not in s and "ZdB" not in s,
+        "depth50A": "ZdA" in s,
+        "depth50B": "ZdB" in s,
+    }
 
-    Parameters match the sidecar entry fields.  swap_type is the code
-    string ("N", "M", "C", "MC").
+
+def generate_trajectory(cond, rot_cfg, delayed_color, swap_type,
+                        onset, t_start, t_end, total,
+                        delayed_depth="N", depth_separation_m=0.0,
+                        non_delayed_color=None):
+    """
+    Return (mk_payload, color_payload, depth_payload) strings in the same
+    format as the C# sidecar writer.
+
+    delayed_depth: "N" = Near, "F" = Far (or "" if no depth planes)
+    depth_separation_m: > 0 enables depth planes
+    non_delayed_color: explicit non-delayed field color. If None, inferred
+        as the opposite of delayed_color (legacy two-color experiments).
+        Pass the same value as delayed_color for same-color experiments.
     """
     N = total
     is_cued = (cond == "CUED")
@@ -93,74 +117,107 @@ def generate_trajectory(cond, rot_cfg, delayed_color, swap_type,
     a_rot = CW  if rot_cfg == 0 else CCW
     b_rot = CCW if rot_cfg == 0 else CW
 
-    # Delayed / non-delayed colors
-    d_col  = delayed_color                               # "R" or "G"
-    nd_col = "G" if delayed_color == "R" else "R"
+    # Colors
+    d_col  = delayed_color
+    if non_delayed_color is not None:
+        nd_col = non_delayed_color
+    else:
+        nd_col = "G" if delayed_color == "R" else "R"
 
-    motion_swap = ("M" in swap_type) if swap_type != "N" else False
-    color_swap  = ("C" in swap_type) if swap_type != "N" else False
-    dots50_swap = ("D" in swap_type) if swap_type != "N" else False
+    flags = parse_swap_flags(swap_type)
 
-    mk_rows   = []   # list of [1,1,2,2] int lists
-    col_rows  = []   # list of ["R","R","G","G"] string lists
+    # Depth planes
+    use_depth = (depth_separation_m > 0.0)
+    field_b_depth = NEAR if delayed_depth == "N" else FAR
+    field_a_depth = FAR  if field_b_depth == NEAR else NEAR
+
+    mk_rows    = []
+    col_rows   = []
+    depth_rows = []
 
     for f in range(N):
         after_onset = (f >= onset)
         after_swap  = (f >= t_start)
 
-        # ── rotation (may be swapped) ────────────────────────────
-        cur_a = b_rot if (motion_swap and after_swap) else a_rot
-        cur_b = a_rot if (motion_swap and after_swap) else b_rot
+        # ── rotation ─────────────────────────────────────────────────
+        cur_a = b_rot if (flags["motion"] and after_swap) else a_rot
+        cur_b = a_rot if (flags["motion"] and after_swap) else b_rot
 
-        # ── color (may be swapped) ───────────────────────────────
-        if color_swap and after_swap:
+        # ── color ────────────────────────────────────────────────────
+        if flags["color"] and after_swap:
             fa_col, fb_col = d_col, nd_col
         else:
             fa_col, fb_col = nd_col, d_col
 
-        # ── field membership (dots50: sub1↔sub3 at tStart) ──────
-        if dots50_swap and after_swap:
-            # sub0=A, sub1=B, sub2=B, sub3=A
-            mk = [cur_a, cur_b, cur_b, cur_a]
-            if not after_onset:
-                col = [fa_col, "K", "K", fa_col]
-            else:
-                col = [fa_col, fb_col, fb_col, fa_col]
+        # ── field membership + motion/color ──────────────────────────
+        if flags["dots50"] and after_swap:
+            mk  = [cur_a, cur_b, cur_b, cur_a]
+            col = ([fa_col, fb_col, fb_col, fa_col] if after_onset
+                   else [fa_col, "K", "K", fa_col])
         else:
-            # default: sub0,1=A  sub2,3=B
-            mk = [cur_a, cur_a, cur_b, cur_b]
-            if not after_onset:
-                col = [fa_col, fa_col, "K", "K"]
-            else:
-                col = [fa_col, fa_col, fb_col, fb_col]
+            mk  = [cur_a, cur_a, cur_b, cur_b]
+            col = ([fa_col, fa_col, fb_col, fb_col] if after_onset
+                   else [fa_col, fa_col, "K", "K"])
+
+        # ── ZdA/ZdB motion override (rotation follows depth group) ───
+        if flags["depth50A"] and after_swap:
+            # Near-group (S0,S3)=curARot, Far-group (S1,S2)=curBRot
+            mk = [cur_a, cur_b, cur_b, cur_a]
+        if flags["depth50B"] and after_swap:
+            # Far-group (S0,S3)=curARot, Near-group (S1,S2)=curBRot
+            mk = [cur_a, cur_b, cur_b, cur_a]
 
         mk_rows.append(mk)
         col_rows.append(col)
 
-    # ── translation override (applied AFTER rotation, matches C#) ─
-    # With dots50: field membership changes translation targets.
+        # ── depth ────────────────────────────────────────────────────
+        if use_depth:
+            if flags["depth"] and after_swap:
+                # 100% depth swap: all fields exchange planes
+                dep = [field_b_depth, field_b_depth, field_a_depth, field_a_depth]
+            elif flags["depth50"] and after_swap:
+                # Zd (legacy): S0↔S2 exchange
+                dep = [field_b_depth, field_a_depth, field_a_depth, field_b_depth]
+            elif flags["depth50A"] and after_swap:
+                # ZdA: S0→fieldB, S1→fieldA, S2→fieldA, S3→fieldB
+                dep = [field_b_depth, field_a_depth, field_a_depth, field_b_depth]
+            elif flags["depth50B"] and after_swap:
+                # ZdB: S0→fieldA, S1→fieldB, S2→fieldB, S3→fieldA
+                dep = [field_a_depth, field_b_depth, field_b_depth, field_a_depth]
+            else:
+                # Default: S0,S1=fieldA; S2,S3=fieldB
+                dep = [field_a_depth, field_a_depth, field_b_depth, field_b_depth]
+        else:
+            dep = [FIXATION, FIXATION, FIXATION, FIXATION]
+
+        depth_rows.append(dep)
+
+    # ── translation override ──────────────────────────────────────────
     f_start = max(0, t_start)
     f_end   = min(N, t_end)
     for f in range(f_start, f_end):
-        if dots50_swap:
-            if is_cued:   # Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent
-                mk_rows[f][2] = LINEAR
-                mk_rows[f][1] = NONCOH
-            else:         # Field A={sub0,sub3}: sub0=Linear, sub3=NonCoherent
-                mk_rows[f][0] = LINEAR
-                mk_rows[f][3] = NONCOH
+        if flags["dots50"]:
+            if is_cued:
+                mk_rows[f][2] = LINEAR;  mk_rows[f][1] = NONCOH
+            else:
+                mk_rows[f][0] = LINEAR;  mk_rows[f][3] = NONCOH
+        elif flags["depth50A"] or flags["depth50B"]:
+            # ZdA/ZdB: same translation subfields as plain N
+            if is_cued:
+                mk_rows[f][2] = LINEAR;  mk_rows[f][1] = NONCOH
+            else:
+                mk_rows[f][0] = LINEAR;  mk_rows[f][3] = NONCOH
         else:
             if is_cued:
-                mk_rows[f][2] = LINEAR
-                mk_rows[f][3] = NONCOH
+                mk_rows[f][2] = LINEAR;  mk_rows[f][3] = NONCOH
             else:
-                mk_rows[f][0] = LINEAR
-                mk_rows[f][1] = NONCOH
+                mk_rows[f][0] = LINEAR;  mk_rows[f][1] = NONCOH
 
-    # ── format as payload strings ─────────────────────────────────
-    mk_payload  = ";".join("|".join(str(v) for v in row) for row in mk_rows)
-    col_payload = ";".join("|".join(row) for row in col_rows)
-    return mk_payload, col_payload
+    # ── format payloads ───────────────────────────────────────────────
+    mk_payload    = ";".join("|".join(str(v) for v in row) for row in mk_rows)
+    col_payload   = ";".join("|".join(row) for row in col_rows)
+    depth_payload = ";".join("|".join(str(v) for v in row) for row in depth_rows)
+    return mk_payload, col_payload, depth_payload
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -172,8 +229,8 @@ def verify_sidecar(sidecar_path, do_plots=False):
         sj = json.load(f)
 
     experiment = sj.get("experiment_name", "(unnamed)")
-    entries = sj.get("trajectory_library", {}).get("entries", [])
-    n_entries = len(entries)
+    entries    = sj.get("trajectory_library", {}).get("entries", [])
+    n_entries  = len(entries)
 
     print(f"Experiment: {experiment}")
     print(f"Sidecar: {os.path.basename(sidecar_path)}")
@@ -183,178 +240,185 @@ def verify_sidecar(sidecar_path, do_plots=False):
         print("  No entries to verify.")
         return True
 
-    # Try to read timing from sidecar experiment_spec (v5+)
+    # Timing from sidecar
     exp_spec = sj.get("experiment_spec", {})
-    sim_hz    = exp_spec.get("sim_hz", DEFAULT_SIM_HZ)
-    onset_ms  = exp_spec.get("delayed_onset_ms", DEFAULT_DELAYED_ONSET_MS)
-    pre_ms    = exp_spec.get("pre_translation_ms", DEFAULT_PRE_TRANSLATION_MS)
-    trans_ms  = exp_spec.get("translation_duration_ms", DEFAULT_TRANSLATION_DUR_MS)
-    has_spec_timing = "sim_hz" in exp_spec
+    sim_hz   = exp_spec.get("sim_hz",                  DEFAULT_SIM_HZ)
+    onset_ms = exp_spec.get("delayed_onset_ms",         DEFAULT_DELAYED_ONSET_MS)
+    pre_ms   = exp_spec.get("pre_translation_ms",       DEFAULT_PRE_TRANSLATION_MS)
+    trans_ms = exp_spec.get("translation_duration_ms",  DEFAULT_TRANSLATION_DUR_MS)
+    depth_sep = exp_spec.get("depth_separation_m",      0.0)
+    has_spec  = "sim_hz" in exp_spec
 
     onset, t_start, t_end, expected_total = compute_timing(sim_hz, onset_ms, pre_ms, trans_ms)
 
     first_payload = entries[0].get("mk_payload", "")
-    actual_total = len(first_payload.split(";")) if first_payload else 0
+    actual_total  = len(first_payload.split(";")) if first_payload else 0
 
-    if has_spec_timing:
-        print(f"\nTiming (from sidecar experiment_spec):")
-        print(f"  sim_hz={sim_hz}  onset_ms={onset_ms}  pre_ms={pre_ms}  "
-              f"trans_ms={trans_ms}")
-    else:
-        print(f"\nTiming (from hardcoded defaults — sidecar has no spec timing):")
-
+    src = "from sidecar experiment_spec" if has_spec else "from hardcoded defaults"
+    print(f"\nTiming ({src}):")
+    print(f"  sim_hz={sim_hz}  onset_ms={onset_ms}  pre_ms={pre_ms}  trans_ms={trans_ms}")
     print(f"  onset={onset}  tStart={t_start}  tEnd={t_end}  total={expected_total}")
+    print(f"  depth_separation_m={depth_sep}")
     print(f"  actual payload length (first entry): {actual_total} frames")
 
     if actual_total != expected_total:
         print(f"  WARNING: frame count mismatch ({actual_total} vs {expected_total})")
-        print(f"  Inferring timing from payload content.")
-        onset, t_start, t_end, expected_total = infer_timing_from_payload(first_payload, entries[0])
+        onset, t_start, t_end, expected_total = infer_timing_from_payload(
+            first_payload, entries[0])
         print(f"  Inferred: onset={onset} tStart={t_start} tEnd={t_end} total={expected_total}")
 
-    # Verify each entry
-    n_ok = 0
-    n_fail = 0
-    failures = []
-    unique_shapes = {}  # (cond, rot_cfg, del_col, swap) -> (expected_mk, expected_col, entry)
+    # ── Verify each entry ─────────────────────────────────────────────
+    n_ok = 0; n_fail = 0; failures = []
+    unique_shapes = {}
 
     for e in entries:
-        cond      = e.get("cond", "")
-        rot_cfg   = e.get("rot_cfg", 0)
-        del_col   = e.get("delayed_field_color", "")
-        swap_type = e.get("swap_type", "N")
-        stim_key  = e.get("stim_key", "")
+        cond       = e.get("cond", "")
+        rot_cfg    = e.get("rot_cfg", 0)
+        del_col    = e.get("delayed_field_color", "")
+        del_dep    = e.get("delayed_field_depth", "N")
+        swap_type  = e.get("swap_type", "N")
+        stim_key   = e.get("stim_key", "")
 
-        stored_mk    = e.get("mk_payload", "")
-        stored_col   = e.get("color_payload", "")
-        stored_mk_h  = e.get("mk_hash32", "").upper()
-        stored_col_h = e.get("color_hash32", "").upper()
+        stored_mk      = e.get("mk_payload", "")
+        stored_col     = e.get("color_payload", "")
+        stored_dep     = e.get("depth_payload", "")
+        stored_mk_h    = e.get("mk_hash32",    "").upper()
+        stored_col_h   = e.get("color_hash32", "").upper()
+        stored_dep_h   = e.get("depth_hash32", "").upper()
 
-        # Generate expected
-        exp_mk, exp_col = generate_trajectory(
+        # Extract actual non-delayed color from frame 0 of color payload.
+        # Pre-onset, S0 always shows the non-delayed field color (S2/S3 are "K").
+        nd_col = None
+        if stored_col:
+            frame0 = stored_col.split(";")[0].split("|")
+            if frame0 and frame0[0] not in ("K", ""):
+                nd_col = frame0[0]
+
+        exp_mk, exp_col, exp_dep = generate_trajectory(
             cond, rot_cfg, del_col, swap_type,
-            onset, t_start, t_end, expected_total
+            onset, t_start, t_end, expected_total,
+            delayed_depth=del_dep, depth_separation_m=depth_sep,
+            non_delayed_color=nd_col
         )
 
-        # Compare payloads
-        mk_match  = (exp_mk == stored_mk)
-        col_match = (exp_col == stored_col)
+        mk_ok  = (exp_mk  == stored_mk)
+        col_ok = (exp_col == stored_col)
+        dep_ok = (exp_dep == stored_dep) if stored_dep else True  # skip if absent
 
-        # Also verify hashes
         exp_mk_h  = fnv1a_32_hex(exp_mk)
         exp_col_h = fnv1a_32_hex(exp_col)
-        mk_h_match  = (exp_mk_h == stored_mk_h)
-        col_h_match = (exp_col_h == stored_col_h)
+        exp_dep_h = fnv1a_32_hex(exp_dep)
+        mk_h_ok   = (exp_mk_h  == stored_mk_h)
+        col_h_ok  = (exp_col_h == stored_col_h)
+        dep_h_ok  = (exp_dep_h == stored_dep_h) if stored_dep_h else True
 
-        if mk_match and col_match and mk_h_match and col_h_match:
+        if mk_ok and col_ok and dep_ok and mk_h_ok and col_h_ok and dep_h_ok:
             n_ok += 1
         else:
             n_fail += 1
             failures.append({
-                "stim_key": stim_key,
-                "mk_payload_match": mk_match,
-                "col_payload_match": col_match,
-                "mk_hash_match": mk_h_match,
-                "col_hash_match": col_h_match,
-                "expected_mk_hash": exp_mk_h,
-                "stored_mk_hash": stored_mk_h,
-                "expected_col_hash": exp_col_h,
-                "stored_col_hash": stored_col_h,
+                "stim_key":      stim_key,
+                "mk_ok":         mk_ok and mk_h_ok,
+                "col_ok":        col_ok and col_h_ok,
+                "dep_ok":        dep_ok and dep_h_ok,
+                "exp_mk_h":      exp_mk_h,  "stored_mk_h":  stored_mk_h,
+                "exp_col_h":     exp_col_h, "stored_col_h": stored_col_h,
+                "exp_dep_h":     exp_dep_h, "stored_dep_h": stored_dep_h,
+                # First differing frame for depth (to help diagnose)
+                "dep_first_diff": _first_diff_frame(exp_dep, stored_dep),
             })
 
-        # Collect unique shapes for plotting
-        shape_key = (cond, rot_cfg, del_col, swap_type)
+        shape_key = (cond, rot_cfg, del_col, swap_type, del_dep)
         if shape_key not in unique_shapes:
-            unique_shapes[shape_key] = (exp_mk, exp_col, e)
+            unique_shapes[shape_key] = (exp_mk, exp_col, exp_dep, e)
 
     print(f"\nResults:")
     print(f"  Passed: {n_ok}/{n_entries}")
     print(f"  Failed: {n_fail}/{n_entries}")
 
     if failures:
-        print(f"\nFailures:")
-        for fail in failures[:10]:  # show first 10
-            print(f"  {fail['stim_key']}:")
-            if not fail["mk_payload_match"]:
-                print(f"    mk_payload MISMATCH")
-            if not fail["col_payload_match"]:
-                print(f"    color_payload MISMATCH")
-            if not fail["mk_hash_match"]:
-                print(f"    mk_hash: expected={fail['expected_mk_hash']} stored={fail['stored_mk_hash']}")
-            if not fail["col_hash_match"]:
-                print(f"    col_hash: expected={fail['expected_col_hash']} stored={fail['stored_col_hash']}")
+        print(f"\nFailures (first 10):")
+        for fail in failures[:10]:
+            parts = []
+            if not fail["mk_ok"]:
+                parts.append(f"mk(exp={fail['exp_mk_h']} got={fail['stored_mk_h']})")
+            if not fail["col_ok"]:
+                parts.append(f"color(exp={fail['exp_col_h']} got={fail['stored_col_h']})")
+            if not fail["dep_ok"]:
+                fd = fail["dep_first_diff"]
+                parts.append(f"depth(exp={fail['exp_dep_h']} got={fail['stored_dep_h']}"
+                              f"{', first diff f='+str(fd) if fd is not None else ''})")
+            print(f"  {fail['stim_key']}: {', '.join(parts)}")
         if len(failures) > 10:
             print(f"  ... and {len(failures) - 10} more")
 
-    # ── Method C: generate trajectory plots for all unique shapes ──
     if do_plots and unique_shapes:
         plot_all_shapes(unique_shapes, onset, t_start, t_end, expected_total,
-                        sidecar_path, experiment)
+                        sidecar_path, experiment, depth_sep > 0)
 
     return n_fail == 0
 
 
-def infer_timing_from_payload(mk_payload, entry):
-    """Infer onset/tStart/tEnd/total from an actual payload."""
-    frames = mk_payload.split(";")
-    total = len(frames)
+def _first_diff_frame(s1, s2):
+    if not s1 or not s2:
+        return None
+    for i, (a, b) in enumerate(zip(s1.split(";"), s2.split(";"))):
+        if a != b:
+            return i
+    return None
 
-    # Find tStart: first frame with LINEAR (3) or NONCOH (4)
-    t_start = total
-    t_end = total
+
+def infer_timing_from_payload(mk_payload, entry):
+    frames = mk_payload.split(";")
+    total  = len(frames)
+    t_start = total; t_end = total
     for i, fr in enumerate(frames):
         codes = [int(x) for x in fr.split("|")]
         if LINEAR in codes or NONCOH in codes:
-            if i < t_start:
-                t_start = i
-            t_end = i + 1  # exclusive
-
-    # Find onset: first frame where color payload has non-K for sub2/sub3
-    # (we don't have color_payload here, so use the entry)
+            if i < t_start: t_start = i
+            t_end = i + 1
     col_payload = entry.get("color_payload", "")
-    onset = t_start  # default
+    onset = t_start
     if col_payload:
-        col_frames = col_payload.split(";")
-        for i, fr in enumerate(col_frames):
+        for i, fr in enumerate(col_payload.split(";")):
             parts = fr.split("|")
             if len(parts) >= 4 and parts[2] != "K":
-                onset = i
-                break
-
+                onset = i; break
     return onset, t_start, t_end, total
 
 
 # ══════════════════════════════════════════════════════════════════════
-#  PLOTTING (Method C: pseudo-session visual verification)
+#  PLOTTING (Method C)
 # ══════════════════════════════════════════════════════════════════════
 
-def parse_payload_to_array(payload, kind="mk"):
-    """Convert payload string to numpy array (nFrames, 4)."""
-    frames = payload.split(";") if payload else []
+def parse_mk_payload(payload):
+    if not payload: return None
     out = []
-    for fr in frames:
-        subs = fr.split("|")
-        if kind == "mk":
-            out.append([int(s) if s else 0 for s in subs])
-        else:
-            out.append([s[0] if s else "K" for s in subs])
-    if not out:
-        return None
-    if kind == "mk":
-        return np.array(out, dtype=float)
+    for fr in payload.split(";"):
+        out.append([int(s) if s else 0 for s in fr.split("|")])
+    return np.array(out, dtype=float)
+
+def parse_col_payload(payload):
+    if not payload: return None
+    out = []
+    for fr in payload.split(";"):
+        out.append([s[0] if s else "K" for s in fr.split("|")])
     return np.array(out, dtype=object)
 
+def parse_dep_payload(payload):
+    if not payload: return None
+    out = []
+    for fr in payload.split(";"):
+        out.append([int(s) if s else 0 for s in fr.split("|")])
+    return np.array(out, dtype=float)
 
-def plot_motion(ax, mk_arr, onset, t_start, t_end, title="", color_arr=None):
+
+def plot_shape(axes_row, mk_arr, col_arr, dep_arr,
+               onset, t_start, t_end, title, has_depth):
+    """Plot one condition shape into a row of 1 or 2 axes."""
     from matplotlib.lines import Line2D
 
-    nF, nS = mk_arr.shape
-    sample_every = max(1, nF // 25)
-    sample_frames = list(range(0, nF, sample_every))
-    if sample_frames[-1] != nF - 1:
-        sample_frames.append(nF - 1)
-
-    cmap = {"R": "#CC3333", "G": "#228B22"}
+    cmap  = {"R": "#CC3333", "G": "#228B22"}
     specs = [
         {"marker": "o", "filled": True,  "s": 22, "lw": 1.0},
         {"marker": "s", "filled": False, "s": 48, "lw": 1.5},
@@ -362,100 +426,110 @@ def plot_motion(ax, mk_arr, onset, t_start, t_end, title="", color_arr=None):
         {"marker": "D", "filled": False, "s": 56, "lw": 1.5},
     ]
 
-    for s in range(nS):
-        sp = specs[s % len(specs)]
-        ax.plot(np.arange(nF), mk_arr[:, s], color="#D0D0D0", linewidth=0.5, zorder=1)
-
-        xs, ys, cs = [], [], []
-        for f in sample_frames:
-            if color_arr is not None and f < color_arr.shape[0]:
-                c = cmap.get(str(color_arr[f, s]))
-                if c is None:
-                    continue
-            else:
-                c = "#666666"
-            xs.append(f)
-            ys.append(mk_arr[f, s])
-            cs.append(c)
-        if not xs:
+    for ax_i, (arr, yticks, ylabels, ylabel) in enumerate([
+        (mk_arr,  [1,2,3,4], ["CW","Trans(coh)","Trans(noise)","CCW"], "motion"),
+        (dep_arr, [1,2],     ["Near","Far"],                           "depth"),
+    ]):
+        if ax_i == 1 and not has_depth:
             continue
-        if sp["filled"]:
-            ax.scatter(xs, ys, marker=sp["marker"], c=cs,
-                       edgecolors="none", s=sp["s"], zorder=3 + s)
+        ax = axes_row[ax_i]
+        if arr is None:
+            ax.set_visible(False); continue
+
+        nF, nS = arr.shape
+        sample = list(range(0, nF, max(1, nF//25)))
+        if sample[-1] != nF-1: sample.append(nF-1)
+
+        for s in range(nS):
+            sp = specs[s]
+            ax.plot(np.arange(nF), arr[:, s], color="#D8D8D8", lw=0.5, zorder=1)
+            xs, ys, cs = [], [], []
+            for f in sample:
+                if arr[f, s] == 0: continue
+                c = cmap.get(str(col_arr[f, s])) if col_arr is not None else "#666666"
+                if c is None: continue
+                xs.append(f); ys.append(arr[f, s]); cs.append(c)
+            if not xs: continue
+            if sp["filled"]:
+                ax.scatter(xs, ys, marker=sp["marker"], c=cs,
+                           edgecolors="none", s=sp["s"], zorder=3+s)
+            else:
+                ax.scatter(xs, ys, marker=sp["marker"], facecolors="none",
+                           edgecolors=cs, s=sp["s"], linewidths=sp["lw"], zorder=3+s)
+
+        ax.axvspan(t_start, t_end, alpha=0.08, color="blue")
+        ax.axvline(onset,   ls=":",  color="gray", lw=0.8)
+        ax.axvline(t_start, ls="--", color="blue", lw=0.8)
+        ax.axvline(t_end,   ls="--", color="blue", lw=0.8)
+        ax.set_yticks(yticks)
+        ax.set_yticklabels(ylabels, fontsize=7)
+        ax.set_ylabel(ylabel, fontsize=8)
+        ax.tick_params(axis="both", labelsize=7)
+        if ax_i == 0:
+            ax.set_ylim(0.5, 4.5)
+            ax.set_title(title, fontsize=8, loc="left")
+            ax.set_xticklabels([])
+            leg = [
+                Line2D([0],[0], marker="o", color="w", markerfacecolor="#666",
+                       markersize=5, ls="None", label="S0"),
+                Line2D([0],[0], marker="s", color="w", markeredgecolor="#666",
+                       markerfacecolor="none", markersize=6, markeredgewidth=1.5,
+                       ls="None", label="S1"),
+                Line2D([0],[0], marker="^", color="w", markerfacecolor="#666",
+                       markersize=5, ls="None", label="S2(delayed)"),
+                Line2D([0],[0], marker="D", color="w", markeredgecolor="#666",
+                       markerfacecolor="none", markersize=6, markeredgewidth=1.5,
+                       ls="None", label="S3(delayed)"),
+            ]
+            ax.legend(handles=leg, loc="upper right", fontsize=6, framealpha=0.7)
         else:
-            ax.scatter(xs, ys, marker=sp["marker"], facecolors="none",
-                       edgecolors=cs, s=sp["s"], linewidths=sp["lw"], zorder=3 + s)
-
-    ax.set_xlabel("frame", fontsize=8)
-    ax.set_ylabel("motion kind", fontsize=8)
-    ax.set_title(title, fontsize=9)
-    ax.set_yticks([1, 2, 3, 4])
-    ax.set_yticklabels(["CW rot", "CCW rot", "Trans (coh)", "Trans (noise)"], fontsize=7)
-    ax.set_ylim(0.5, 4.5)
-    ax.axvspan(t_start, t_end, alpha=0.08, color="blue")
-    ax.axvline(onset, ls=":", color="gray", lw=0.8)
-    ax.axvline(t_start, ls="--", color="blue", lw=0.8)
-    ax.axvline(t_end, ls="--", color="blue", lw=0.8)
-    ax.tick_params(axis='both', labelsize=7)
-
-    legend_handles = [
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="gray",
-               markersize=5, linestyle="None", label="S0 (FieldA)"),
-        Line2D([0], [0], marker="s", color="w", markeredgecolor="gray",
-               markerfacecolor="none", markersize=6, markeredgewidth=1.5,
-               linestyle="None", label="S1 (FieldA)"),
-        Line2D([0], [0], marker="^", color="w", markerfacecolor="gray",
-               markersize=5, linestyle="None", label="S2 (FieldB)"),
-        Line2D([0], [0], marker="D", color="w", markeredgecolor="gray",
-               markerfacecolor="none", markersize=6, markeredgewidth=1.5,
-               linestyle="None", label="S3 (FieldB)"),
-    ]
-    ax.legend(handles=legend_handles, loc="upper right", fontsize=6)
+            ax.set_ylim(0.5, 2.5)
+            ax.set_xlabel("frame", fontsize=8)
 
 
 def plot_all_shapes(unique_shapes, onset, t_start, t_end, total,
-                    sidecar_path, experiment):
+                    sidecar_path, experiment, has_depth):
     import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
 
     shapes = sorted(unique_shapes.keys())
-    n = len(shapes)
-    ncols = min(4, n)
-    nrows = math.ceil(n / ncols)
+    n      = len(shapes)
+    n_axes = 2 if has_depth else 1   # rows per condition: motion + depth
 
-    fig, axes = plt.subplots(nrows, ncols,
-                             figsize=(4.5 * ncols, 3.5 * nrows),
-                             squeeze=False)
+    fig = plt.figure(figsize=(16, (2.8 * n_axes + 0.3) * n))
+    outer = gridspec.GridSpec(n, 1, hspace=0.55, figure=fig)
 
-    fig.suptitle(f"Experiment: {experiment} — All {n} unique trajectory shapes\n"
-                 f"onset={onset}  tStart={t_start}  tEnd={t_end}  total={total}",
-                 fontsize=11, y=0.99)
+    fig.suptitle(
+        f"Experiment: {experiment} — All {n} unique trajectory shapes\n"
+        f"onset={onset}  tStart={t_start}  tEnd={t_end}  total={total}",
+        fontsize=11, y=1.002)
 
     for i, key in enumerate(shapes):
-        cond, rot_cfg, del_col, swap_type = key
-        mk_payload, col_payload, _ = unique_shapes[key]
+        cond, rot_cfg, del_col, swap_type, del_dep = key
+        mk_p, col_p, dep_p, _ = unique_shapes[key]
 
-        mk_arr  = parse_payload_to_array(mk_payload, "mk")
-        col_arr = parse_payload_to_array(col_payload, "color")
+        mk_arr  = parse_mk_payload(mk_p)
+        col_arr = parse_col_payload(col_p)
+        dep_arr = parse_dep_payload(dep_p) if has_depth else None
 
-        rot_label = f"Rot{rot_cfg}"
-        a_rot_label = "CW" if rot_cfg == 0 else "CCW"
-        b_rot_label = "CCW" if rot_cfg == 0 else "CW"
+        inner = gridspec.GridSpecFromSubplotSpec(
+            n_axes, 1, subplot_spec=outer[i],
+            height_ratios=([3, 1.5] if has_depth else [1]),
+            hspace=0.08)
+        ax_mk  = fig.add_subplot(inner[0])
+        ax_dep = fig.add_subplot(inner[1], sharex=ax_mk) if has_depth else None
 
-        title = (f"{cond}  {rot_label}  Del={del_col}  Swap={swap_type}\n"
-                 f"A({a_rot_label})  B({b_rot_label})")
+        a_label = "CW" if rot_cfg == 0 else "CCW"
+        b_label = "CCW" if rot_cfg == 0 else "CW"
+        title = (f"{cond}  Rot{rot_cfg}({a_label}/{b_label})  "
+                 f"Del={del_col}  Dep={del_dep}  Swap={swap_type}")
 
-        row, col = divmod(i, ncols)
-        ax = axes[row][col]
-        plot_motion(ax, mk_arr, onset, t_start, t_end, title=title,
-                    color_arr=col_arr)
+        axes_row = [ax_mk] + ([ax_dep] if has_depth else [])
+        plot_shape(axes_row, mk_arr, col_arr, dep_arr,
+                   onset, t_start, t_end, title, has_depth)
 
-    # Hide unused subplots
-    for i in range(n, nrows * ncols):
-        row, col = divmod(i, ncols)
-        axes[row][col].set_visible(False)
-
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    out_dir = os.path.dirname(sidecar_path)
+    plt.tight_layout(rect=[0, 0, 1, 0.998])
+    out_dir  = os.path.dirname(sidecar_path)
     out_name = os.path.basename(sidecar_path).replace(".sidecar.json", "")
     out_path = os.path.join(out_dir, f"{out_name}_verification_plots.png")
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -473,7 +547,7 @@ def main():
         sys.exit(1)
 
     sidecar_path = sys.argv[1]
-    do_plots = "--plots" in sys.argv
+    do_plots     = "--plots" in sys.argv
 
     if not os.path.isfile(sidecar_path):
         print(f"File not found: {sidecar_path}")

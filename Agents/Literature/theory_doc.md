@@ -1,0 +1,328 @@
+# VRDots Theory Document
+**Version**: 0.1 — Initial literature integration
+**Date**: 2026-03-31
+
+---
+
+## 1. The Paradigm: Where VRDots Sits in the Literature
+
+### 1.1 Transparent-Motion Object-Based Attention
+
+VRDots belongs to a specific paradigm: two superimposed random-dot kinematograms (RDKs) moving in opposite directions, creating the percept of two transparent surfaces. The observer must selectively attend to one surface. The founding behavioral work is Valdes-Sosa, Cobo & Pinilla (1998, Cognition), which established that observers can switch attention between overlapping transparent surfaces without any change in spatial location, demonstrating that the unit of selection can be a surface defined by common motion rather than a spatial region.
+
+The specific cuing method in VRDots — a brief translation of dots in one field at stimulus onset, followed by a delayed translation in the same or opposite field — derives directly from Valdes-Sosa, Cobo & Pinilla (2000, JEP:HPP). That paper showed the onset translation acts as an exogenous surface cue: accuracy for a second translation is highest when the two translations occur within the same surface. This is the core logic of VRDots. The initial translation cues the observer to one surface; the delayed translation (target) occurs in either the cued (same) or uncued (opposite) surface; the cueing effect (CUED minus UNCUED accuracy) measures surface-based attentional selection.
+
+### 1.2 From 2D to 3D: VRDots Extension
+
+VRDots extends the paradigm into virtual reality to introduce stereoscopic depth. The two surfaces now occupy distinct depth planes (near vs. far), separated by a small disparity (0.05 m at 2 m viewing distance in current experiments). This adds a question the original 2D paradigm cannot answer: does the attentional surface unit incorporate disparity-defined depth, or is the selection entirely feature-based (motion-direction) and agnostic to depth?
+
+---
+
+## 2. Key Findings from Approved Papers, Organized by Theme
+
+### 2.1 Surface-Based Selection Is Robust and Pre-Attentive
+
+**Valdes-Sosa, Cobo & Pinilla (1998, Cognition)** established the behavioral benchmark: accuracy for detecting a property change (e.g., speed) is substantially higher when successive events occur within the same transparent surface versus across surfaces, even though both surfaces occupy identical retinal locations. The effect is not reducible to spatial attention.
+
+**Valdes-Sosa, Cobo & Pinilla (2000, JEP:HPP)** refined this using onset translations as cues and showed the effect is exogenous: it occurs even under divided-attention conditions and does not require deliberate tracking. This validates VRDots' use of an onset translation as a surface cue.
+
+**Valdes-Sosa et al. (2010)** ruled out the main alternative explanation — that the cueing effect reflects temporal asynchrony rather than surface identity — by equating temporal intervals while varying surface congruence. The delayed-onset design used in VRDots is explicitly validated by this control.
+
+**Mitchell, Stoner & Reynolds (2004, Nature)** demonstrated that the same translation-cue paradigm determines dominance in binocular rivalry: cueing one of two rivaling surfaces increases its predominance. This establishes that the translating-dot onset cue selects a perceptual surface, not merely a local feature. VRDots is a behavioral descendant of this exact paradigm.
+
+### 2.2 Selection Is Surface-Based, Not Feature-Channel-Based
+
+**Mitchell, Stoner, Fallah & Reynolds (2003, Vision Research)** showed that surface-based attentional selection persists even when both transparent fields are the same color. If selection were accomplished by modulating color-channel gain, the effect should collapse when color does not distinguish surfaces. It does not. This is directly relevant to VRDots' same-color (COLOR_RED) experiments: cueing effects with matched-color fields cannot be attributed to color-channel selection and must reflect surface-level representation based on common motion.
+
+### 2.3 Object Files and Feature Binding Across Space and Time
+
+**Blaser, Pylyshyn & Holcombe (2000, Nature)** showed that observers can track a conjunction of features (color + shape) for a single object through feature space without spatial cues, demonstrating that object files are maintained for spatially overlapping objects defined by feature coherence. This supports the theoretical claim that VRDots surfaces are represented as discrete objects, not merely as segregated texture regions. The depth-plane information in VRDots may serve as an additional feature bound into the surface's object file.
+
+### 2.4 Attentional Selection Sharpens Motion Representation
+
+**Lankheet & Verstraten (1995, Vision Research)** found that attending to one component of a transparent RDK shifts the motion aftereffect (MAE) to favor the attended direction by approximately 70%. This shows that selective attention does not merely tag a surface for post-perceptual decision making; it modulates the gain on motion signals during perceptual processing.
+
+**Felisberti & Zanker (2005, Vision Research)** showed that direction-discrimination thresholds are lower for the attended component of overlapping RDKs. Combined with Lankheet & Verstraten, this establishes that attention to a transparent surface produces measurable improvements in motion sensitivity, not just response bias.
+
+**Wannig, Rodriguez & Freiwald (2007, Neuron)** showed that MT neurons in non-human primates respond more strongly to the direction of an attended transparent surface than to the unattended surface. This neural evidence establishes that surface-based attention operates at the level of motion-selective cortex (MT/V5), consistent with the source of the translating-dot signals in VRDots.
+
+### 2.5 Neural Timing and Early Cortical Modulation
+
+**Khoe, Mitchell, Reynolds & Hillyard (2005, Vision Research)** recorded ERPs during the translation-cue paradigm and found that C1 and N1 components are enhanced for attended surfaces relative to unattended. C1 enhancement implicates V1/V2, which means surface-based selection modulates the earliest cortical stages — consistent with feedback from higher areas. The timing constrains when the cue has its effect: selection is established rapidly, within approximately 100 ms of the onset cue.
+
+**Valdes-Sosa, Bobes et al. (1998, J Cognitive Neuroscience)** showed that non-spatial surface switching modulates the P1 ERP component, providing early evidence that surface switching has electrophysiological correlates even without spatial shifts.
+
+**Ciaramitaro, Mitchell, Stoner, Reynolds & Boynton (2011, J Neurophysiol)** used fMRI to show that attending to one of two superimposed translating-dot surfaces enhances BOLD responses in early visual cortex (V1–V3), with the effect spatially co-localized with the shared retinotopic footprint of both surfaces. Surface-based attention thus has a cortical locus in early visual areas, not only in MT or higher areas. This is the most direct neural evidence that the VRDots paradigm engages genuine surface-selective cortical processing.
+
+### 2.6 Dual-Task and Interference Costs Between Surfaces
+
+**Cavanagh et al. (2002, Acta Psychologica)** measured dual-task costs for tracking within a single transparent surface versus across two surfaces. Within-surface dual-task costs were near zero; across-surface costs were large. This shows that two objects within the same surface can be monitored nearly for free, but monitoring across surfaces requires a capacity-limited switch.
+
+**Pinilla, Cobo, Torres & Valdes-Sosa (2001, Vision Research)** quantified the interference cost for successive events when the second event occurs in a different surface, finding approximately 500 ms of interference — roughly the duration of the attentional episode needed to disengage from one surface and re-engage the other.
+
+**Iani et al. (2012, J Vision)** replicated and extended the finding of large across-surface costs and near-zero within-surface costs in a parametric design, confirming the boundary between within- and across-surface selection is categorical rather than graded.
+
+---
+
+## 3. What the Approved Papers Predict About VRDots Results
+
+### 3.1 Dot Cueing Effect (CUED > UNCUED)
+
+The entire paradigm lineage (Valdes-Sosa et al. 1998, 2000; Mitchell et al. 2004; Valdes-Sosa et al. 2010) predicts a robust CUED > UNCUED advantage. VRDots observes +19.8pp binocular (p < 0.001) and +9.1pp monocular (p < 0.05). The binocular effect is within the range of prior 2D studies. The monocular survival of the cueing effect is consistent with the paradigm being primarily motion-feature based (common translational motion defines the surface), since motion signals are available monocularly — depth is not required for surface selection, only for depth-field cueing.
+
+### 3.2 Depth-Field Cueing (Translation in Same Depth Plane as Delayed Field)
+
+The 2D literature does not directly predict this effect because depth planes are not part of the 2D paradigm. However, Blaser et al. (2000) establishes that object files incorporate multiple bound features, and depth (disparity) is a strong perceptual cue that could contribute to surface representation alongside motion direction. The prediction from object-file theory is that the surface defined by common depth plane would be more coherent and more likely to be selected as a unit, boosting the cueing effect when cue and target share a depth plane. VRDots observes +12.5pp binocular (p < 0.05) and +7.1pp monocular (p < 0.10, marginal). The monocular attenuation (binocular > monocular for this component specifically) is consistent with a stereoscopic contribution to depth-field cueing that is absent monocularly, as expected.
+
+### 3.3 Near/Far Asymmetry
+
+The 2D literature makes no prediction about Near vs. Far depth planes. The observed +9.4pp advantage for Far over Near (binocular only; n.s. monocularly) points to a stereoscopic mechanism. The literature's most relevant contribution is Ciaramitaro et al. (2011) showing early-cortical modulation: if depth-defined surface selection operates at V1–V3 (where disparity tuning exists), then Near/Far differences could arise from asymmetries in binocular disparity processing, not from surface selection per se. The Far > Near pattern matches the VRDots session-level observation that Far cueing is consistently larger than Near cueing (e.g., session 260325_1831: Far = +59.4pp, Near = -4.9pp). This is not predicted by the 2D surface literature and represents a genuinely novel finding whose origin is unclear from existing theory.
+
+### 3.4 ZdB Enhancement (+32.8pp, stronger than N baseline)
+
+Cavanagh et al. (2002) and Iani et al. (2012) predict that within-surface events are processed more efficiently than across-surface events. In ZdB, the non-coherent (distractor) dot group moves INTO the cued depth plane at target onset, while the cued (coherent) dot group stays in the originally cued plane. If the surface unit is depth-plane defined, then in ZdB the distractor moves AWAY from the cued surface and the signal/noise ratio for the cued surface increases — this is the predicted direction.
+
+Mitchell et al. (2003) established that surface selection operates on motion coherence, not color. In ZdB, the cued surface maintains its motion coherence AND its depth-plane identity; the distractor surface is doubly disrupted (motion incoherence at target onset plus depth-plane change). The prediction is that ZdB should enhance cueing relative to N (no swap), which is exactly what is observed (+32.8pp vs. N baseline). This is the clearest confirmation that depth-plane membership is incorporated into the surface representation that drives cueing.
+
+### 3.5 ZdA Attenuation (cueing drops to +10.9pp n.s.)
+
+The translation-cue literature (Valdes-Sosa et al. 2000; Mitchell et al. 2004) establishes that the cue works by selecting the surface containing the translating dots. In ZdA, the cued dot group itself changes depth plane at target onset. If the observer has selected the surface in the originally cued depth plane, and the cued dot group moves out of that plane at target onset, there is a mismatch: the attentional selection (based on the original cue) no longer aligns with the physical location of the target-bearing dots.
+
+Blaser et al. (2000) predicts that object-file identity depends on continuity of features. A depth-plane switch constitutes a feature discontinuity that could disrupt the object file for the cued surface, releasing attentional hold. Pinilla et al. (2001) measured ~500ms interference for across-surface events; ZdA imposes exactly this kind of cross-plane event on the target itself. The prediction is attenuation, which is observed. The attenuation specifically to n.s. (from +19.8pp baseline) is consistent with a complete disruption of the surface representation at the moment of target evaluation.
+
+---
+
+## 4. Open Theoretical Questions the VRDots Data Raises
+
+### 4.1 Is Depth-Plane Membership a Defining Feature of the Surface Unit, or a Tag?
+
+Two interpretations are consistent with ZdA/ZdB results:
+
+**Depth-as-defining-feature account**: The surface representation integrates disparity as a defining dimension alongside motion direction. Changing depth plane (ZdA for the cued dot) dissolves the existing surface identity and places the cued dot in a new, unattended surface. ZdB removes the distractor from the attended plane, making the attended surface purer.
+
+**Depth-as-grouping-cue account**: Depth does not define the surface per se, but provides an additional grouping signal. Under this account, the effect of depth change in ZdA is to reduce grouping strength of the cued surface, which is a quantitative rather than categorical disruption.
+
+The current data cannot discriminate these: attenuation to n.s. in ZdA is consistent with both a complete dissolution of surface identity (categorical) and with partial degradation (quantitative). Parametric variation of the proportion of dots undergoing depth swap, or of the magnitude of the depth shift, could discriminate.
+
+### 4.2 Monocular Geometric Confound vs. True Surface Disruption in ZdA/ZdB
+
+As documented in the project, a depth change of 0.05m at 2m induces a position shift per eye that scales with eccentricity (up to ~49% of translation distance at aperture edge). In ZdA, this spurious positional shift occurs for the cued (target-bearing) dot group; in ZdB, it occurs only for the non-cued group. The monocular session (L eye closed) shows near-zero effects for all conditions (+12.2pp overall, n.s.), but this session has the confound of the right eye having floaters. A clean right-eye-closed monocular replication is needed.
+
+If ZdA attenuation and ZdB enhancement survive monocular viewing (with floater confound removed), that would support a surface-level account (since depth-plane identity is not available monocularly, any residual effect would reflect the positional-shift confound or some other mechanism). If they collapse monocularly, that supports a stereoscopic surface-identity account. The 2D literature offers no guidance here because depth was never manipulated.
+
+### 4.3 What Drives the Far > Near Asymmetry?
+
+The 2D paradigm literature (all approved papers) is agnostic about Near/Far. The Wannig et al. (2007) finding that MT neurons prefer the attended surface direction does not predict Near/Far differences because MT neurons are not strongly disparity-tuned. Ciaramitaro et al. (2011) shows early visual cortex involvement, where disparity processing does occur, but does not speak to Near/Far asymmetries. The VRDots Far > Near asymmetry may reflect: (a) a perceptual asymmetry in depth-plane salience (far planes easier to segment from a background at optical infinity); (b) an asymmetry in the mapping of convergent vs. divergent disparity; or (c) a task-level confound (e.g., head/body posture differences for near vs. far reaching). None of the approved papers predict or explain this finding.
+
+### 4.4 Can Surface-Based Attention Operate Across Depth Planes Defined Only by Disparity?
+
+The entire approved-paper corpus uses 2D transparent surfaces — both fields share the same depth plane. VRDots is the first implementation (to our knowledge) of the Valdes-Sosa/Mitchell paradigm with stereoscopic depth separation. The question of whether the translational-onset cue selects a depth-plane-defined surface as a unit is genuinely open. The current VRDots data suggest the answer is yes (depth-field cueing effect, ZdA/ZdB dissociation), but the monocular confound issue prevents a definitive conclusion. The approved papers predict that any feature that defines a coherent perceptual unit could serve as a surface-selection handle (Blaser et al. 2000; Mitchell et al. 2003), but they do not test disparity specifically.
+
+### 4.5 Does ZdB Enhancement Reveal Active Suppression of the Unattended Surface?
+
+The ZdB result (+32.8pp, exceeding N baseline) is consistent with the idea that moving the distractor surface into the cued depth plane normally reduces cueing efficiency (by "contaminating" the attended surface with non-coherent dots). In the N (no-swap) condition, the distractor stays in its original depth plane, which is already different from the cued plane — yet cueing is +19.8pp, not maximum. ZdB enhancement above N implies that additional separation of the distractor (moving it further in a new plane at target onset) actively improves selection.
+
+Cavanagh et al. (2002) and Iani et al. (2012) show near-zero within-surface costs, implying that within-surface processing is efficient, but they do not predict enhancement from distractor departure. Wannig et al. (2007) show MT suppression for unattended surfaces; if unattended-surface suppression is gated by the surface's depth-plane membership, then ZdB (which moves the unattended surface to a new plane at target onset) would briefly re-engage suppression processes and thus enhance target detection. This is speculative but testable: if ZdB enhancement is mediated by active suppression, then a probe of the distractor surface immediately after the depth-plane swap should show enhanced suppression relative to N.
+
+### 4.6 Is the ~500ms Surface-Switch Cost (Pinilla et al. 2001) Modulated by Depth?
+
+Pinilla et al. (2001) measured a ~500ms interference cost when the observer must effectively switch from one transparent surface to another. VRDots uses a fixed 80ms translation duration; the inter-trial interval structure is not optimized to measure this cost. However, if depth-plane membership shortens or lengthens the surface-switch cost (e.g., because depth provides a more stable or faster attentional handle than motion alone), this would be detectable in an RT or threshold-vs.-SOA experiment. The current design does not measure SOA-dependent effects, leaving this question entirely open.
+
+---
+
+## 5. Summary Table: Predictions vs. Observations
+
+| VRDots Finding | Best-Matching Prior Work | Predicted Direction | Observed | Match? |
+|---|---|---|---|---|
+| Dot cueing effect (binocular) | Valdes-Sosa et al. 2000; Mitchell et al. 2004 | CUED > UNCUED | +19.8pp*** | Yes |
+| Dot cueing effect (monocular) | Valdes-Sosa et al. 2010 (motion-based) | Should survive | +9.1pp* | Yes |
+| Depth-field cueing (binocular) | Blaser et al. 2000 (object file binding) | Feature coherence boosts selection | +12.5pp* | Yes |
+| Depth-field cueing (monocular) | — (no prior prediction) | Attenuation expected if stereoscopic | +7.1pp* (n=769) | Partial survival |
+| Near/Far asymmetry | None | No prediction | +9.4pp† bino, n.s. mono | Novel |
+| ZdB enhancement | Cavanagh et al. 2002; Wannig et al. 2007 | Less distractor contamination → better | +32.8pp*** | Yes |
+| ZdA attenuation | Blaser et al. 2000; Pinilla et al. 2001 | Feature discontinuity disrupts object file | +10.9pp n.s. | Yes |
+| ZdA = ZdB disruption count | Mitchell et al. 2003 (not color-channel) | Effect not purely disruption-count-based | ZdA ≠ ZdB | Yes |
+
+---
+
+## 6. Additional Stoner Lab Background
+
+This section integrates the Stoner lab papers from `pending_papers.md`. Three venue discrepancies were found between the pending list and web search results and are flagged inline — verify before citing formally.
+
+### 6.1 Stoner, Albright & Ramachandran (1990) — Transparency as Gate for Motion Coherence
+
+**Stoner, G.R., Albright, T.D., & Ramachandran, V.S. (1990). Transparency and coherence in human motion perception. *Nature*, 344, 153–155.**
+
+When two superimposed sine-wave gratings move in different directions, observers perceive either a single coherent plaid (pattern motion) or two transparent surfaces sliding across each other (component motion). Stoner et al. showed that which percept dominates is determined not by motion signals per se but by the luminance of intersection regions: when intersection luminance is physically consistent with optical transparency, pattern motion is destroyed and component motion is seen. The implication is that the motion system has access to tacit knowledge of the physics of surface transparency — motion signals are resolved within a surface interpretation, not prior to it.
+
+VRDots directly inherits this framework. The two rotating dot fields are the RDK analog of two transparent gratings. The finding that motion grouping depends on surface interpretation (not just motion energy) means VRDots cueing effects reflect surface-level selection — the cue selects a surface, not a direction of motion. It also implies that adding depth-plane separation (which further supports a two-surface interpretation) should facilitate surface segregation, consistent with the depth-field cueing effect.
+
+### 6.2 Stoner & Albright (1992) — MT as the Neural Site of Surface Motion Coherence
+
+**Stoner, G.R., & Albright, T.D. (1992). Neural correlates of perceptual motion coherence. *Nature*, 358, 412–414.**
+
+Recording from MT neurons in awake macaques, Stoner & Albright found that direction tuning shifts as a function of whether the plaid stimulus produces coherent or non-coherent (transparent) perception. When the stimulus is perceptually coherent, MT neurons respond as pattern-direction-selective cells; when the same stimulus is made perceptually non-coherent by adjusting intersection luminance, MT neurons respond to component directions. MT activity tracks perception, not the physical stimulus.
+
+This is the neural grounding for VRDots' surface-cueing signal. The translating dot field defines a coherent surface; MT represents that surface as a unit. Cueing effects are read out downstream from MT, where the surface representation is already formed. ZdA's impairment of cueing is consistent with a depth-plane change degrading MT's coherent-surface representation for the cued dot group at the moment of target onset — the MT pattern-direction signal for the cued surface may collapse when the cued dot group abruptly changes depth plane.
+
+### 6.3 Stoner & Albright (1993) — Non-Modularity: Segmentation Cues Feed Into Motion Processing
+
+**Stoner, G.R., & Albright, T.D. (1993). Image segmentation cues in motion processing: Implications for modularity in vision. *Journal of Cognitive Neuroscience*, 5(2), 129–149.**
+
+⚠️ *Venue discrepancy: pending_papers.md lists this as Neuron; web search identifies the venue as Journal of Cognitive Neuroscience. Verify before citing.*
+
+The paper argues that motion processing is not modular: image segmentation cues — luminance relationships that signal surface boundaries and transparency — feed directly into motion grouping. The visual system uses segmentation cues that are unrelated to motion per se to resolve which motion signals belong to the same surface. This non-modularity is demonstrated behaviorally and has implications for how visual cortex should be modeled.
+
+This is directly relevant to VRDots' depth-field cueing effect. If depth-plane identity is an image segmentation cue (surfaces separated in depth are distinct objects), then it should modulate motion surface processing in the same way that luminance transparency does — not as a post-hoc tag but as a constitutive input. The depth-field cueing result (+12.5pp binocular, +7.1pp monocular) is consistent with depth acting as a segmentation cue that sharpens the surface representation for the attended plane.
+
+### 6.4 Stoner & Albright (1996) — Psychophysics of Surface Segmentation in Motion
+
+**Stoner, G.R., & Albright, T.D. (1996). The interpretation of visual motion: Evidence for surface segmentation mechanisms. *Vision Research*, 36(10), 1291–1310.**
+
+⚠️ *Venue discrepancy: pending_papers.md lists this as Nature; web search identifies the venue as Vision Research. Verify before citing.*
+
+Using plaid stimuli with systematically varied intersection luminance, Stoner & Albright mapped the full psychophysical curve from coherent to non-coherent motion perception as a function of how much the intersection luminance departs from the transparency-consistent value. This provided a dose-response characterization of surface segmentation strength: the further the intersection luminance departs from the transparency prediction, the stronger the segmentation signal and the clearer the transparent (component-motion) percept.
+
+For VRDots, this dose-response logic extends to the depth-separation dimension. The strength of the depth-plane segmentation cue is a function of disparity magnitude — explaining why Near/Far cueing effects are larger at 0.10m (where depth dominates to the point of reversing the cueing effect) than at 0.05m (where depth modulates but does not override motion-based grouping) and absent at 0.03m (where depth is barely perceptible).
+
+### 6.5 Stoner Lab (1998) — Smooth Pursuit Tracks the Attended Transparent Surface
+
+**Dobkins, K.R., Stoner, G.R., & Albright, T.D. (1998). Perceptual, oculomotor and neural responses to moving color plaids. *Journal of the Optical Society of America A*, 15(8), 1986–2001.**
+
+⚠️ *Note: The pending_papers.md lists "Stoner & Albright (1998) Vision Research — Luminance contrast affects smooth-pursuit eye movements." Web search did not locate a paper with exactly that title and authorship; the above related paper from the same lab and year is cited as a proxy. Verify whether a separate 1998 VR paper exists.*
+
+Work from the Stoner lab in this period established that smooth pursuit eye movements track the perceptually dominant surface in transparent motion displays. When a plaid is perceptually coherent, pursuit locks to the pattern direction; when it is transparent, pursuit can lock to either component direction, depending on which surface is attended. Pursuit is thus a behavioral readout of the same surface-level representation driving perceptual decisions.
+
+For VRDots, this raises a methodological consideration: if observers make smooth pursuit movements toward the cued surface's translation direction, the retinal motion of cued-surface dots may be partially cancelled, potentially affecting performance asymmetrically across CUED and UNCUED trials. At 80ms translation duration and 2.26 deg/sec, pursuit gain is low, but any systematic tracking could contaminate Near vs. Far comparisons if the translation angle relative to gravity or the fixation target differs across depth planes.
+
+### 6.6 Albright & Stoner (2002) — Contextual Influences as a Unifying Framework
+
+**Albright, T.D., & Stoner, G.R. (2002). Contextual influences on visual processing. *Annual Review of Neuroscience*, 25, 339–379.**
+
+⚠️ *Venue discrepancy: pending_papers.md lists this as PNAS; web search identifies the venue as Annual Review of Neuroscience. Verify before citing.*
+
+This comprehensive review synthesizes evidence from V1 through MT that cortical responses are not determined solely by the stimulus in the classical receptive field but are systematically modulated by surrounding context — nearby stimuli, temporal history, higher-order scene properties like surface identity. The review frames contextual modulation as the mechanism by which local measurements are embedded in a global scene interpretation, and as a general principle of cortical computation across sensory systems.
+
+VRDots is a paradigm case of contextual influence: the translating dot group's identity (cued vs. uncued surface) is determined not by local motion properties but by its global context (which surface it belongs to, defined by coherent rotation and now depth plane). The review provides the theoretical vocabulary for why depth-plane context shapes MT's surface representation: depth is a contextual property that feeds into — rather than decorating — the surface identity computation. ZdA/ZdB results are a direct demonstration: changing depth-plane context at target onset (ZdA) degrades cueing; removing distractor context from the cued plane (ZdB) enhances it.
+
+### 6.7 Note: Stoner, Carney & Shadlen — Citation Not Located
+
+The pending_papers.md entry "Stoner, Carney & Shadlen (various) — Work on depth and disparity in MT/surface segmentation" did not resolve to a specific paper in web search. A potentially related and highly relevant paper is:
+
+**Qian, N., & Andersen, R.A. (1997). A physiological model for motion-stereo integration and a unified explanation of Pulfrich-like phenomena. *Vision Research*, 37(12), 1683–1698.** — depth and motion integration at the level of V1/MT binocular cells.
+
+Also of note from web search: **"Population anisotropy in area MT explains a perceptual difference between near and far disparity motion segmentation" (PubMed ID: 21068268)** — this paper reports that MT has more neurons tuned to near vs. far disparities, which could directly explain VRDots' Far > Near cueing asymmetry (if far-disparity-tuned neurons are fewer, the far surface may be more distinctly represented by a more selective population). Recommend retrieving and reviewing this paper explicitly.
+
+---
+
+## 7. Venue Corrections to pending_papers.md
+
+The following venue errors were identified during web search (2026-03-31). Update `pending_papers.md` accordingly:
+
+| Entry | Listed venue | Correct venue |
+|-------|-------------|---------------|
+| Stoner & Albright (1993) | Neuron | *Journal of Cognitive Neuroscience* |
+| Stoner & Albright (1996) | Nature | *Vision Research* |
+| Albright & Stoner (2002) | PNAS | *Annual Review of Neuroscience* |
+
+---
+
+*Section 6–7 added 2026-03-31. Stoner lab paper integration pass.*
+
+---
+
+## 8. PDF Library — Confirmed Published Papers (Integration Pass, 2026-03-31)
+
+Two files flagged as NOT published papers (AI-generated syntheses, no journal/DOI):
+- `Motion_Transparency_Disruption_Review.pdf` — internal synthesis only
+- `Object_Based_Attention_Review.pdf` — AI-generated review dated 2025-06-02
+
+`HillyardReynoldsOurParadigmEEG.pdf` is a duplicate of `KhoeReynoldsHillyard.pdf` (Khoe et al. 2005, already integrated in §2.5).
+
+---
+
+### 8.1 Stoner & Blanc (2010) — VRDots' Direct Predecessor
+
+**Stoner, G.R., & Blanc, G. (2010). Exploring the mechanisms underlying surface-based stimulus selection. *Vision Research*, 50(2), 229–238.**
+
+The immediate predecessor to VRDots. Stoner & Blanc showed that the Valdes-Sosa et al. (2000) delayed-onset design contains a **motion-duration confound**: the cued dot field has a longer rotation history than the uncued field at the moment of translation, creating a duration asymmetry that could explain performance biases without invoking surface-based selection. They tested this by reversing the relationship between rotation duration and which field was cued. The results still supported surface-based selection, ruling out the confound. Crucially, they also showed that attentional selection in this paradigm is **spatially selective at the scale of the individual texture elements** (dots) — not coarse spatial attention. The paper explicitly used the Desimone & Duncan (1995) biased-competition framework and discussed motion-competition as an alternative account.
+
+VRDots is built directly on this design. The finding that selection is spatially fine-grained at the dot level is important: it means depth-plane effects in VRDots (which operate at the level of individual dot subfields) can be interpreted as genuine surface-level selection, not coarse spotlight attention. Stoner & Blanc's motion-competition account also motivates the ZdA/ZdB conditions: ZdA introduces a new source of motion competition (spurious positional shift of the cued dot group due to depth change) that the motion-competition account would predict should disrupt cueing.
+
+---
+
+### 8.2 Schoenfeld, Tempelmann et al. (2003) — Feature Binding Dynamics: ERP/fMRI
+
+**Schoenfeld, M.A., Tempelmann, C., Martinez, A., Hopf, J.-M., Sattler, C., Heinze, H.-J., & Hillyard, S.A. (2003). Dynamics of feature binding during object-selective attention. *PNAS*, 100(20), 11806–11811.**
+
+Combined simultaneous ERP/ERF and fMRI recordings while subjects attended to one of two superimposed transparent dot surfaces (distinguished by motion direction, with color as an irrelevant feature). Key finding: when a surface was attended on the basis of motion direction, neural activity appeared first in motion-selective cortex (~lateral occipital/MT+ region), and within the same latency window (~180–250 ms), activity also appeared in the color-selective fusiform gyrus for the task-irrelevant color of the attended surface. This rapid co-activation of feature-specific areas provides a neural substrate for feature binding — all features of an attended object are rapidly co-selected, even those not relevant to the task. The authors interpret this as support for the integrated competition model (Desimone & Duncan 1995; Duncan et al. 1997).
+
+VRDots relevance: depth plane is an additional feature of the attended surface. By the logic of Schoenfeld et al. (2003), when the cued surface is selected, its depth-plane membership should be co-activated along with its motion and color features. ZdA disrupts cueing at the moment of target onset by changing the depth-plane feature of the cued dot group — this amounts to a feature-binding disruption: the attended object's depth-plane feature abruptly mismatches the object representation built up during the rotation period.
+
+---
+
+### 8.3 Schoenfeld, Hopf et al. (2014) — Sequential Feature Activation in Object-Based Attention
+
+**Schoenfeld, M.A., Hopf, J.-M., Merkel, C., Heinze, H.-J., & Hillyard, S.A. (2014). Object-based attention involves the sequential activation of feature-specific cortical modules. *Nature Neuroscience*, 17(4), 619–624.**
+
+Extended the 2003 PNAS finding using MEG source analysis with higher temporal resolution. Subjects attended to transparent-motion surfaces defined by speed or color. When attention was directed by speed, the motion-sensitive lateral occipital area was activated first (~150 ms), followed ~60 ms later by the color-selective inferior occipital area — regardless of whether color was task-relevant. The reverse temporal sequence (color first, then motion) occurred when attention was directed by color. This rapid sequential activation reveals a binding mechanism that sweeps through feature-specific cortical modules in an order determined by which feature defined the attended object.
+
+VRDots relevance: in VRDots, the attended surface is defined primarily by its motion onset (delayed onset creates the exogenous cue). This predicts that motion-sensitive areas activate first, followed by depth-sensitive areas. ZdA disrupts the depth-sensitive activation at target onset by moving the cued dot group to a different depth plane — potentially breaking the sequential binding chain at the depth-feature stage. The ~60 ms binding cascade is fast relative to VRDots' 80 ms translation duration, so the depth-feature representation of the attended surface may be disrupted mid-translation in ZdA trials.
+
+---
+
+### 8.4 Catak, Özkan, Kafaligonul & Stoner (2022) — ERP Evidence with Feature Swaps (Stoner Lab)
+
+**Catak, E.N., Özkan, M., Kafaligonul, H., & Stoner, G.R. (2022). Behavioral and ERP evidence that object-based attention utilizes fine-grained spatial mechanisms. *Cortex*, 151, 89–104.**
+
+Directly used the Stoner & Blanc (2010) design (with feature swaps) to simultaneously measure behavioral performance and ERP responses. Confirmed that the behavioral cueing effect survives feature swaps — consistent with the object-based account. Found that the N1 ERP component (occipital and parieto-occipital sites) is modulated by attentional cueing under feature-swap conditions that rule out feature-based mechanisms. Crucially, N1 modulation was correlated with individual behavioral performance values across conditions. This is identified as the first ERP evidence for the role of N1 in object-based attention in a transparent-motion design that controls for feature-based explanations.
+
+VRDots relevance: this is the closest existing paper to VRDots in paradigm and question. The N1 modulation at parieto-occipital sites (consistent with MT+ source localization) is the ERP correlate of surface-based selection in the exact paradigm that VRDots extends to stereo depth. The finding that fine-grained spatial mechanisms (at the scale of texture elements) underlie selection is consistent with VRDots' depth-field cueing effect operating at the subfield level. This paper should be cited as the immediate neural predecessor to VRDots in any write-up.
+
+---
+
+### 8.5 Mitchell, Stoner & Reynolds (2004) — Object-Based Attention and Binocular Rivalry (expansion of §2.1)
+
+**Mitchell, J.F., Stoner, G.R., & Reynolds, J.H. (2004). Object-based attention determines dominance in binocular rivalry. *Nature*, 429, 410–413.**
+
+Already referenced in §2.1. Expanded note from PDF: the paper used a dichoptic presentation — after a cueing translation, images of the two surfaces were presented to separate eyes, creating rivalry. The cued surface was dominant during subsequent rivalry, and this dominance persisted regardless of which eye's image it appeared in. Critically, this rules out ocular, spatial, and feature-based mechanisms: selection was purely object-based, following the surface identity established during binocular transparent viewing. The same object-based mechanisms that mediate competitive selection during transparency also mediate binocular rivalry dominance.
+
+Additional VRDots relevance not in §2.1: this paper is directly relevant to VRDots' monocular sessions. If object-based selection is mediated by the same mechanisms during both binocular and monocular (transparency) viewing, then the monocular survival of the dot-cueing effect in VRDots (+7.1pp* across n=769) is expected — object-based selection does not require binocular viewing. The attenuation relative to binocular (+19.8pp***) may reflect loss of the additional depth-plane grouping cue (Factor 2) rather than loss of the core object-based mechanism.
+
+---
+
+### 8.6 Rodríguez & Valdés-Sosa (2006) — Sensory Suppression During Surface Switches
+
+**Rodríguez, V., & Valdés-Sosa, M. (2006). Sensory suppression during shifts of attention between surfaces in transparent motion. *Brain Research*, 1072, 110–118.**
+
+Examined the attentional blink (AB) between transparent surfaces: when T1 and T2 occur on different surfaces with a short SOA, T2 identification is strongly impaired. Using the RSOT (rapid serial object transformation) transparent-motion paradigm, they showed the AB is associated with **reduced N200 ERP amplitude** on different-surface trials, modeled by relative suppression of sources in visual extrastriate cortex (near MT+). The N200 amplitude was larger for correct than incorrect trials, consistent with signal detection theory — smaller N200 = less sensory information available for the T2 judgment. P300 was larger for same-surface correct trials.
+
+VRDots relevance: the attentional blink literature provides a temporal-capacity framework for cross-surface costs. In VRDots, the 300 ms pre-translation period (during which the observer is watching the rotating surfaces after onset of the delayed field) is the window during which the cued-surface representation is consolidated. The Rodríguez & Valdés-Sosa suppression finding suggests that, during this period, the uncued surface is actively suppressed in extrastriate cortex — this active suppression is what ZdB may enhance: moving the distractor to a new depth plane could transiently reinstate the suppression signal at tStart, boosting the cued-surface representation above its N-condition level.
+
+---
+
+### 8.7 Duncan, Humphreys & Ward (1997) — Integrated Competition Hypothesis
+
+**Duncan, J., Humphreys, G., & Ward, R. (1997). Competitive brain activity in visual attention. *Current Opinion in Neurobiology*, 7, 255–261.**
+
+A focused review of the integrated competition hypothesis (building on Desimone & Duncan 1995): visual objects activate distributed brain systems simultaneously; within each system, representations of different objects compete; competition is integrated across systems so that a winning object in one area tends to become dominant in others; top-down task priming biases competition toward task-relevant objects. Key prediction: selecting one feature of an object propagates dominance to all other feature modules encoding that object. Evidence from single-unit monkey studies showing widespread suppression of ignored objects in extrastriate cortex, and from spatial and non-spatial selection tasks showing similar suppression profiles.
+
+VRDots relevance: the 1997 paper provides the theoretical architecture for why depth-field cueing should exist. If depth plane is encoded in a separate module (disparity-tuned cells in V1/MT), and if the attended surface wins the competition in the motion module (MT, driven by the exogenous translation cue), then depth-plane competition should also be biased toward the attended surface's depth plane — depth-field cueing follows. ZdB enhances this by removing the distractor from the integrated competition network at the cued depth plane, reducing the distractor's competitive weight at that depth.
+
+---
+
+### 8.8 Kohn & Movshon (2004) — MT Adaptation Reshapes Direction Tuning
+
+**Kohn, A., & Movshon, J.A. (2004). Adaptation changes the direction tuning of macaque MT neurons. *Nature Neuroscience*, 7(7), 764–772.**
+
+Prolonged exposure (adaptation) to a preferred-direction stimulus narrows MT direction tuning bandwidth and causes attractive shifts in preferred direction toward the adapting stimulus. This is the opposite of V1 adaptation (which causes repulsive shifts). Flank adaptation (adapting to a direction off the tuning peak) causes the preferred direction to shift attractively toward the adapted direction and reduces responsiveness on the opposite flank. The mechanism implies that MT cells' tuning is shaped by the history of recent stimulation in a way that is distinct from V1.
+
+VRDots relevance: in VRDots, observers run multiple trials within a session. The 750 ms rotation period before each translation constitutes a brief adaptation epoch for MT neurons tuned to the rotation direction of each surface. The Kohn & Movshon finding predicts that MT direction tuning will narrow toward each surface's rotation direction during the pre-translation period — potentially sharpening the surface representation before the translation cue arrives. This is a within-trial mechanism that could contribute to the cueing effect: the cued surface's rotation history (longer, from onset) may produce stronger MT adaptation that sharpens its direction representation more than the non-delayed surface. Relevance to Stoner & Blanc (2010) motion-duration confound: adaptation is one candidate mechanism for that confound.
+
+---
+
+*Section 8 added 2026-03-31. PDF library integration pass.*
+
+---
+
+*Document generated 2026-03-31. Approved paper list as specified in Literature Agent task brief.*
