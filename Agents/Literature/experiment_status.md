@@ -111,6 +111,36 @@ Note: session-to-session variability is large (ZdB ranged from +3pp to +56pp acr
 - **R-eye sessions weaker overall** (35.4%) vs L-eye (44.3%) — consistent with floaters in R eye; R-eye mono data noisier
 - **Session 2 (260331_0621) was anomalous**: near-zero cueing across all conditions; possibly fatigue, vergence instability, or random variation at n=32/cell
 
+### 3.4 Response error analysis
+
+Error distribution (% of trials):
+
+| Error | Binocular | Mono R | Mono L |
+|-------|-----------|--------|--------|
+| 0° (correct) | 44.9% | 35.4% | 44.3% |
+| ±45° (adjacent) | 23.2% | 28.4% | 22.4% |
+| ±90° | 10.0% | 11.3% | 12.2% |
+| ±135° | 11.3% | 15.9% | 13.5% |
+| 180° (opposite) | 10.5% | 8.8% | 7.6% |
+
+- **±45° errors elevated in R-eye mono**: boundary errors increase from 23% to 28% — consistent with a weaker or noisier motion signal landing near category boundaries rather than cleanly in one bin
+- **180° errors not elevated monocularly**: axial ambiguity (mis-assigning rotation direction) does not appear to be the primary source of monocular errors
+- **Cardinal vs diagonal**: R-eye accuracy is *lower* for cardinal headings (30.8%) than diagonal (39.9%) — the reverse of binocular and L-eye; suggests possible display distortion rotating the effective response wheel under monocular R-eye viewing
+
+### 3.5 Response biases
+
+Substantial direction-specific response biases observed (deviation from flat 12.5%):
+
+| Condition | Over-represented | Under-represented |
+|-----------|-----------------|-------------------|
+| Binocular | 270° (+6.1pp), 225° (+3.5pp) | 315° (−4.4pp), 135° (−2.7pp) |
+| Mono R-eye | 45° (+6.7pp), 90° (+3.6pp) | 180° (−4.2pp), 270° (−3.0pp) |
+| Mono L-eye | 90° (+5.2pp), 0° (+3.9pp) | 315° (−4.4pp), 135° (−3.4pp) |
+
+**Key observation**: The bias pattern differs substantially across viewing conditions — and crucially, the binocular default (lower-left: 270°/225°) is *avoided* under R-eye monocular viewing, replaced by an upper-right bias (45°/90°). This shift between conditions is consistent with display distortion rotating the apparent response wheel geometry under monocular viewing rather than a stable perceptual bias.
+
+**Interpretive caution**: The appropriate uncertainty here is high. Bias patterns could reflect display geometry, motor habits, idiosyncratic perceptual priors, or some combination. With n=1 observer and varying session conditions, separating these is not possible from the current data. The main implication is that percent correct conflates perceptual signal strength with response bias, and the monocular "deficit" may partly reflect a response-stage artifact rather than a purely perceptual one. A neural measure (e.g., motion-onset ERP) would bypass the response stage and provide a cleaner index of motion coherence detection.
+
 ---
 
 ## 4. Open Questions
@@ -118,9 +148,12 @@ Note: session-to-session variability is large (ZdB ranged from +3pp to +56pp acr
 1. **ZdB enhancement mechanism**: companion moving INTO cued plane boosts cueing above N. Active suppression of unattended surface? Depth-grouping sharpening? Needs parametric follow-up.
 2. **ZdA residual cueing**: with n=96/cell, ZdA shows significant cueing (+14.6pp*). Depth-plane change is costly but the basic temporal onset advantage survives. Is the monocular geometric confound (position shift at depth change) part of the ZdA story?
 3. **Near/Far asymmetry**: entirely binocular; no theoretical prediction from prior literature. Far > Near consistently. Mechanism unknown.
-4. **Depth-field cueing monocular survival**: unexpected. Either (a) the translation-plane advantage has a non-stereoscopic component, or (b) the rotation reversals in ZdA/ZdB are driving it monocularly (they're visible without depth).
+4. **Depth-field cueing monocular survival**: uncertain with current data. Was * at n=769 mono, n.s. at n=961. Awaiting final L-eye session.
 5. **True dichoptic nonius lines**: needed for precise vergence verification.
 6. **Single subject (GS)**: all data from one observer. Generalizability unknown.
+7. **Display distortion under monocular viewing**: response bias patterns shift substantially across binocular vs R-eye vs L-eye conditions, suggesting the response wheel geometry may appear rotated or distorted when one eye is covered. Mechanism unclear (IPD correction, lens distortion, or other). Needs investigation before monocular data can be fully trusted.
+8. **Rotation-induced axis bias**: rotating dot surround may pull perceived translation direction toward the tangential, particularly near heading/rotation congruence boundaries. Not dominant in current error distributions but plausible as a within-trial variance source.
+9. **Percent correct as a limited measure**: response biases and potential display distortion mean accuracy conflates perceptual signal with response-stage artifacts. A neural measure (motion-onset ERP, N2 coherence component) would index motion coherence detection independently of the response stage and give continuous signal-strength estimates not available from categorical 8-AFC accuracy.
 
 ---
 
