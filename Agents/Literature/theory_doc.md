@@ -32,7 +32,27 @@ VRDots extends the paradigm into virtual reality to introduce stereoscopic depth
 
 ### 2.2 Selection Is Surface-Based, Not Feature-Channel-Based
 
-**Mitchell, Stoner, Fallah & Reynolds (2003, Vision Research)** showed that surface-based attentional selection persists even when both transparent fields are the same color. If selection were accomplished by modulating color-channel gain, the effect should collapse when color does not distinguish surfaces. It does not. This is directly relevant to VRDots' same-color (COLOR_RED) experiments: cueing effects with matched-color fields cannot be attributed to color-channel selection and must reflect surface-level representation based on common motion.
+**Mitchell, Stoner, Fallah & Reynolds (2003, Vision Research)** showed that surface-based attentional selection persists even when both transparent fields are the same color. If selection were accomplished by modulating color-channel gain, the effect should collapse when color does not distinguish surfaces. It does not (p > .05 on all measures; first judgment 74.5% vs. 74.0%, same-surface second judgment 69.0% vs. 69.2%). Color is therefore not *necessary* for surface-based selection, and the mechanism cannot be reduced to feature-channel modulation.
+
+*Nuance (confirmed from paper, 2026-04-01)*: Graphical inspection of Fig. 2 vs. Fig. 3 suggests a slight trend toward less impairment (smaller cueing effect) at the shortest ISIs in the same-color condition, though this did not reach significance. The study was designed to rule out color as a *sole* mechanism and was likely underpowered to detect a modest facilitative increment. Mitchell §4.3 explicitly acknowledges that color could facilitate surface segmentation under some conditions (citing Croner & Albright 1997). This is consistent with the V1 Point-Set model: color columns add a dimension to the point-set, strengthening within-surface coherence without being strictly necessary. VRDots' same-color (COLOR_RED) conditions may therefore slightly underestimate the cueing effect that would be seen with two-color surfaces.
+
+*Extension to depth (2026-04-01)*: The same logic applies to disparity-defined depth. V1 hypercolumns contain disparity-tuned cells alongside direction- and color-tuned cells, and these are the substrate of the Point-Set model. Two transparent surfaces occupying different depth planes carry distinct disparity values per dot, adding a third feature dimension to the point-set beyond direction and color. The V1 Point-Set model therefore predicts that depth separation should be *facilitative* for surface-based selection — not necessary (motion coherence alone is sufficient), but adding coherence strength to the point-set in the same way color does.
+
+Several lines of evidence from the transparent-motion literature are consistent with this prediction:
+
+- **Qian, Andersen & Adelson (1994)**: Transparent motion perception requires locally *unbalanced* motion signals. Disparity imbalance (depth-plane separation between the two motion populations) provides an additional source of local imbalance, predicting that depth separation strengthens the two-surface percept independently of motion direction differences. A stronger two-surface percept should support stronger attentional selection of one surface.
+
+- **Qian & Andersen (1997)**: V1 binocular cells are jointly tuned for direction *and* disparity. MT pools these inputs, enabling direction × disparity selectivity. When two surfaces differ in both direction and depth, their MT populations are more separated (less overlapping) than when they differ only in direction — exactly the mechanism by which depth would facilitate surface-based selection.
+
+- **Stoner & Albright (1993, 1996)**: Segmentation cues feed into motion grouping non-modularly, and the contribution is dose-dependent. Depth-plane separation, as a segmentation cue, would modulate surface-processing strength continuously with separation magnitude — not as a post-hoc tag.
+
+- **VRDots dose-response** (pilot, 2026-03): cueing effects are present at 0.10m depth separation (where depth planes are clearly visible) and appear attenuated at 0.03m (barely perceptible depth). While noisy at the pilot level, this is directionally consistent with depth facilitating cueing as a graded segmentation cue. Formally analogous to the Mitchell (2003) comparison: 0.03m ≈ same-color (depth barely discriminable), 0.10m ≈ two-color (depth clearly discriminable).
+
+- **VRDots ZdA/ZdB** (pilot, 2026-03): Changing the cued dot's depth plane at target onset (ZdA) disrupts cueing; maintaining depth purity of the cued surface while changing non-coherent dot depth (ZdB) enhances cueing. Both results confirm that depth membership is actively incorporated into the surface representation and that its integrity matters — consistent with depth being a facilitative dimension in the point-set rather than an irrelevant tag.
+
+The key untested comparison in the existing 2D literature is a direct same-depth vs. different-depth manipulation of the cueing effect, analogous to Mitchell's same-color vs. different-color design. No published transparent-motion study has done this. VRDots Baseline (no depth separation) vs. DepthBaseline (0.10m separation) approximates this comparison but with session-level confounds (different dates, fatigue, calibration). A controlled within-session depth-separation manipulation (0m vs. 0.05m) would be the definitive test.
+
+*Prediction*: Same-depth (both surfaces at identical depth plane) should produce somewhat weaker cueing than different-depth conditions, with the magnitude of facilitation scaling with depth separation. This may be too small to reach significance at typical n per session (~192 trials) but should be detectable across subjects.
 
 ### 2.3 Object Files and Feature Binding Across Space and Time
 
@@ -288,6 +308,12 @@ VRDots relevance: this is the closest existing paper to VRDots in paradigm and q
 Already referenced in §2.1. Expanded note from PDF: the paper used a dichoptic presentation — after a cueing translation, images of the two surfaces were presented to separate eyes, creating rivalry. The cued surface was dominant during subsequent rivalry, and this dominance persisted regardless of which eye's image it appeared in. Critically, this rules out ocular, spatial, and feature-based mechanisms: selection was purely object-based, following the surface identity established during binocular transparent viewing. The same object-based mechanisms that mediate competitive selection during transparency also mediate binocular rivalry dominance.
 
 Additional VRDots relevance not in §2.1: this paper is directly relevant to VRDots' monocular sessions. If object-based selection is mediated by the same mechanisms during both binocular and monocular (transparency) viewing, then the monocular survival of the dot-cueing effect in VRDots (+7.1pp* across n=769) is expected — object-based selection does not require binocular viewing. The attenuation relative to binocular (+19.8pp***) may reflect loss of the additional depth-plane grouping cue (Factor 2) rather than loss of the core object-based mechanism.
+
+*Follow-up papers (added 2026-04-01)*:
+- **Stoner, Mitchell, Fallah & Reynolds (2005)** *Progress in Brain Research* 149:227–234 — review chapter by Stoner (first author) placing Mitchell 2004 in the biased-competition framework; contrasts exogenous initial-dominance effects (the cueing result) with endogenous alternation-rate effects (a separate mechanism).
+- **Khoe, Mitchell, Reynolds & Hillyard (2008)** *Journal of Vision* 8(3):18 — ERP under dichoptic rivalry: P1 modulation (110–160 ms) for same-surface probes under rivalry but absent under monocular viewing. Establishes that the rivalry-specific neural mechanism is early (lateral extrastriate) and dissociates from the monocular case.
+- **Mishra & Hillyard (2009)** *Vision Research* 49:1073–1080 — extends Khoe 2008 to voluntary (endogenous) attention during rivalry; same P1/N1 signature, localized to V3/V3a/V4.
+- **Paffen, Alais & Verstraten (2006)** *Psychological Science* 17:752–756 — attention speeds rivalry alternation rate; different mechanism from dominance cueing but establishes a sustained attention component.
 
 ---
 

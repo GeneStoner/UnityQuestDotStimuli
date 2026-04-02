@@ -109,7 +109,42 @@ Far > Near translation (+11pp**) is present binocularly and absent across all mo
 
 ---
 
-## 5. Open Questions and Next Steps
+## 5. Historical Context and Cross-Experiment Comparison
+
+### 5.1 No-depth baseline at current parameters
+
+The cueing effect has been measured without stereo depth at the current timing (80ms translation, 8-AFC) in three datasets:
+
+| Dataset | n | Δ | p | Notes |
+|---------|---|---|---|-------|
+| Jan 2026 (260122 pooled) | 128 | **+45pp** | *** | No depth, no swap |
+| March 23 pooled | 192 | **+33pp** | *** | No depth, no swap |
+| DepthSwapCtrl N, binocular | ~256 | **+13pp** | * | 0.05m depth, stereo |
+| DepthSwapCtrl N, all mono | ~384 | **+7pp** | n.s. | 0.05m depth, monocular |
+
+The Jan/March no-depth baselines (+33–45pp) are substantially larger than DepthSwapCtrl binocular N (+13pp). Two non-exclusive explanations: (a) adding stereo depth reduces overall cueing by introducing competing near-plane attention capture; (b) session-to-session variability at small n means the no-depth estimates are noisy. The Jan/March difference (+45 vs +33pp) with the same parameters illustrates this variability.
+
+**Qualification**: The no-depth sessions (Jan, March) had no depth planes and no swap conditions — the observer may have been in a simpler attentional state. DepthSwapCtrl introduces Near/Far depth complexity even in the N condition, which may reduce cueing independently of stereoscopic processing per se.
+
+### 5.2 The Near reversal — a depth-plane attentional capture effect
+
+At 0.10m depth separation (DepthBaseline, March 25), the Near plane showed a strong *reversal* of cueing — UNCUED outperformed CUED by up to 47pp***. The Far plane simultaneously showed +59–60pp*** cueing. This is a large, bidirectional dissociation within the same session.
+
+At 0.05m (DepthSwapCtrl), the reversal disappears but the asymmetry persists: Far=+56pp*** vs Near=+13pp n.s. (binocular N condition). Monocularly, both collapse to near zero.
+
+**Tentative interpretation**: Near-plane stimuli may exert a default attentional priority — possibly related to looming/threat processing or binocular prominence of near-disparate stimuli. When the *UNCUED* field translates at Near depth, this salience advantage overrides the temporal onset cue, producing the reversal. As depth separation decreases, this near-capture effect weakens. The fact that Factor 3 (Far > Near) is entirely absent monocularly confirms it is stereoscopic in origin — it requires genuine disparity signals, not just a monocular depth cue.
+
+This is potentially a novel finding: near-plane motion captures attention even against a competing temporal onset cue, and this effect scales with disparity magnitude.
+
+### 5.3 Motion and dot swaps (March 24–25)
+
+Motion swap reduces cueing ~50% (+29pp → +16pp n.s.) but does not eliminate it. The temporal onset advantage survives a mid-trial change in motion type, suggesting the cue operates primarily on object identity rather than motion feature continuity.
+
+Dot50 swap has no effect (+29pp → +34pp n.s.). Swapping half the dots mid-trial leaves cueing intact — spatial layout and dot identity continuity are not required. The grouping that supports cueing is more abstract than individual dot tracking.
+
+---
+
+## 6. Open Questions and Next Steps
 
 ### Immediate (within current pilot)
 1. Replicate binocular findings with a second observer — the data pattern is coherent but n=1

@@ -17,19 +17,29 @@ All data in `~/Library/Application Support/ThatsRandom/VRDotsDataFiles/` (341 TS
 
 ## 2. December 2025 – January 2026: Early Development
 
-No depth, no swap types. Variable effects during parameter exploration. Key observations:
+No depth, no swap types. Variable effects — but the key reason is that **translation duration changed across this period**:
 
-| Session | n | CUED | UNCUED | Δ | p | Notes |
-|---------|---|------|--------|---|---|-------|
-| 251218_1321 | 160 | 56% | 74% | −18pp | * | **Reversed** — likely configuration issue |
-| 251218_1633 | 325 | 67% | 59% | +8pp | n.s. | Weak; parameters still in flux |
-| 260114_0700 | 256 | 73% | 59% | +14pp | * | Stabilizing |
-| 260122_0738 | 64 | 75% | 28% | +47pp | *** | Large effect; params settled |
-| 260122_0956 | 64 | 72% | 28% | +44pp | *** | Large effect replicated |
+| Period | tEnd | Duration | Overall acc | Notes |
+|--------|------|----------|-------------|-------|
+| Dec 2025 – Jan 16 | frame 100 | **293ms** (22 frames) | 62–65% | Much easier; not comparable |
+| Jan 17 | frame 89 | **147ms** (11 frames) | 75% | Transitional |
+| Jan 22 onwards | frame 84 | **80ms** (6 frames) | ~50% | **Current paradigm** |
 
-Overall accuracy in this era was high (59–84%) — task likely easier due to longer translation duration, different timing, or other parameter differences vs current paradigm. The early reversed session (251218_1321) and general variability suggest this was genuine parameter exploration, not clean experimentation. By late January 2026, a large and stable cueing effect (+44–47pp***) was established under the final-ish parameters.
+Only Jan 22 and later use the current 80ms translation duration. Cueing effects in the Dec–Jan 293ms sessions are not directly comparable to current data.
 
-**Tentative interpretation**: The large effects in Dec–Jan likely reflect a period when the delayed onset advantage was clear and uncontaminated by depth complexity or swap conditions. These may not be directly comparable to the March data if timing or dot parameters differed.
+**Comparable sessions (80ms translation, no depth):**
+
+| Session | n | CUED | UNCUED | Δ | p |
+|---------|---|------|--------|---|---|
+| 260122_0738 | 64 | 75% | 28% | **+47pp** | *** |
+| 260122_0956 | 64 | 72% | 28% | **+44pp** | *** |
+| 260122 pooled | 128 | 73% | 28% | **+45pp** | *** |
+
+**The reversed session (251218_1321)**: −18pp* at 293ms duration. Origin unexplained — possibly a stimulus configuration bug in that early version (no SwapType column, no DelayedFieldColor column). Not interpretable as a genuine perceptual reversal.
+
+**293ms sessions (not directly comparable)**: Overall accuracy 62–66%, cueing effects variable (+8pp to +14pp*). Longer translation gives more signal and higher accuracy, but the cueing effect is paradoxically weaker in most sessions — possibly because a longer translation window allows the UNCUED field's rotation to partially dominate, or because response noise is lower and saturates near ceiling in the easier direction.
+
+**Tentative interpretation**: At current parameters (80ms translation, no depth), the cueing effect is large and reliable (+45pp***). This is the cleanest no-depth, no-swap baseline.
 
 ---
 

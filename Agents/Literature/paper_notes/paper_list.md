@@ -16,6 +16,8 @@
 | 5 | Valdes-Sosa et al. (2010) | Temporal asynchrony alternative ruled out | ✗ | ✓ §2.1 |
 | 6 | Mitchell, Stoner & Reynolds (2004) *Nature* 429:410 | Object-based cueing determines dominance in binocular rivalry; not eye-, spatial-, or feature-based | ✓ `LatestTurkey/ObjectBasedAttention.pdf` | ✓ §2.1 + §8.5 |
 | 7 | Mitchell, Stoner, Fallah & Reynolds (2003) *Vision Research* | Cueing effect survives color removal — not color-channel | ✗ | ✓ §2.2 |
+| 66 | **Stoner, Mitchell, Fallah & Reynolds (2005)** *Progress in Brain Research* 149:227–234 | Review: competitive selection in attention and rivalry share a biased-competition mechanism; frames Mitchell 2004 in theoretical context | ✗ | ✓ integrated_review Group 1 |
+| 67 | **Paffen, Alais & Verstraten (2006)** *Psychological Science* 17:752–756 | Attention speeds rivalry alternation rate (dividing attention slows it); different mechanism from dominance cueing but establishes attention-rivalry link | ✗ | ✓ integrated_review Group 1 |
 
 ---
 
@@ -31,6 +33,8 @@
 | 12 | Ciaramitaro, Mitchell, Stoner, Reynolds & Boynton (2011) *J Neurophysiol* | fMRI: BOLD enhancement in V1–V3 for attended transparent surface | ✗ | ✓ §2.5 |
 | 13 | **Catak, Özkan, Kafaligonul & Stoner (2022)** *Cortex* 151:89 | N1 ERP modulated by cueing under feature-swap conditions; rules out feature-based explanation; correlated with behavior | ✓ `Behavioral_and_ERP_evidence_...pdf` | ✓ §8.4 |
 | 14 | **Rodríguez & Valdés-Sosa (2006)** *Brain Research* 1072:110 | Attentional blink between surfaces: N200 suppressed on different-surface trials; modeled by extrastriate (MT+) source suppression | ✓ `LatestTurkey/ValdesSosaBrainResearch.pdf` | ✓ §8.6 |
+| 68 | **Khoe, Mitchell, Reynolds & Hillyard (2008)** *Journal of Vision* 8(3):18 | ERP under dichoptic (rivalry) viewing: P1 enhanced for same-surface probes under rivalry but not monocular — surface-based attention biases interocular competition at early cortical stages | ✗ | ✓ integrated_review Group 2 |
+| 69 | **Mishra & Hillyard (2009)** *Vision Research* 49:1073–1080 | ERP: endogenous (voluntary) attention during rivalry produces P1/N1 modulation (110–160 ms, lateral extrastriate); confirms surface-based selection during rivalry is not purely automatic | ✗ | ✓ integrated_review Group 2 |
 
 ---
 
@@ -141,4 +145,5 @@
 ---
 
 *Created 2026-03-31. Updated 2026-04-01 with Tier 1/2 papers from Doostani et al. (2023) reference list.*
-*65 papers tracked; 39 integrated; 26 pending (Groups 6–7 pending + new additions #42–65).*
+*Updated 2026-04-01: added rivalry follow-up papers #66–69 (Stoner 2005, Paffen 2006, Khoe 2008, Mishra 2009).*
+*69 papers tracked; 43 integrated; 26 pending.*
