@@ -68,40 +68,56 @@ Correctness: `TransDeg == RespDeg (mod 360)`. Chance = 12.5% (1/8).
 | 260331_1530 | 2026-03-31 | R-eye (L closed) | 39.1% | Mono R #2 |
 | 260331_1705 | 2026-03-31 | L-eye (R closed) | 45.3% | Mono L #1 |
 | 260331_1734 | 2026-03-31 | L-eye (R closed) | 43.2% | Mono L #2 |
-| 260401_1313 | 2026-04-01 | Binocular | 51.0% | Session 3; ZdA trend |
-| 260401_1349 | 2026-04-01 | Binocular | 44.3% | Session 4; ZdB weak this session |
-| 260401_1541 | 2026-04-01 | R-eye (L closed) | 33.9% | Mono R #3; weak session, +5.2pp n.s. |
-| 260401_1705 | 2026-04-01 | L-eye (R closed) | 39.6% | Mono L #3; +4.2pp n.s.; ZdA −6.2pp |
+| 260401_1313 | 2026-04-01 | Binocular | 51.0% | Session 3; good performance |
+| 260401_1349 | 2026-04-01 | Binocular | 44.3% | Session 4 |
+| 260401_1541 | 2026-04-01 | Binocular | 33.9% | Session 5; performance collapse — 4th session same day (fatigue) |
+| 260401_1705 | 2026-04-01 | Binocular | 39.6% | Session 6; also weak (fatigue) |
 
 All sessions: 192/192 trials completed, 192/192 trajectories verified (mk + color + depth hashes).
 
-**Current n per cell:**
-- Binocular: n=128 per swap × cued cell (4 sessions × 32)
-- Monocular R-eye: n=96 per cell (3 sessions × 32)
-- Monocular L-eye: n=96 per cell (3 sessions × 32)
-- All mono pooled: n=192 per cell (6 sessions × 32)
+**Current n per cell (as of 260401_1705):**
+- Binocular: n=192 per swap × cued cell (6 sessions × 32)
+- Monocular R-eye: n=64 per cell (2 sessions × 32)
+- Monocular L-eye: n=64 per cell (2 sessions × 32)
+- All mono pooled: n=128 per cell (4 sessions × 32)
+
+*Note: sessions 260401_1541 and 260401_1705 were originally logged as monocular but confirmed binocular from TSV data — only 4 monocular sessions on record (260330_2012, 260331_1530, 260331_1705, 260331_1734).*
 
 ---
 
 ## 3. Results
 
-### 3.1 Binocular — swap × cueing (pooled 4 sessions, n=768)
+### 3.1 Binocular — swap × cueing (pooled 6 sessions, n=1152)
 
-| Swap | CUED | UNCUED | Δ | p |
-|------|------|--------|---|---|
-| N | 55.5% | 42.2% | +13.3pp | * |
-| ZdA | 48.4% | 32.8% | +15.6pp | * |
-| ZdB | 55.5% | 35.2% | +20.3pp | ** |
+| Swap | CUED | UNCUED | Δ | sig |
+|------|------|--------|---|-----|
+| N | 51.0% | 41.1% | +9.9pp | † |
+| ZdA | 42.7% | 31.2% | +11.5pp | * |
+| ZdB | 51.6% | 35.4% | +16.1pp | ** |
+| **Overall** | **48.4%** | **35.9%** | **+12.5pp** | **\*\*\*** |
 
-Note: session-to-session variability is large (ZdB ranged from +3pp to +56pp across 4 sessions).
+Pattern: ZdB > ZdA ≈ N. Session-to-session variance large (individual sessions ranged +5–34pp overall).
 
-### 3.2 Master summary — three factors
+### 3.1b Monocular — swap × cueing (pooled 4 sessions, n=769)
 
-| Factor | Binocular (n=768) | Mono R-eye (n=577) | Mono L-eye (n=576) | All mono (n=1153) |
-|--------|-------------------|--------------------|--------------------|-------------------|
-| 1. Dot cueing (CUED vs UNCUED) | +16.4pp *** | +8.4pp * | +4.2pp n.s. | +6.3pp * |
-| 2. Depth-field cueing (same vs diff plane) | +6.0pp † | +3.6pp n.s. | +7.6pp † | +5.6pp † |
-| 3. Depth plane (Far vs Near translation) | +10.7pp ** | −2.2pp n.s. | +1.4pp n.s. | −0.4pp n.s. |
+| Swap | CUED | UNCUED | Δ | sig |
+|------|------|--------|---|-----|
+| N | 49.2% | 39.8% | +9.4pp | n.s. |
+| ZdA | 35.9% | 35.9% | **+0.0pp** | n.s. |
+| ZdB | 46.1% | 34.1% | +12.0pp | * |
+| **Overall** | **43.8%** | **36.6%** | **+7.1pp** | **\*** |
+
+**ZdA collapses to 0.0pp monocularly — ZdA effect is entirely stereoscopic.**
+
+### 3.2 Near/Far asymmetry
+
+| | Binocular | Monocular |
+|--|-----------|-----------|
+| Near cueing | **−5.9pp n.s.** | +1.8pp n.s. |
+| Far cueing | **+30.9pp \*\*\*** | +12.5pp * |
+| Interaction | **+36.8pp \*\*\*** (z=6.50) | +10.7pp * |
+
+Near inversion (negative cueing) is binocular; absent monocularly. Far dominance is partially monocular, mostly stereoscopic.
 
 ### 3.3 Key interpretive points
 - **Dot cueing** (factor 1): survives monocularly (*) — temporal onset advantage is not purely stereoscopic; attenuated vs binocular

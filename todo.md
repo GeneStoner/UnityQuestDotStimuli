@@ -76,6 +76,7 @@
 
 ## Admin / Backup
 
+- [ ] **Recover session 260326_1649** (`Exp_DepthSwap50`, 0.05m, R/G, 256 trials) — data exists on Quest but was lost from /tmp/; pull with `adb pull` and copy to permanent Mac store; stats are in memory (`vrdots-project.md` line 276)
 - [ ] After each session batch: copy updated memory files to `Agents/Memory/` and commit+push
 - [x] ~~Save key figure PNGs somewhere permanent~~ — copied to `Agents/Figures/` and committed (2026-04-01)
 - [ ] Session TSV/sidecar data: currently in `~/Library/Application Support/ThatsRandom/VRDotsDataFiles/` (local only) — confirm Time Machine covers this path
