@@ -7,7 +7,7 @@
 
 Single observer (GS), Meta Quest, binocular and monocular viewing. All sessions used `Exp_DepthSwapCtrl`: 192 trials, N/ZdA/ZdB × CUED/UNCUED × Near/Far × 2 rotations × 8 headings × 1 rep. Both fields red (same color), 0.05 m depth separation at 2.0 m, 3.5° aperture, 63 dots/field, 81°/s rotation, 2.26°/s translation, 80 ms translation burst (6 frames at 75 Hz), 750 ms delayed onset.
 
-**9 sessions total:**
+**10 sessions total:**
 | Session | Eye | Overall | Notes |
 |---------|-----|---------|-------|
 | 260330_1853 | Binocular | 46.4% | Session 1 |
@@ -169,5 +169,5 @@ Dot50 swap has no effect (+29pp → +34pp n.s.). Swapping half the dots mid-tria
 
 ---
 
-## 6. Headset Comfort and Ergonomics (Note)
+## 7. Headset Comfort and Ergonomics (Note)
 To be addressed before multi-subject data collection. Key issues: pressure from headset frame and prescription lens insert, neck strain from headset weight, vergence-accommodation dissociation (VAD), session length limits, and acclimatization protocol for naïve observers. Relevant literature: VR comfort guidelines, VAD effects on perceptual tasks. Assign to Packaging/Protocol agent.
