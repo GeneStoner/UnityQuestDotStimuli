@@ -71,14 +71,15 @@ Correctness: `TransDeg == RespDeg (mod 360)`. Chance = 12.5% (1/8).
 | 260401_1313 | 2026-04-01 | Binocular | 51.0% | Session 3; ZdA trend |
 | 260401_1349 | 2026-04-01 | Binocular | 44.3% | Session 4; ZdB weak this session |
 | 260401_1541 | 2026-04-01 | R-eye (L closed) | 33.9% | Mono R #3; weak session, +5.2pp n.s. |
+| 260401_1705 | 2026-04-01 | L-eye (R closed) | 39.6% | Mono L #3; +4.2pp n.s.; ZdA −6.2pp |
 
 All sessions: 192/192 trials completed, 192/192 trajectories verified (mk + color + depth hashes).
 
 **Current n per cell:**
 - Binocular: n=128 per swap × cued cell (4 sessions × 32)
 - Monocular R-eye: n=96 per cell (3 sessions × 32)
-- Monocular L-eye: n=64 per cell (2 sessions × 32)
-- All mono pooled: n=160 per cell
+- Monocular L-eye: n=96 per cell (3 sessions × 32)
+- All mono pooled: n=192 per cell (6 sessions × 32)
 
 ---
 
@@ -96,15 +97,15 @@ Note: session-to-session variability is large (ZdB ranged from +3pp to +56pp acr
 
 ### 3.2 Master summary — three factors
 
-| Factor | Binocular (n=768) | Mono R-eye (n=577) | Mono L-eye (n=384) | All mono (n=961) |
-|--------|-------------------|--------------------|--------------------|------------------|
-| 1. Dot cueing (CUED vs UNCUED) | +16.4pp *** | +8.4pp * | +4.2pp n.s. | +6.7pp * |
-| 2. Depth-field cueing (same vs diff plane) | +6.0pp † | +3.6pp n.s. | +7.3pp n.s. | +5.1pp n.s. |
-| 3. Depth plane (Far vs Near translation) | +10.7pp ** | −2.2pp n.s. | +2.1pp n.s. | −0.5pp n.s. |
+| Factor | Binocular (n=768) | Mono R-eye (n=577) | Mono L-eye (n=576) | All mono (n=1153) |
+|--------|-------------------|--------------------|--------------------|-------------------|
+| 1. Dot cueing (CUED vs UNCUED) | +16.4pp *** | +8.4pp * | +4.2pp n.s. | +6.3pp * |
+| 2. Depth-field cueing (same vs diff plane) | +6.0pp † | +3.6pp n.s. | +7.6pp † | +5.6pp † |
+| 3. Depth plane (Far vs Near translation) | +10.7pp ** | −2.2pp n.s. | +1.4pp n.s. | −0.4pp n.s. |
 
 ### 3.3 Key interpretive points
 - **Dot cueing** (factor 1): survives monocularly (*) — temporal onset advantage is not purely stereoscopic; attenuated vs binocular
-- **Depth-field cueing** (factor 2): was * at n=769 mono; now n.s. at n=961 with added R-eye session pulling against it — status uncertain, awaiting final L-eye session
+- **Depth-field cueing** (factor 2): † in all mono pooled (n=1153) and † in L-eye alone (n=576); R-eye sessions weaker (n.s.) — L-eye data more reliable given floaters in R eye. Effect appears to survive monocularly at marginal level.
 - **Depth plane / Near vs Far** (factor 3): entirely stereoscopic — absent monocularly in all subgroups
 - **ZdB > N binocularly**: cued dot staying in plane AND companion moving into cued plane boosts performance above no-swap baseline
 - **ZdA significant binocularly**: cueing reduced relative to ZdB but not eliminated; cued dot moving planes is costly but not catastrophic
@@ -153,7 +154,14 @@ Substantial direction-specific response biases observed (deviation from flat 12.
 6. **Single subject (GS)**: all data from one observer. Generalizability unknown.
 7. **Display distortion under monocular viewing**: response bias patterns shift substantially across binocular vs R-eye vs L-eye conditions, suggesting the response wheel geometry may appear rotated or distorted when one eye is covered. Mechanism unclear (IPD correction, lens distortion, or other). Needs investigation before monocular data can be fully trusted.
 8. **Rotation-induced axis bias**: rotating dot surround may pull perceived translation direction toward the tangential, particularly near heading/rotation congruence boundaries. Not dominant in current error distributions but plausible as a within-trial variance source.
-9. **Percent correct as a limited measure**: response biases and potential display distortion mean accuracy conflates perceptual signal with response-stage artifacts. A neural measure (motion-onset ERP, N2 coherence component) would index motion coherence detection independently of the response stage and give continuous signal-strength estimates not available from categorical 8-AFC accuracy.
+9. **Percent correct as a limited measure**: response biases and potential display distortion mean accuracy conflates perceptual signal with response-stage artifacts. A neural measure would bypass the response stage entirely.
+10. **ERP as a measure of enhanced processing — object-level enhancement**: if attentional enhancement operates at the object level, it should boost neural responses to *all* motions of the cued field, not just the coherent translation. Specifically:
+    - **Motion-reversal ERP at tStart** (ZdA/ZdB): rotation reversals in the cued field should generate a large, stimulus-locked direction-change response — enhanced if the cued object is preferentially processed. This doesn't require the subject to detect the translation direction at all.
+    - **Delayed-onset ERP at frame 56**: motion onset of Field B should be enhanced for CUED vs UNCUED conditions.
+    - **Non-coherent motion response**: even the S3 non-coherent dots (part of the cued field in CUED trials) may show enhanced processing.
+    - **Implication**: an ERP study could detect attentional enhancement even on trials where the subject fails to identify the heading — completely sidestepping response bias and display distortion problems. The motion-reversal VEP is a particularly robust signal (large amplitude, well-localized in time) and is a natural target.
+    - **Caveat**: if non-coherent and reversal motions are equally enhanced, this complicates the interpretation of *what* the cueing effect indexes — it may be object-level gain rather than specifically enhanced coherent motion detection.
+11. **Headset comfort and ergonomics**: document best practices for extended VR use — pressure from headset frame and prescription lens insert, neck strain from headset weight, vergence-accommodation dissociation (VAD) and eye strain, session length limits. Relevant for scaling to multi-subject data collection. Assign to Packaging agent when active.
 
 ---
 
