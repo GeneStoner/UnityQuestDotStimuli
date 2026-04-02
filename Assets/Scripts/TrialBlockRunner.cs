@@ -65,7 +65,7 @@ public class TrialBlockRunner : MonoBehaviour
     public bool logRealizedGeometryEachTrial = true;
 
     [Header("Field A Preview")]
-    [Tooltip("If true, show Field A (sub0, sub1) static at frame-0 positions and correct depth during WaitingForStart, " +
+    [Tooltip("If true, show BOTH fields (sub0–sub3) static at frame-0 positions and correct depth during WaitingForStart, " +
              "so vergence is established before trial onset. Field B remains hidden until its normal delayed onset.")]
     public bool showFieldAPreview = true;
 
@@ -627,12 +627,15 @@ public class TrialBlockRunner : MonoBehaviour
         builder.BuildFromCondition(_currentCond);
         builder.SetDotsActive(false);
 
-        // If preview is enabled, show Field A (sub0, sub1) immediately so depth is
-        // established before the subject triggers the trial.
+        // Show both fields (sub0–sub3) at frame-0 positions during WaitingForStart so
+        // the observer can fuse both depth planes before triggering the trial.
+        // Sub2/sub3 (Field B) vanish at trial onset (frame 0) as usual.
         if (showFieldAPreview)
         {
             builder.SetSubfieldActive(0, true);
             builder.SetSubfieldActive(1, true);
+            builder.SetSubfieldActive(2, true);
+            builder.SetSubfieldActive(3, true);
             builder.ApplyAppearance(_currentCond, 0);
             builder.ApplyDepthOffsets(_currentCond, 0);
         }

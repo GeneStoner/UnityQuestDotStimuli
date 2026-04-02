@@ -1,12 +1,15 @@
 Shader "Custom/NoniusLine"
 {
-    // Dichoptic nonius line for vergence monitoring.
-    // Per-eye visibility is handled by camera stereoTargetEye (URP Camera Stacking),
-    // not by shader-level discard. This shader simply renders a flat colored quad.
+    // Dichoptic nonius line.
+    // _TargetEye: 0 = left eye only, 1 = right eye only, -1 = both eyes (binocular fallback).
+    // Requires Multiview stereo rendering (m_StereoRenderingModeAndroid: 2) so that
+    // unity_StereoEyeIndex is populated per-fragment. In Multipass mode (0) this always
+    // returns 0 and dichoptic masking does not work — confirmed in prior testing.
 
     Properties
     {
-        _Color ("Color", Color) = (1,1,1,1)
+        _Color     ("Color", Color) = (1,1,1,1)
+        _TargetEye ("Target Eye (0=Left, 1=Right, -1=Both)", Int) = -1
     }
 
     SubShader
@@ -28,6 +31,8 @@ Shader "Custom/NoniusLine"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma multi_compile _ STEREO_INSTANCING_ON
+            #pragma multi_compile _ STEREO_MULTIVIEW_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -46,6 +51,7 @@ Shader "Custom/NoniusLine"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
+                int    _TargetEye;
             CBUFFER_END
 
             Varyings vert(Attributes input)
@@ -62,6 +68,12 @@ Shader "Custom/NoniusLine"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                // Discard if this fragment is for the wrong eye.
+                // _TargetEye == -1 means show to both eyes (binocular fallback).
+                if (_TargetEye >= 0 && (int)unity_StereoEyeIndex != _TargetEye)
+                    discard;
+
                 return half4(_Color.rgb, _Color.a);
             }
             ENDHLSL

@@ -366,12 +366,16 @@ public class Fixation_Controller : MonoBehaviour
         _shaderHCross = CreateShaderQuad("ShaderHCross", _crossMaterialH);
         _shaderVCross = CreateShaderQuad("ShaderVCross", _crossMaterialV);
 
-        // Nonius line quads (binocular reference lines above and below fixation)
+        // Nonius line quads — dichoptic: top segment to left eye only, bottom to right eye only.
+        // Requires Multiview stereo mode (m_StereoRenderingModeAndroid: 2) for unity_StereoEyeIndex
+        // to be populated. In Multipass mode _TargetEye has no effect (both eyes see both lines).
         Shader noniusShader = Shader.Find("Custom/NoniusLine");
         if (noniusShader != null)
         {
             _noniusMaterialL = new Material(noniusShader) { name = "NoniusTop"    };
             _noniusMaterialR = new Material(noniusShader) { name = "NoniusBottom" };
+            _noniusMaterialL.SetInt("_TargetEye", 0);  // top segment → left eye only
+            _noniusMaterialR.SetInt("_TargetEye", 1);  // bottom segment → right eye only
             _noniusLeft  = CreateShaderQuad("NoniusTop",    _noniusMaterialL);
             _noniusRight = CreateShaderQuad("NoniusBottom", _noniusMaterialR);
         }

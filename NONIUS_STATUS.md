@@ -22,19 +22,27 @@ Unity's shader system cannot distinguish left-eye vs. right-eye rendering with t
 - **`cam.stereoActiveEye`** always returns `Mono` from `RenderPipelineManager.beginCameraRendering` — Unity's C# callback does not fire separately per eye; the Oculus compositor handles eye compositing after the fact.
 - **`cam.worldToCameraMatrix`** is identical in both per-frame callbacks — no way to distinguish which pass is which.
 - **`Camera.stereoTargetEye = Right`** on URP overlay cameras — ignored by the Oculus XR Plugin on Android.
-- **STEREO_INSTANCING_ON / STEREO_MULTIVIEW_ON** pragmas — not activated at runtime with the current setup (`m_StereoRenderingModeAndroid: 0` = Multipass in `OculusSettings.asset`).
+- **STEREO_INSTANCING_ON / STEREO_MULTIVIEW_ON** pragmas — not activated in Multipass mode.
 
-All of these were attempted and confirmed non-functional via adb logcat.
+All of these were attempted in **Multipass mode** (`m_StereoRenderingModeAndroid: 0`) and confirmed non-functional via `adb logcat`.
 
-### Path forward: OVR Compositor Layers
-The correct Meta API is **OVR Compositor Layers** (part of the Meta XR SDK). These bypass Unity's rendering pipeline entirely and inject content directly into the compositor per eye. Steps:
+### Current attempt: Multiview mode — UNTESTED ON DEVICE
 
-1. Import the **Meta XR All-in-One SDK** (or at minimum `com.meta.xr.sdk.core`) via Package Manager.
-2. Add an `OVROverlay` component set to `Underlay` or `Overlay` type.
-3. Assign a separate `RenderTexture` for each eye; render the nonius quad into the appropriate RT each frame.
-4. The compositor guarantees true monocular delivery.
+`OculusSettings.asset` switched from Multipass (0) to **Multiview (2)**. In Multiview, Unity submits both views in a single pass using `GL_OVR_multiview`, which populates `unity_StereoEyeIndex` per-fragment via the multiview extension. The shader now discards fragments where `unity_StereoEyeIndex != _TargetEye`. Top segment → left eye (`_TargetEye=0`), bottom segment → right eye (`_TargetEye=1`).
 
-This is non-trivial (separate camera setup, RT management). Deferred until the binocular version is validated behaviorally.
+**Test on Quest before running experiments.** Check: with nonius lines enabled, cover left eye — only bottom line should be visible. Cover right eye — only top line should be visible.
+
+**If Multiview breaks rendering or eye index is still always 0**: revert `m_StereoRenderingModeAndroid` to `0` in `OculusSettings.asset`. The shader's `_TargetEye = -1` binocular path still works in Multipass (old behavior — both eyes see both lines).
+
+### Fallback: OVR Compositor Layers
+The guaranteed Meta API. Bypasses Unity's rendering pipeline entirely, injects content per eye into the compositor. Steps:
+
+1. Import **Meta XR All-in-One SDK** (`com.meta.xr.sdk.core`) via Package Manager.
+2. Add `OVROverlay` component (Underlay or Overlay type).
+3. Assign separate `RenderTexture` per eye; render each nonius segment into its RT each frame.
+4. Compositor guarantees monocular delivery.
+
+Non-trivial (separate camera setup, RT management). Use if Multiview attempt fails.
 
 ---
 
