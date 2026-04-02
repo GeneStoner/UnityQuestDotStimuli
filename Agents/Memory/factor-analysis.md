@@ -34,48 +34,42 @@ else:
 depth_field_cued = int(ctf == delay_far)
 ```
 
-## Results (marginal chi-squares, all sessions verified 192/192)
+## Results — Final Pilot (all sessions verified 192/192)
 
-### Binocular (260330_1853 + 260331_0621, n=384)
-| Factor | Level A | Level B | Δ | p |
-|--------|---------|---------|---|---|
-| 1. Dot cueing | CUED 52.1% | UNCUED 32.3% | +19.8pp | *** |
-| 2. Depth-field cueing | same plane 48.4% | diff plane 35.9% | +12.5pp | * |
-| 3. Depth field | Far 46.9% | Near 37.5% | +9.4pp | † |
+### Master summary (as of 2026-04-01)
 
-### Monocular (260330_2012, n=193, L eye closed / R eye active — floaters may affect quality)
-| Factor | Level A | Level B | Δ | p |
-|--------|---------|---------|---|---|
-| 1. Dot cueing | CUED 39.6% | UNCUED 26.8% | +12.8pp | † |
-| 2. Depth-field cueing | same 37.5% | diff 28.9% | +8.6pp | n.s. |
-| 3. Depth field | Far 32.0% | Near 34.4% | −2.4pp | n.s. |
+| Factor | Binocular (n=768) | Mono R (n=577) | Mono L (n=576) | All mono (n=1153) |
+|--------|-------------------|----------------|----------------|-------------------|
+| 1. Dot cueing | +16.4pp *** | +8.4pp * | +4.2pp n.s. | +6.3pp * |
+| 2. Depth-field cueing | +6.0pp † | +3.6pp n.s. | +7.6pp † | +5.6pp † |
+| 3. Far vs Near | +10.7pp ** | −2.2pp n.s. | +1.4pp n.s. | −0.4pp n.s. |
 
-### All sessions combined (n=577)
-| Factor | Level A | Level B | Δ | p |
-|--------|---------|---------|---|---|
-| 1. Dot cueing | CUED 47.9% | UNCUED 30.4% | +17.5pp | *** |
-| 2. Depth-field cueing | same 44.8% | diff 33.6% | +11.2pp | ** |
-| 3. Depth field | Far 41.9% | Near 36.5% | +5.4pp | n.s. |
+Sessions:
+- Binocular: 260330_1853, 260331_0621, 260401_1313, 260401_1349 (4 sessions, n=768)
+- Mono R-eye (L closed): 260330_2012, 260331_1530, 260401_1541 (3 sessions, n=577)
+- Mono L-eye (R closed): 260331_1705, 260331_1734, 260401_1705 (3 sessions, n=576)
+
+### Binocular by swap condition
+| Swap | CUED | UNCUED | Δ | p |
+|------|------|--------|---|---|
+| N | 55.5% | 42.2% | +13.3pp | * |
+| ZdA | 48.4% | 32.8% | +15.6pp | * |
+| ZdB | 55.5% | 35.2% | +20.3pp | ** |
+
+### All mono by swap condition
+| Swap | CUED | UNCUED | Δ | p |
+|------|------|--------|---|---|
+| N | 46.9% | 39.6% | +7.3pp | n.s. |
+| ZdA | 34.4% | 33.3% | +1.0pp | n.s. |
+| ZdB | 45.3% | 34.7% | +10.6pp | * |
 
 ## Interpretation
 
-- **Factor 1 (dot cueing)**: strongest and most reliable effect; marginal monocularly
-- **Factor 2 (depth-field cueing)**: binocular * → monocular * (survives with n=769 pooled)
-- **Factor 3 (depth field absolute)**: binocular †, entirely absent monocularly — purely stereoscopic
-
-## Monocular sessions (as of 2026-03-31)
-- R-eye (L closed): 260330_2012 + 260331_1530, n=385
-- L-eye (R closed): 260331_1705 + 260331_1734, n=384
-- All mono pooled: n=769
-
-## Master summary (binocular n=384 vs all mono n=769)
-| Factor | Binocular | All mono |
-|--------|-----------|----------|
-| 1. Dot cueing (CUED vs UNCUED) | +19.8pp *** | +7.1pp * |
-| 2. Depth-field cueing (same vs diff) | +12.5pp * | +7.1pp * |
-| 3. Depth plane (Far vs Near) | +9.4pp † | +1.2pp n.s. |
-
-Factors 1 and 2 both survive monocularly. Factor 3 is entirely stereoscopic.
+- **Factor 1 (dot cueing)**: strongest; survives monocularly (*) but attenuated (+16pp → +6pp)
+- **Factor 2 (depth-field cueing)**: † binocular, † in L-eye mono, † all mono pooled; R-eye sessions noisier (floaters)
+- **Factor 3 (Far vs Near)**: ** binocular, entirely absent monocularly — purely stereoscopic
+- **ZdA collapses monocularly** (+1pp n.s.); ZdB survives (*) — key dissociation implicating depth-plane change of cued translator specifically
+- **ZdB > N binocularly**: depth-grouping benefit, not merely absence of disruption
 
 ## Logistic regression (binocular)
 Dominant terms: `far` (OR=0.15, ***) and `cued:far` (OR=10.4, ***) in swap-type model.

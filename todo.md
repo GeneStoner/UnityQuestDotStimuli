@@ -1,13 +1,14 @@
 # VRDots To-Do List
-*Last updated: 2026-04-01*
+*Last updated: 2026-04-01 (end of pilot)*
 
 ---
 
 ## Data Collection
 
-- [ ] Run at least 2 more binocular sessions (Near effect at † level; need n≥192/cell to firm up)
-- [ ] Run more monocular sessions, both eyes — session variance large at n=64/cell per eye; aim for n≥128/cell per eye
-- [ ] Consider dedicated Near vs Far session to confirm Factor 3 asymmetry
+- [x] ~~Run more monocular sessions~~ — **PILOT COMPLETE**: 4 bino + 3 mono R + 3 mono L = 10 sessions
+- [ ] Replicate binocular findings with a second observer (n=1 throughout)
+- [ ] Consider dedicated Near vs Far parametric session (vary depth separation 0.03→0.05→0.10m) to map the Near reversal curve
+- [ ] More binocular sessions to firm up Factor 3 (Near/Far at ** level, but large session variance)
 
 ---
 
@@ -39,10 +40,11 @@
 
 ## Analysis
 
-- [ ] Update `three_factors_bino_vs_mono.png` and `depthswapctrl_all_sessions_bars.png` after each new session batch
+- [ ] Regenerate `three_factors_bino_vs_mono.png` and `depthswapctrl_all_sessions_bars.png` with final pilot n (n=768 bino, n=1153 mono)
 - [ ] Add depth column support to `analyze_vr_dots_v2.py` (backburner — low priority)
 - [ ] Consider session-level mixed-effects model once n-per-session is large enough
-- [ ] Update `Agents/Literature/experiment_status.md` after each new session
+- [ ] Investigate display distortion under monocular viewing — cardinal heading deficit in R-eye sessions suggests response wheel appears rotated
+- [ ] Investigate Near reversal parametrically — is the −47pp at 0.10m depth Sep reproducible?
 
 ## Visualization (`plot_dot_traces.py`)
 
@@ -57,6 +59,9 @@
 - [ ] Work through `Agents/Literature/pending_papers.md` — remaining Stoner and related papers (14 items)
 - [ ] Expand `Agents/Literature/modeling_lit.md` with additional computational accounts
 - [ ] Update `Agents/Literature/theory_doc.md` Section 4.2 — monocular confound framing now refined by both-eye monocular data
+- [ ] Situate Near reversal finding in literature — Near/Far attentional priority, looming salience, depth-plane capture (see `historical_comparison.md` Section 5.2 and questions for lit agent)
+- [ ] Search for ERP/motion-reversal VEP literature relevant to object-level enhancement hypothesis (see `pilot_summary.md` Section 6)
+- [ ] Search for headset comfort / VAD literature for protocol design
 - [ ] Best run in a separate window: invoke as "Literature agent: [question]"
 
 ---
@@ -83,13 +88,18 @@
 - [x] ZdA and ZdB swap conditions implemented
 - [x] `Exp_DepthSwapCtrl` asset (N/ZdA/ZdB, same color, 0.05m depth, 192 trials)
 - [x] `verify_trajectories.py` color hash fix (nd_col hardcoded bug → reads from stored payload)
-- [x] 192/192 trajectory verification passing for all 8 sessions
+- [x] 192/192 trajectory verification passing for all 10 sessions
 - [x] Three-factor analysis framework (dot cueing, depth-field cueing, depth plane Near/Far)
-- [x] Binocular vs monocular master summary (n=768 bino, n=769 mono)
-- [x] `three_factors_bino_vs_mono.png` and `depthswapctrl_all_sessions_bars.png` generated
+- [x] Final pilot master summary: n=768 bino, n=1153 mono (3 R-eye + 3 L-eye sessions)
+- [x] Error distribution and response bias analysis across all viewing conditions
+- [x] `three_factors_bino_vs_mono.png` and `depthswapctrl_all_sessions_bars.png` generated (need regeneration with final n)
+- [x] `plot_dot_traces.py` — accumulated dot trajectory trace script (single-panel prototype)
 - [x] Literature agent scaffolding and initial outputs (`theory_doc.md`, `experiment_status.md`, `pending_papers.md`, `modeling_lit.md`)
 - [x] Catak 2022 fixation methods digested (`catak2022_fixation_methods.md`)
 - [x] Packaging agent and Modeling agent scopes defined (not yet active)
-- [x] All session data consolidated to permanent Mac local folder
-- [x] Memory files backed up to `Agents/Memory/` on GitHub
+- [x] All session data consolidated to permanent Mac local folder + GitHub (`Agents/Memory/`)
 - [x] Nonius lines plan documented (in `.claude/plans/`) — not yet implemented
+- [x] Historical data analyzed: Dec 2025–Jan 2026 (translation duration finding), March 23–26 pre-stereo baselines
+- [x] `pilot_summary.md` — comprehensive summary with stats, interpretations, historical context
+- [x] `historical_comparison.md` — pre-stereo session archive analysis and comparison
+- [x] Matched CUED/UNCUED seed design evaluated and tentatively rejected (inconsistency across swap conditions)
