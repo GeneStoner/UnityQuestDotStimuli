@@ -1,0 +1,226 @@
+{
+  "experiment_name": "MotionSwap",
+  "files": {
+    "tsv": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260324_1010.tsv",
+    "meta": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260324_1010.tsv.meta.json",
+    "sidecar": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260324_1010.tsv.sidecar.json"
+  },
+  "counts": {
+    "n_trials_raw": 129,
+    "n_trials_used": 128,
+    "unique_keys": 128,
+    "duplicates_in_keyspace": {}
+  },
+  "hash_crosscheck": {
+    "have_sidecar": true,
+    "traj_entries_count": 128,
+    "nonzero_hash_trials": 128,
+    "matched": 128,
+    "missing": 0
+  },
+  "summary": {
+    "ALL": {
+      "label": "ALL",
+      "n": 128,
+      "responded": 127,
+      "correct": 54,
+      "acc": 0.4251968503937008,
+      "meanRTf": 117.34645669291339,
+      "stdRTf": 60.77626167763173
+    },
+    "by_cond": {
+      "CUED": {
+        "label": "CUED",
+        "n": 64,
+        "responded": 64,
+        "correct": 34,
+        "acc": 0.53125,
+        "meanRTf": 123.15625,
+        "stdRTf": 71.90145572891761
+      },
+      "UNCUED": {
+        "label": "UNCUED",
+        "n": 64,
+        "responded": 63,
+        "correct": 20,
+        "acc": 0.31746031746031744,
+        "meanRTf": 111.44444444444444,
+        "stdRTf": 46.09919524752179
+      }
+    },
+    "by_trans_field_color": {
+      "R": {
+        "label": "TransFieldColor=R",
+        "n": 64,
+        "responded": 64,
+        "correct": 31,
+        "acc": 0.484375,
+        "meanRTf": 112.578125,
+        "stdRTf": 47.864980899237544
+      },
+      "G": {
+        "label": "TransFieldColor=G",
+        "n": 64,
+        "responded": 63,
+        "correct": 23,
+        "acc": 0.36507936507936506,
+        "meanRTf": 122.19047619047619,
+        "stdRTf": 71.21905780766366
+      }
+    },
+    "by_cond_x_trans_field_color": {
+      "CUED_R": {
+        "label": "CUED TransFieldColor=R",
+        "n": 32,
+        "responded": 32,
+        "correct": 18,
+        "acc": 0.5625,
+        "meanRTf": 116.9375,
+        "stdRTf": 41.8695425548214
+      },
+      "CUED_G": {
+        "label": "CUED TransFieldColor=G",
+        "n": 32,
+        "responded": 32,
+        "correct": 16,
+        "acc": 0.5,
+        "meanRTf": 129.375,
+        "stdRTf": 92.24551140841488
+      },
+      "UNCUED_R": {
+        "label": "UNCUED TransFieldColor=R",
+        "n": 32,
+        "responded": 32,
+        "correct": 13,
+        "acc": 0.40625,
+        "meanRTf": 108.21875,
+        "stdRTf": 52.830350163873604
+      },
+      "UNCUED_G": {
+        "label": "UNCUED TransFieldColor=G",
+        "n": 32,
+        "responded": 31,
+        "correct": 7,
+        "acc": 0.22580645161290322,
+        "meanRTf": 114.7741935483871,
+        "stdRTf": 37.6286693012375
+      }
+    },
+    "by_swap": {
+      "M": {
+        "label": "Swap=M",
+        "n": 64,
+        "responded": 64,
+        "correct": 25,
+        "acc": 0.390625,
+        "meanRTf": 111.515625,
+        "stdRTf": 43.691386517932514
+      },
+      "N": {
+        "label": "Swap=N",
+        "n": 64,
+        "responded": 63,
+        "correct": 29,
+        "acc": 0.4603174603174603,
+        "meanRTf": 123.26984126984127,
+        "stdRTf": 73.73788979919549
+      }
+    },
+    "by_cond_x_swap": {
+      "CUED_M": {
+        "label": "CUED Swap=M",
+        "n": 32,
+        "responded": 32,
+        "correct": 15,
+        "acc": 0.46875,
+        "meanRTf": 116.71875,
+        "stdRTf": 55.17655433639817
+      },
+      "CUED_N": {
+        "label": "CUED Swap=N",
+        "n": 32,
+        "responded": 32,
+        "correct": 19,
+        "acc": 0.59375,
+        "meanRTf": 129.59375,
+        "stdRTf": 84.9252831077854
+      },
+      "UNCUED_M": {
+        "label": "UNCUED Swap=M",
+        "n": 32,
+        "responded": 32,
+        "correct": 10,
+        "acc": 0.3125,
+        "meanRTf": 106.3125,
+        "stdRTf": 26.81934644524359
+      },
+      "UNCUED_N": {
+        "label": "UNCUED Swap=N",
+        "n": 32,
+        "responded": 31,
+        "correct": 10,
+        "acc": 0.3225806451612903,
+        "meanRTf": 116.74193548387096,
+        "stdRTf": 59.3388127032223
+      }
+    },
+    "contingency_cond_x_delayed_color": {
+      "CUED_G": 32,
+      "UNCUED_G": 32,
+      "UNCUED_R": 32,
+      "CUED_R": 32
+    },
+    "contingency_cond_x_translating_field_color": {
+      "CUED_G": 32,
+      "UNCUED_R": 32,
+      "UNCUED_G": 32,
+      "CUED_R": 32
+    }
+  },
+  "meta_file_contents": {
+    "schema_version": "vrdots.meta.v3",
+    "experiment_name": "MotionSwap",
+    "application_version": "0.2.0",
+    "logging": {
+      "tsv_delimiter": "\t",
+      "write_payloads_in_tsv": false,
+      "hash_algorithm": "FNV-1a-32",
+      "columns": [
+        "Trial",
+        "Experiment",
+        "Cond",
+        "RotCfg",
+        "TransDeg",
+        "RespDeg",
+        "RespIndex",
+        "RespDigit",
+        "RTf",
+        "OnsetFrame",
+        "TransStartFrame",
+        "TransEndFrame",
+        "TotalFrames",
+        "SeedA0",
+        "SeedA1",
+        "SeedB2",
+        "SeedB3",
+        "DelayedFieldColor",
+        "SwapType",
+        "EndKey",
+        "Device",
+        "MkHash32",
+        "ColorHash32",
+        "MotionTypeByFrame_SubfieldCodes",
+        "ColorByFrame_SubfieldCodes"
+      ]
+    },
+    "stats": {
+      "target_number_trials": 128,
+      "generated_trials": 128,
+      "started_trials": 129,
+      "completed_trials": 129,
+      "requeued_trials": 1,
+      "measured_fps_mean": null,
+      "measured_fps_std": null
+    }
+  }
+}

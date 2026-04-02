@@ -1,0 +1,2 @@
+Trial	Cond	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	EndKey	Device	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes
+0	UNCUED	45	-1	-1	-1	-1	56	78	100	130	1300761069	899225216	759552276	534673839	R	ABORT	OnDisable		

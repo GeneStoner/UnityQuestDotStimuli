@@ -1,0 +1,238 @@
+{
+  "experiment_name": "DepthBaseline",
+  "files": {
+    "tsv": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260325_1831.tsv",
+    "meta": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260325_1831.tsv.meta.json",
+    "sidecar": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260325_1831.tsv.sidecar.json"
+  },
+  "counts": {
+    "n_trials_raw": 129,
+    "n_trials_used": 128,
+    "unique_keys": 64,
+    "duplicates_in_keyspace": {
+      "CUED|Rot1|H270|DelR|SwN": 2,
+      "CUED|Rot0|H45|DelR|SwN": 2,
+      "UNCUED|Rot0|H315|DelR|SwN": 2,
+      "UNCUED|Rot0|H180|DelG|SwN": 2,
+      "CUED|Rot1|H135|DelG|SwN": 2,
+      "UNCUED|Rot0|H45|DelR|SwN": 2,
+      "UNCUED|Rot0|H270|DelG|SwN": 2,
+      "UNCUED|Rot0|H0|DelG|SwN": 2,
+      "CUED|Rot0|H135|DelR|SwN": 2,
+      "CUED|Rot0|H315|DelG|SwN": 2,
+      "CUED|Rot0|H135|DelG|SwN": 2,
+      "UNCUED|Rot0|H180|DelR|SwN": 2,
+      "CUED|Rot0|H270|DelR|SwN": 2,
+      "UNCUED|Rot1|H315|DelR|SwN": 2,
+      "UNCUED|Rot1|H45|DelR|SwN": 2,
+      "CUED|Rot1|H225|DelG|SwN": 2,
+      "UNCUED|Rot1|H180|DelG|SwN": 2,
+      "CUED|Rot1|H180|DelG|SwN": 2,
+      "CUED|Rot0|H315|DelR|SwN": 2,
+      "CUED|Rot1|H225|DelR|SwN": 2,
+      "UNCUED|Rot0|H45|DelG|SwN": 2,
+      "UNCUED|Rot0|H315|DelG|SwN": 2,
+      "UNCUED|Rot1|H135|DelG|SwN": 2,
+      "UNCUED|Rot1|H225|DelG|SwN": 2,
+      "UNCUED|Rot0|H225|DelR|SwN": 2,
+      "CUED|Rot1|H90|DelR|SwN": 2,
+      "UNCUED|Rot0|H270|DelR|SwN": 2,
+      "UNCUED|Rot1|H315|DelG|SwN": 2,
+      "UNCUED|Rot0|H135|DelR|SwN": 2,
+      "UNCUED|Rot1|H0|DelG|SwN": 2,
+      "UNCUED|Rot1|H90|DelG|SwN": 2,
+      "CUED|Rot1|H0|DelG|SwN": 2,
+      "CUED|Rot1|H90|DelG|SwN": 2,
+      "CUED|Rot0|H0|DelG|SwN": 2,
+      "CUED|Rot1|H270|DelG|SwN": 2,
+      "CUED|Rot0|H90|DelG|SwN": 2,
+      "UNCUED|Rot1|H180|DelR|SwN": 2,
+      "CUED|Rot1|H0|DelR|SwN": 2,
+      "CUED|Rot1|H135|DelR|SwN": 2,
+      "UNCUED|Rot1|H225|DelR|SwN": 2,
+      "CUED|Rot1|H315|DelG|SwN": 2,
+      "CUED|Rot1|H45|DelG|SwN": 2,
+      "UNCUED|Rot0|H90|DelR|SwN": 2,
+      "UNCUED|Rot1|H45|DelG|SwN": 2,
+      "UNCUED|Rot0|H90|DelG|SwN": 2,
+      "CUED|Rot0|H225|DelR|SwN": 2,
+      "CUED|Rot1|H180|DelR|SwN": 2,
+      "CUED|Rot0|H180|DelR|SwN": 2,
+      "UNCUED|Rot1|H90|DelR|SwN": 2,
+      "CUED|Rot0|H0|DelR|SwN": 2,
+      "UNCUED|Rot0|H225|DelG|SwN": 2,
+      "CUED|Rot1|H315|DelR|SwN": 2,
+      "UNCUED|Rot0|H135|DelG|SwN": 2,
+      "CUED|Rot1|H45|DelR|SwN": 2,
+      "CUED|Rot0|H225|DelG|SwN": 2,
+      "UNCUED|Rot1|H0|DelR|SwN": 2,
+      "CUED|Rot0|H45|DelG|SwN": 2,
+      "UNCUED|Rot1|H270|DelR|SwN": 2,
+      "CUED|Rot0|H270|DelG|SwN": 2,
+      "UNCUED|Rot1|H135|DelR|SwN": 2,
+      "CUED|Rot0|H180|DelG|SwN": 2,
+      "CUED|Rot0|H90|DelR|SwN": 2,
+      "UNCUED|Rot0|H0|DelR|SwN": 2,
+      "UNCUED|Rot1|H270|DelG|SwN": 2
+    }
+  },
+  "hash_crosscheck": {
+    "have_sidecar": true,
+    "traj_entries_count": 128,
+    "nonzero_hash_trials": 128,
+    "matched": 128,
+    "missing": 0
+  },
+  "summary": {
+    "ALL": {
+      "label": "ALL",
+      "n": 128,
+      "responded": 127,
+      "correct": 57,
+      "acc": 0.44881889763779526,
+      "meanRTf": 98.58267716535433,
+      "stdRTf": 26.23438896727593
+    },
+    "by_cond": {
+      "CUED": {
+        "label": "CUED",
+        "n": 64,
+        "responded": 63,
+        "correct": 37,
+        "acc": 0.5873015873015873,
+        "meanRTf": 100.74603174603175,
+        "stdRTf": 30.113525018085568
+      },
+      "UNCUED": {
+        "label": "UNCUED",
+        "n": 64,
+        "responded": 64,
+        "correct": 20,
+        "acc": 0.3125,
+        "meanRTf": 96.453125,
+        "stdRTf": 21.539157428608366
+      }
+    },
+    "by_trans_field_color": {
+      "R": {
+        "label": "TransFieldColor=R",
+        "n": 64,
+        "responded": 64,
+        "correct": 35,
+        "acc": 0.546875,
+        "meanRTf": 100.421875,
+        "stdRTf": 27.31517703556715
+      },
+      "G": {
+        "label": "TransFieldColor=G",
+        "n": 64,
+        "responded": 63,
+        "correct": 22,
+        "acc": 0.3492063492063492,
+        "meanRTf": 96.71428571428571,
+        "stdRTf": 24.95038159928848
+      }
+    },
+    "by_cond_x_trans_field_color": {
+      "CUED_R": {
+        "label": "CUED TransFieldColor=R",
+        "n": 32,
+        "responded": 32,
+        "correct": 22,
+        "acc": 0.6875,
+        "meanRTf": 104.375,
+        "stdRTf": 29.584360310812873
+      },
+      "CUED_G": {
+        "label": "CUED TransFieldColor=G",
+        "n": 32,
+        "responded": 31,
+        "correct": 15,
+        "acc": 0.4838709677419355,
+        "meanRTf": 97.0,
+        "stdRTf": 30.19613305727909
+      },
+      "UNCUED_R": {
+        "label": "UNCUED TransFieldColor=R",
+        "n": 32,
+        "responded": 32,
+        "correct": 13,
+        "acc": 0.40625,
+        "meanRTf": 96.46875,
+        "stdRTf": 24.202252445536963
+      },
+      "UNCUED_G": {
+        "label": "UNCUED TransFieldColor=G",
+        "n": 32,
+        "responded": 32,
+        "correct": 7,
+        "acc": 0.21875,
+        "meanRTf": 96.4375,
+        "stdRTf": 18.49651571918344
+      }
+    },
+    "by_swap": null,
+    "by_cond_x_swap": null,
+    "contingency_cond_x_delayed_color": {
+      "CUED_R": 32,
+      "UNCUED_R": 32,
+      "UNCUED_G": 32,
+      "CUED_G": 32
+    },
+    "contingency_cond_x_translating_field_color": {
+      "CUED_R": 32,
+      "UNCUED_G": 32,
+      "UNCUED_R": 32,
+      "CUED_G": 32
+    }
+  },
+  "meta_file_contents": {
+    "schema_version": "vrdots.meta.v3",
+    "experiment_name": "DepthBaseline",
+    "application_version": "0.2.0",
+    "logging": {
+      "tsv_delimiter": "\t",
+      "write_payloads_in_tsv": false,
+      "hash_algorithm": "FNV-1a-32",
+      "columns": [
+        "Trial",
+        "Experiment",
+        "Cond",
+        "RotCfg",
+        "TransDeg",
+        "RespDeg",
+        "RespIndex",
+        "RespDigit",
+        "RTf",
+        "OnsetFrame",
+        "TransStartFrame",
+        "TransEndFrame",
+        "TotalFrames",
+        "SeedA0",
+        "SeedA1",
+        "SeedB2",
+        "SeedB3",
+        "DelayedFieldColor",
+        "DelayedFieldDepth",
+        "SwapType",
+        "EndKey",
+        "Device",
+        "MkHash32",
+        "ColorHash32",
+        "DepthHash32",
+        "MotionTypeByFrame_SubfieldCodes",
+        "ColorByFrame_SubfieldCodes",
+        "DepthByFrame_SubfieldCodes"
+      ]
+    },
+    "stats": {
+      "target_number_trials": 128,
+      "generated_trials": 128,
+      "started_trials": 129,
+      "completed_trials": 129,
+      "requeued_trials": 1,
+      "measured_fps_mean": null,
+      "measured_fps_std": null
+    }
+  }
+}

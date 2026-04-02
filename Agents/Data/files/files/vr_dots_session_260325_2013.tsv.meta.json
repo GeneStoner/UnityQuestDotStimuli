@@ -1,0 +1,20 @@
+{
+  "schema_version": "vrdots.meta.v3",
+  "experiment_name": "DepthBaseline",
+  "application_version": "0.2.0",
+  "logging": {
+    "tsv_delimiter": "\t",
+    "write_payloads_in_tsv": false,
+    "hash_algorithm": "FNV-1a-32",
+    "columns": ["Trial", "Experiment", "Cond", "RotCfg", "TransDeg", "RespDeg", "RespIndex", "RespDigit", "RTf", "OnsetFrame", "TransStartFrame", "TransEndFrame", "TotalFrames", "SeedA0", "SeedA1", "SeedB2", "SeedB3", "DelayedFieldColor", "DelayedFieldDepth", "SwapType", "EndKey", "Device", "MkHash32", "ColorHash32", "DepthHash32", "MotionTypeByFrame_SubfieldCodes", "ColorByFrame_SubfieldCodes", "DepthByFrame_SubfieldCodes"]
+  },
+  "stats": {
+    "target_number_trials": 128,
+    "generated_trials": 128,
+    "started_trials": 131,
+    "completed_trials": 131,
+    "requeued_trials": 3,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "vrdots.meta.v3",
+  "experiment_name": "MotionSwap",
+  "application_version": "0.2.0",
+  "logging": {
+    "tsv_delimiter": "\t",
+    "write_payloads_in_tsv": false,
+    "hash_algorithm": "FNV-1a-32",
+    "columns": ["Trial", "Experiment", "Cond", "RotCfg", "TransDeg", "RespDeg", "RespIndex", "RespDigit", "RTf", "OnsetFrame", "TransStartFrame", "TransEndFrame", "TotalFrames", "SeedA0", "SeedA1", "SeedB2", "SeedB3", "DelayedFieldColor", "SwapType", "EndKey", "Device", "MkHash32", "ColorHash32", "MotionTypeByFrame_SubfieldCodes", "ColorByFrame_SubfieldCodes"]
+  },
+  "stats": {
+    "target_number_trials": 128,
+    "generated_trials": 128,
+    "started_trials": 3,
+    "completed_trials": 3,
+    "requeued_trials": 0,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+  }
+}

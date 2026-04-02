@@ -1,0 +1,2 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	DepthSwapCtrl_005m	UNCUED	0	180	225	5	1	363	56	78	84	114	1624032746	1961660486	733941072	1934966793	G	F	ZdB		XR Controller	1CE20318	083E616C	32DDF264			

@@ -1,0 +1,3 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	DepthSwapCtrl_005m	UNCUED	0	135	-1	-1	-1	69	56	78	84	114	760551827	1321537073	1834051016	326638203	G	F	ZdB	Return	Keyboard	1CE20318	083E616C	32DDF264			
+1	DepthSwapCtrl_005m	CUED	1	45	-1	-1	-1	-1	56	78	84	114	867122553	1748988813	749757662	580233637	G	N	N	ABORT	OnApplicationQuit	00000000	00000000	00000000			

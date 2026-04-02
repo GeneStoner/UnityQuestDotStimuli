@@ -1,0 +1,94 @@
+{
+  "schema_version": "vrdots.meta.v1",
+  "session": {
+    "session_id": "vr_dots_session_251217_1556",
+    "created_iso8601": "2025-12-17T15:56:48.0348010-08:00",
+    "timezone": "America/Los_Angeles",
+    "data_file": "vr_dots_session_251217_1556.tsv",
+    "meta_file": "vr_dots_session_251217_1556.tsv.meta.json",
+    "notes": ""
+},
+  "build": {
+    "unity_version": "6000.2.7f2",
+    "platform": "OSXEditor",
+    "application_version": "0.1.4",
+    "git_commit": "",
+    "git_branch": "",
+    "experiment_version": ""
+},
+  "stimulus": {
+    "view_distance_m": 2,
+    "meters_per_degree": 0,
+    "aperture_radius_deg": 0,
+    "dot_size_deg": 0,
+    "dot_size_m": 0,
+    "dots_per_field": 0,
+    "num_subfields": 0,
+    "sim_dt": 0,
+    "sim_hz": 0,
+    "translation_speed_deg_per_sec": 2.25999999,
+    "rotation_speed_deg_per_sec": 0,
+    "heading_convention": "0deg=+X (right), 90deg=+Y (up), CCW positive"
+},
+  "conditions": {
+    "motion_kind_map": {
+      "0": "None",
+      "1": "Linear",
+      "2": "RotationCW",
+      "3": "RotationCCW",
+      "4": "NonCoherent"
+},
+    "color_code_map": {
+      "R": "Red",
+      "G": "Green",
+      "B": "Blue",
+      "Y": "Yellow",
+      "K": "Black/Off"
+}
+},
+  "response": {
+    "max_response_frames": 0,
+    "rt_units": "frames",
+    "choice_map": {"0": {
+        "digit": 8,
+        "dir": "N"
+},"1": {
+        "digit": 9,
+        "dir": "NE"
+},"2": {
+        "digit": 6,
+        "dir": "E"
+},"3": {
+        "digit": 3,
+        "dir": "SE"
+},"4": {
+        "digit": 2,
+        "dir": "S"
+},"5": {
+        "digit": 1,
+        "dir": "SW"
+},"6": {
+        "digit": 4,
+        "dir": "W"
+},"7": {
+        "digit": 7,
+        "dir": "NW"
+}
+}
+},
+  "logging": {
+    "tsv_delimiter": "\\t",
+    "missing_int": -1,
+    "missing_string": "",
+    "columns": [
+    ]
+},
+  "stats": {
+    "planned_trials": 0,
+    "started_trials": 0,
+    "completed_trials": 0,
+    "requeued_trials": 0,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+}
+}

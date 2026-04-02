@@ -1,0 +1,103 @@
+{
+  "schema_version": "vrdots.meta.v1",
+  "subject": {
+    "subject_id": "S000",
+    "age": -1,
+    "sex": "",
+    "handedness": "",
+    "notes": ""
+  },
+  "session": {
+    "session_id": "vr_dots_session_251231_1228",
+    "created_iso8601": "2025-12-31T12:28:40.5243460-08:00",
+    "timezone": "America/Los_Angeles",
+    "data_file": "vr_dots_session_251231_1228.tsv",
+    "meta_file": "vr_dots_session_251231_1228.tsv.meta.json",
+    "notes": ""
+  },
+  "build": {
+    "unity_version": "6000.2.7f2",
+    "platform": "OSXEditor",
+    "application_version": "0.1.4",
+    "git_commit": "",
+    "git_branch": "",
+    "experiment_version": ""
+  },
+  "stimulus": {
+    "view_distance_m": 2,
+    "meters_per_degree": 0.03491013,
+    "aperture_radius_deg": 8,
+    "dot_size_deg": 0.5,
+    "dot_size_m": 0.01745507,
+    "dots_per_field": 400,
+    "num_subfields": 4,
+    "sim_dt": 0.01333333,
+    "sim_hz": 75,
+    "translation_speed_deg_per_sec": 2.26,
+    "rotation_speed_deg_per_sec": 81,
+    "heading_convention": "0deg=+X (right), 90deg=+Y (up), CCW positive"
+  },
+  "conditions": {
+    "motion_type_map": {
+      "0": "None",
+      "1": "RotationCW",
+      "2": "RotationCCW",
+      "3": "Linear",
+      "4": "NonCoherent"
+    },
+    "color_code_map": {
+      "R": "Red",
+      "G": "Green",
+      "B": "Blue",
+      "Y": "Yellow",
+      "K": "Black/Off"
+    }
+  },
+  "response": {
+    "rt_units": "frames"
+  },
+  "logging": {
+    "tsv_delimiter": "\t",
+    "missing_int": -1,
+    "missing_string": "",
+    "columns": ["Trial", "Cond", "TransDeg", "RespDeg", "RespIndex", "RespDigit", "RTf", "OnsetFrame", "TransStartFrame", "TransEndFrame", "TotalFrames", "SeedA0", "SeedA1", "SeedB2", "SeedB3", "DelayedFieldColor", "EndKey", "Device", "MotionTypeByFrame_SubfieldCodes", "ColorByFrame_SubfieldCodes"],
+    "column_descriptions": {
+      "Trial": "0-based trial index within this session file",
+      "Cond": "condition identifier (string)",
+      "TransDeg": "translation heading in degrees (0=right, 90=up, CCW+)",
+      "RespDeg": "response direction in degrees (same convention); -1 if none",
+      "RespIndex": "0..7 choice index; -1 if none",
+      "RespDigit": "keypad digit mapped from RespIndex; -1 if none",
+      "RTf": "reaction time in simulation frames; -1 if none",
+      "OnsetFrame": "frame index when delayed field becomes visible (simulation frames)",
+      "TransStartFrame": "first frame index where translation is applied (inclusive); translation spans [TransStartFrame, TransEndFrame)",
+      "TransEndFrame": "first frame index where translation is NOT applied (exclusive end)",
+      "TotalFrames": "stimulus duration in simulation frames",
+      "SeedA0": "random seed A0 (int32)",
+      "SeedA1": "random seed A1 (int32)",
+      "SeedB2": "random seed B2 (int32)",
+      "SeedB3": "random seed B3 (int32)",
+      "DelayedFieldColor": "delayed-onset field color after onset (R=Red, G=Green)",
+      "EndKey": "key that ended response window, or ABORT if session stopped mid-trial",
+      "Device": "input device label",
+      "MotionTypeByFrame_SubfieldCodes": "per-frame motion-type codes; frames separated by ';', subfields by '|'",
+      "ColorByFrame_SubfieldCodes": "per-frame color codes; frames separated by ';', subfields by '|'"
+    },
+    "payload_format": {
+      "frame_delimiter": ";",
+      "subfield_delimiter": "|",
+      "num_subfields_source": "stimulus.num_subfields",
+      "frame_count_source": "TotalFrames",
+      "frame_rate_hz_source": "stimulus.sim_hz"
+    }
+  },
+  "stats": {
+    "target_number_trials": 64,
+    "generated_trials": 320,
+    "started_trials": 2,
+    "completed_trials": 2,
+    "requeued_trials": 1,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "vrdots.sidecar.v1",
+  "created_iso8601": "2026-01-10T14:39:16.9737580-08:00",
+  "data_file": "vr_dots_session_260110_1439.tsv",
+  "sidecar_file": "vr_dots_session_260110_1439.tsv.sidecar.json",
+  "experiment_spec": {
+    "spec_name": "ExpSpecTestPhase",
+    "unique_stimulus_count": 64,
+    "planned_trials": 64
+  },
+  "preview": {
+    "monitor_preview_mode": true,
+    "preview_scale": 5,
+    "use_separate_preview_scales": false,
+    "preview_dot_scale": 4,
+    "preview_fixation_scale": 20,
+    "preview_aperture_scale": 5
+  },
+  "camera": {
+    "name": "Main Camera",
+    "projection": "perspective",
+    "field_of_view_deg": 60,
+    "orthographic_size": 0.1,
+    "near_clip": 0.01,
+    "far_clip": 1000
+  },
+  "stimulus_builder": {
+    "dots_per_field": 400,
+    "aperture_diameter_deg": 4,
+    "dot_size_m": 0.05,
+    "respawn_when_out_of_bounds": true
+  },
+  "fixation": {
+    "preview_scale": 1,
+    "inner_diameter_deg": 0.24,
+    "outer_diameter_deg": 0.6,
+    "z_outer": 0.0001,
+    "z_cross": -0.002,
+    "z_inner": -0.0016
+  }
+}

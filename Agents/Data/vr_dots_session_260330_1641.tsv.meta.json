@@ -1,0 +1,20 @@
+{
+  "schema_version": "vrdots.meta.v3",
+  "experiment_name": "DepthSwapCtrl_005m",
+  "application_version": "0.2.0",
+  "logging": {
+    "tsv_delimiter": "\t",
+    "write_payloads_in_tsv": false,
+    "hash_algorithm": "FNV-1a-32",
+    "columns": ["Trial", "Experiment", "Cond", "RotCfg", "TransDeg", "RespDeg", "RespIndex", "RespDigit", "RTf", "OnsetFrame", "TransStartFrame", "TransEndFrame", "TotalFrames", "SeedA0", "SeedA1", "SeedB2", "SeedB3", "DelayedFieldColor", "DelayedFieldDepth", "SwapType", "EndKey", "Device", "MkHash32", "ColorHash32", "DepthHash32", "MotionTypeByFrame_SubfieldCodes", "ColorByFrame_SubfieldCodes", "DepthByFrame_SubfieldCodes"]
+  },
+  "stats": {
+    "target_number_trials": 192,
+    "generated_trials": 192,
+    "started_trials": 1,
+    "completed_trials": 0,
+    "requeued_trials": 0,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+  }
+}

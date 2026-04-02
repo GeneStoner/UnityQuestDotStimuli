@@ -1,0 +1,2 @@
+Trial	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	EndKey	Device	MkHash32	ColorHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes
+0	CUED	0	45	-1	-1	-1	-1	56	78	100	130	871716971	2108949079	212752569	1161741718	R	ABORT	OnApplicationQuit	00000000	00000000		

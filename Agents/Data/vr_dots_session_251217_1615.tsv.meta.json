@@ -1,0 +1,73 @@
+{
+  "schema_version": "vrdots.meta.v1",
+  "subject": {
+    "subject_id": "S000",
+    "age": -1,
+    "sex": "",
+    "handedness": "",
+    "notes": ""
+  },
+  "session": {
+    "session_id": "vr_dots_session_251217_1615",
+    "created_iso8601": "2025-12-17T16:15:12.4727600-08:00",
+    "timezone": "America/Los_Angeles",
+    "data_file": "vr_dots_session_251217_1615.tsv",
+    "meta_file": "vr_dots_session_251217_1615.tsv.meta.json",
+    "notes": ""
+  },
+  "build": {
+    "unity_version": "6000.2.7f2",
+    "platform": "OSXEditor",
+    "application_version": "0.1.4",
+    "git_commit": "",
+    "git_branch": "",
+    "experiment_version": ""
+  },
+  "stimulus": {
+    "view_distance_m": 2,
+    "meters_per_degree": 0.03491013,
+    "aperture_radius_deg": 8,
+    "dot_size_deg": 0.5,
+    "dot_size_m": 0.01745507,
+    "dots_per_field": 400,
+    "num_subfields": 4,
+    "sim_dt": 0.01333333,
+    "sim_hz": 75,
+    "translation_speed_deg_per_sec": 2.26,
+    "rotation_speed_deg_per_sec": 81,
+    "heading_convention": "0deg=+X (right), 90deg=+Y (up), CCW positive"
+  },
+  "conditions": {
+    "motion_kind_map": {
+      "0": "None",
+      "1": "Linear",
+      "2": "RotationCW",
+      "3": "RotationCCW",
+      "4": "NonCoherent"
+    },
+    "color_code_map": {
+      "R": "Red",
+      "G": "Green",
+      "B": "Blue",
+      "Y": "Yellow",
+      "K": "Black/Off"
+    }
+  },
+  "response": {
+    "rt_units": "frames"
+  },
+  "logging": {
+    "tsv_delimiter": "\t",
+    "missing_int": -1,
+    "missing_string": "",
+    "columns": ["Trial", "Cond", "TransDeg", "RespDeg", "RespIndex", "RespDigit", "RTf", "On", "TS", "TE", "N", "SeedA0", "SeedA1", "SeedB2", "SeedB3", "EndKey", "Device", "MkRows", "ColorRows"]
+  },
+  "stats": {
+    "planned_trials": 0,
+    "started_trials": 4,
+    "completed_trials": 3,
+    "requeued_trials": 0,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+  }
+}

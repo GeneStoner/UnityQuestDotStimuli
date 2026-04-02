@@ -1,0 +1,228 @@
+{
+  "files": {
+    "tsv": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260114_0700.tsv",
+    "meta": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260114_0700.tsv.meta.json",
+    "sidecar": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260114_0700.tsv.sidecar.json"
+  },
+  "counts": {
+    "n_trials_raw": 256,
+    "n_trials_used": 256,
+    "unique_keys": 64,
+    "duplicates_in_keyspace": {
+      "CUED|Rot0|H45|DelR": 4,
+      "UNCUED|Rot1|H270|DelG": 4,
+      "CUED|Rot1|H270|DelR": 4,
+      "CUED|Rot0|H135|DelR": 4,
+      "CUED|Rot1|H315|DelR": 4,
+      "CUED|Rot1|H225|DelG": 4,
+      "CUED|Rot1|H0|DelG": 4,
+      "UNCUED|Rot1|H90|DelR": 4,
+      "CUED|Rot1|H90|DelR": 4,
+      "CUED|Rot1|H45|DelR": 4,
+      "CUED|Rot0|H0|DelG": 4,
+      "UNCUED|Rot1|H315|DelR": 4,
+      "CUED|Rot1|H270|DelG": 4,
+      "CUED|Rot0|H270|DelG": 4,
+      "UNCUED|Rot1|H180|DelG": 4,
+      "CUED|Rot0|H90|DelG": 4,
+      "UNCUED|Rot0|H90|DelG": 4,
+      "UNCUED|Rot0|H90|DelR": 4,
+      "CUED|Rot0|H45|DelG": 4,
+      "UNCUED|Rot0|H180|DelR": 4,
+      "CUED|Rot0|H225|DelR": 4,
+      "UNCUED|Rot0|H225|DelG": 4,
+      "UNCUED|Rot0|H225|DelR": 4,
+      "UNCUED|Rot1|H45|DelR": 4,
+      "UNCUED|Rot1|H135|DelG": 4,
+      "UNCUED|Rot1|H90|DelG": 4,
+      "CUED|Rot1|H0|DelR": 4,
+      "UNCUED|Rot0|H270|DelR": 4,
+      "UNCUED|Rot0|H0|DelR": 4,
+      "UNCUED|Rot1|H0|DelR": 4,
+      "CUED|Rot0|H225|DelG": 4,
+      "UNCUED|Rot0|H315|DelG": 4,
+      "UNCUED|Rot1|H0|DelG": 4,
+      "UNCUED|Rot1|H135|DelR": 4,
+      "UNCUED|Rot0|H135|DelR": 4,
+      "CUED|Rot1|H180|DelR": 4,
+      "CUED|Rot1|H135|DelR": 4,
+      "UNCUED|Rot0|H135|DelG": 4,
+      "CUED|Rot0|H270|DelR": 4,
+      "CUED|Rot1|H315|DelG": 4,
+      "UNCUED|Rot0|H315|DelR": 4,
+      "UNCUED|Rot1|H180|DelR": 4,
+      "UNCUED|Rot1|H315|DelG": 4,
+      "CUED|Rot0|H180|DelG": 4,
+      "UNCUED|Rot0|H180|DelG": 4,
+      "UNCUED|Rot0|H270|DelG": 4,
+      "CUED|Rot1|H135|DelG": 4,
+      "CUED|Rot0|H315|DelG": 4,
+      "CUED|Rot1|H225|DelR": 4,
+      "CUED|Rot0|H0|DelR": 4,
+      "CUED|Rot1|H180|DelG": 4,
+      "UNCUED|Rot0|H45|DelR": 4,
+      "UNCUED|Rot1|H225|DelG": 4,
+      "UNCUED|Rot1|H270|DelR": 4,
+      "CUED|Rot1|H45|DelG": 4,
+      "UNCUED|Rot0|H45|DelG": 4,
+      "CUED|Rot0|H135|DelG": 4,
+      "CUED|Rot0|H315|DelR": 4,
+      "UNCUED|Rot1|H225|DelR": 4,
+      "UNCUED|Rot1|H45|DelG": 4,
+      "CUED|Rot1|H90|DelG": 4,
+      "CUED|Rot0|H180|DelR": 4,
+      "CUED|Rot0|H90|DelR": 4,
+      "UNCUED|Rot0|H0|DelG": 4
+    }
+  },
+  "hash_crosscheck": {
+    "have_sidecar": true,
+    "traj_entries_count": 64,
+    "nonzero_hash_trials": 256,
+    "matched": 256,
+    "missing": 0
+  },
+  "summary": {
+    "ALL": {
+      "label": "ALL",
+      "n": 256,
+      "responded": 256,
+      "correct": 170,
+      "acc": 0.6640625,
+      "meanRTf": 58.3359375,
+      "stdRTf": 16.942355090013127
+    },
+    "by_cond": {
+      "CUED": {
+        "label": "CUED",
+        "n": 128,
+        "responded": 128,
+        "correct": 94,
+        "acc": 0.734375,
+        "meanRTf": 57.953125,
+        "stdRTf": 17.5818884860067
+      },
+      "UNCUED": {
+        "label": "UNCUED",
+        "n": 128,
+        "responded": 128,
+        "correct": 76,
+        "acc": 0.59375,
+        "meanRTf": 58.71875,
+        "stdRTf": 16.2687091816622
+      }
+    },
+    "by_trans_field_color": {
+      "R": {
+        "label": "TransFieldColor=R",
+        "n": 128,
+        "responded": 128,
+        "correct": 114,
+        "acc": 0.890625,
+        "meanRTf": 59.2890625,
+        "stdRTf": 19.775360435933745
+      },
+      "G": {
+        "label": "TransFieldColor=G",
+        "n": 128,
+        "responded": 128,
+        "correct": 56,
+        "acc": 0.4375,
+        "meanRTf": 57.3828125,
+        "stdRTf": 13.461241290826182
+      }
+    },
+    "by_cond_x_trans_field_color": {
+      "CUED_R": {
+        "label": "CUED TransFieldColor=R",
+        "n": 64,
+        "responded": 64,
+        "correct": 58,
+        "acc": 0.90625,
+        "meanRTf": 59.234375,
+        "stdRTf": 19.817717915021774
+      },
+      "CUED_G": {
+        "label": "CUED TransFieldColor=G",
+        "n": 64,
+        "responded": 64,
+        "correct": 36,
+        "acc": 0.5625,
+        "meanRTf": 56.671875,
+        "stdRTf": 14.90706070908598
+      },
+      "UNCUED_R": {
+        "label": "UNCUED TransFieldColor=R",
+        "n": 64,
+        "responded": 64,
+        "correct": 56,
+        "acc": 0.875,
+        "meanRTf": 59.34375,
+        "stdRTf": 19.732760474335567
+      },
+      "UNCUED_G": {
+        "label": "UNCUED TransFieldColor=G",
+        "n": 64,
+        "responded": 64,
+        "correct": 20,
+        "acc": 0.3125,
+        "meanRTf": 58.09375,
+        "stdRTf": 11.797402719984598
+      }
+    },
+    "contingency_cond_x_delayed_color": {
+      "CUED_R": 64,
+      "UNCUED_G": 64,
+      "CUED_G": 64,
+      "UNCUED_R": 64
+    },
+    "contingency_cond_x_translating_field_color": {
+      "CUED_R": 64,
+      "UNCUED_R": 64,
+      "CUED_G": 64,
+      "UNCUED_G": 64
+    }
+  },
+  "meta_file_contents": {
+    "schema_version": "vrdots.meta.v2",
+    "logging": {
+      "tsv_delimiter": "\t",
+      "write_payloads_in_tsv": false,
+      "hash_algorithm": "FNV-1a-32",
+      "columns": [
+        "Trial",
+        "Cond",
+        "RotCfg",
+        "TransDeg",
+        "RespDeg",
+        "RespIndex",
+        "RespDigit",
+        "RTf",
+        "OnsetFrame",
+        "TransStartFrame",
+        "TransEndFrame",
+        "TotalFrames",
+        "SeedA0",
+        "SeedA1",
+        "SeedB2",
+        "SeedB3",
+        "DelayedFieldColor",
+        "EndKey",
+        "Device",
+        "MkHash32",
+        "ColorHash32",
+        "MotionTypeByFrame_SubfieldCodes",
+        "ColorByFrame_SubfieldCodes"
+      ]
+    },
+    "stats": {
+      "target_number_trials": 256,
+      "generated_trials": 256,
+      "started_trials": 256,
+      "completed_trials": 256,
+      "requeued_trials": 0,
+      "measured_fps_mean": null,
+      "measured_fps_std": null
+    }
+  }
+}

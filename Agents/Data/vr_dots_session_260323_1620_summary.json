@@ -1,0 +1,164 @@
+{
+  "files": {
+    "tsv": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260323_1620.tsv",
+    "meta": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260323_1620.tsv.meta.json",
+    "sidecar": "/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/vr_dots_session_260323_1620.tsv.sidecar.json"
+  },
+  "counts": {
+    "n_trials_raw": 64,
+    "n_trials_used": 64,
+    "unique_keys": 64,
+    "duplicates_in_keyspace": {}
+  },
+  "hash_crosscheck": {
+    "have_sidecar": true,
+    "traj_entries_count": 64,
+    "nonzero_hash_trials": 64,
+    "matched": 64,
+    "missing": 0
+  },
+  "summary": {
+    "ALL": {
+      "label": "ALL",
+      "n": 64,
+      "responded": 64,
+      "correct": 33,
+      "acc": 0.515625,
+      "meanRTf": 94.8125,
+      "stdRTf": 35.175397563496
+    },
+    "by_cond": {
+      "CUED": {
+        "label": "CUED",
+        "n": 32,
+        "responded": 32,
+        "correct": 22,
+        "acc": 0.6875,
+        "meanRTf": 90.84375,
+        "stdRTf": 29.615356420909407
+      },
+      "UNCUED": {
+        "label": "UNCUED",
+        "n": 32,
+        "responded": 32,
+        "correct": 11,
+        "acc": 0.34375,
+        "meanRTf": 98.78125,
+        "stdRTf": 39.57329779583071
+      }
+    },
+    "by_trans_field_color": {
+      "R": {
+        "label": "TransFieldColor=R",
+        "n": 32,
+        "responded": 32,
+        "correct": 22,
+        "acc": 0.6875,
+        "meanRTf": 96.21875,
+        "stdRTf": 38.072902416778
+      },
+      "G": {
+        "label": "TransFieldColor=G",
+        "n": 32,
+        "responded": 32,
+        "correct": 11,
+        "acc": 0.34375,
+        "meanRTf": 93.40625,
+        "stdRTf": 31.954909027213642
+      }
+    },
+    "by_cond_x_trans_field_color": {
+      "CUED_R": {
+        "label": "CUED TransFieldColor=R",
+        "n": 16,
+        "responded": 16,
+        "correct": 13,
+        "acc": 0.8125,
+        "meanRTf": 98.6875,
+        "stdRTf": 32.803808372656974
+      },
+      "CUED_G": {
+        "label": "CUED TransFieldColor=G",
+        "n": 16,
+        "responded": 16,
+        "correct": 9,
+        "acc": 0.5625,
+        "meanRTf": 83.0,
+        "stdRTf": 23.558437978779494
+      },
+      "UNCUED_R": {
+        "label": "UNCUED TransFieldColor=R",
+        "n": 16,
+        "responded": 16,
+        "correct": 9,
+        "acc": 0.5625,
+        "meanRTf": 93.75,
+        "stdRTf": 42.55364261728953
+      },
+      "UNCUED_G": {
+        "label": "UNCUED TransFieldColor=G",
+        "n": 16,
+        "responded": 16,
+        "correct": 2,
+        "acc": 0.125,
+        "meanRTf": 103.8125,
+        "stdRTf": 35.64621079091016
+      }
+    },
+    "contingency_cond_x_delayed_color": {
+      "CUED_R": 16,
+      "UNCUED_G": 16,
+      "UNCUED_R": 16,
+      "CUED_G": 16
+    },
+    "contingency_cond_x_translating_field_color": {
+      "CUED_R": 16,
+      "UNCUED_R": 16,
+      "UNCUED_G": 16,
+      "CUED_G": 16
+    }
+  },
+  "meta_file_contents": {
+    "schema_version": "vrdots.meta.v2",
+    "application_version": "0.2.0",
+    "logging": {
+      "tsv_delimiter": "\t",
+      "write_payloads_in_tsv": false,
+      "hash_algorithm": "FNV-1a-32",
+      "columns": [
+        "Trial",
+        "Cond",
+        "RotCfg",
+        "TransDeg",
+        "RespDeg",
+        "RespIndex",
+        "RespDigit",
+        "RTf",
+        "OnsetFrame",
+        "TransStartFrame",
+        "TransEndFrame",
+        "TotalFrames",
+        "SeedA0",
+        "SeedA1",
+        "SeedB2",
+        "SeedB3",
+        "DelayedFieldColor",
+        "EndKey",
+        "Device",
+        "MkHash32",
+        "ColorHash32",
+        "MotionTypeByFrame_SubfieldCodes",
+        "ColorByFrame_SubfieldCodes"
+      ]
+    },
+    "stats": {
+      "target_number_trials": 64,
+      "generated_trials": 64,
+      "started_trials": 64,
+      "completed_trials": 64,
+      "requeued_trials": 0,
+      "measured_fps_mean": null,
+      "measured_fps_std": null
+    }
+  }
+}

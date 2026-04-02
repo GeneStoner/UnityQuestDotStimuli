@@ -1,0 +1,18 @@
+{
+  "schema_version": "vrdots.meta.v2",
+  "logging": {
+    "tsv_delimiter": "\t",
+    "write_payloads_in_tsv": false,
+    "hash_algorithm": "FNV-1a-32",
+    "columns": ["Trial", "Cond", "RotCfg", "TransDeg", "RespDeg", "RespIndex", "RespDigit", "RTf", "OnsetFrame", "TransStartFrame", "TransEndFrame", "TotalFrames", "SeedA0", "SeedA1", "SeedB2", "SeedB3", "DelayedFieldColor", "EndKey", "Device", "MkHash32", "ColorHash32", "MotionTypeByFrame_SubfieldCodes", "ColorByFrame_SubfieldCodes"]
+  },
+  "stats": {
+    "target_number_trials": 64,
+    "generated_trials": 64,
+    "started_trials": 7,
+    "completed_trials": 7,
+    "requeued_trials": 0,
+    "measured_fps_mean": null,
+    "measured_fps_std": null
+  }
+}
