@@ -166,17 +166,32 @@ The Near inversion seen binocularly disappears monocularly (Near becomes +1.8pp 
 
 ## 3. Theoretical Interpretation
 
-### 3.1 Cueing effect in same-color context
+### 3.1 Color, depth, and cueing magnitude across experiments
 
-The DepthSwapCtrl cueing effect (+12.5pp binocular) is substantially smaller than the two-color Baseline (~28–50pp). Both Mitchell (2003) and the V1 Point-Set model suggest color provides a facilitative dimension. Removing color while adding depth at 0.05m appears to produce a net reduction in absolute cueing magnitude relative to the two-color no-depth conditions. This is consistent with:
-- Color being more salient or perceptually distinctive than 0.05m depth at 2m viewing distance (≈0.72 arcmin disparity)
-- The depth signal at 0.05m being a weaker feature dimension than a full red/green color difference
+Now that color config is verified, three distinct conditions exist in the pilot data:
 
-**The prediction from our model**: a two-color, depth-separated condition should produce the *strongest* cueing effects, as both the color and depth dimensions of the V1 point-set would be populated. This experiment has not been run.
+| Condition | Color | Depth | Overall cueing | Far cueing |
+|-----------|-------|-------|----------------|------------|
+| Two-color, no depth (Baseline) | R+G | None | ~28–50pp | n/a |
+| Two-color, depth 0.10m (DepthBaseline) | R+G | 0.10m | ~8–28pp | ~59–65pp |
+| Same-color, depth 0.05m (DepthSwapCtrl) | R only | 0.05m | +12.5pp | +30.9pp |
+
+The overall cueing magnitude in two-color DepthBaseline (~8–28pp average of two 0.10m sessions) is not dramatically different from same-color DepthSwapCtrl (+12.5pp), despite the larger depth separation. This is because overall cueing in both depth conditions is dominated by the Near/Far split — the Near plane suppresses overall cueing by contributing a negative term, masking a much larger Far effect.
+
+**The more informative comparison is Far-plane cueing only:**
+- Two-color, no depth: ~28–50pp (no Near/Far distinction)
+- Two-color, depth 0.10m: Far ~59–65pp
+- Same-color, depth 0.05m: Far ~31pp
+
+This pattern is consistent with the V1 Point-Set model prediction: **depth separation adds a dimension to the point-set, facilitating Far-plane cueing above the no-depth baseline.** The two-color DepthBaseline shows the largest Far cueing of any condition tested (~59–65pp), combining both color and a strong depth signal (0.10m). Reducing depth separation to 0.05m AND removing color (DepthSwapCtrl) brings Far cueing down to ~31pp — still substantial and ***. The relative contributions of the two changes (color removal vs. depth reduction) cannot be separated without a within-experiment manipulation, but both are predicted to reduce cueing by the model.
+
+**The prediction from our model** — that two-color + depth-separated stimuli should produce the strongest cueing — is partially supported by the DepthBaseline Far data (~59–65pp Far cueing with two-color + 0.10m). A direct within-experiment comparison (same-color vs. two-color within DepthSwapCtrl at 0.05m) would be the clean test and has not been run.
+
+**One important caveat**: the two-color DepthBaseline sessions have no swap conditions (no ZdA/ZdB noise), single-session n (n=16/cell), and larger depth separation than DepthSwapCtrl. Direct magnitude comparisons should be treated as indicative rather than definitive.
 
 ### 3.2 Far >> Near asymmetry: candidate accounts
 
-This is the most robust and theoretically novel finding. No prior published study in the transparent-motion literature has tested this comparison, and no theoretical framework predicts it a priori. Candidate accounts:
+This is the most robust and theoretically novel finding. No prior published study in the transparent-motion literature has tested this comparison, and no theoretical framework predicts it a priori. Importantly, the asymmetry is present in **both** the two-color DepthBaseline sessions (Far ~59–65pp, Near ~−5 to −47pp at 0.10m) and the same-color DepthSwapCtrl sessions (Far +30.9pp***, Near −5.9pp n.s. at 0.05m). Its replication across color conditions and depth separations argues against it being a color-interaction artifact and in favor of a genuine depth-plane effect. Candidate accounts:
 
 **a) MT population anisotropy** (PubMed 21068268, not yet retrieved): MT is reported to have more neurons tuned to far disparities in some preparations. A larger neural population for Far-plane stimuli would produce stronger attentional selection signals for the Far surface.
 
