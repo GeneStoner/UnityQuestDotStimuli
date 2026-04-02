@@ -31,13 +31,18 @@ This is not anticipated by prior object-based attention literature and may be a 
 
 ---
 
-## The color confound between depth experiments
+## The color confound — broader than it first appears
 
-A methodological point worth sitting with: the DepthBaseline sessions (0.10m, March 25) used the standard balanced-color design — one field red, one green, counterbalanced. DepthSwapCtrl (0.05m) used both fields red.
+Every experiment prior to DepthSwapCtrl — including the no-depth baselines (Jan 2026, March 23) and the DepthBaseline depth sessions (March 25) — used a balanced R/G design: one field red, one field green, counterbalanced across trials (confirmed from TSV `DelayedFieldColor` column). DepthSwapCtrl used both fields red throughout (`balanceDelayedFieldColor=false`).
 
-This means two things changed between the experiments: depth separation *and* color redundancy. In DepthBaseline, color and depth were redundant cues to field identity, potentially amplifying depth-plane segregation. The Near reversal at 0.10m might be larger partly because color reinforced the boundary between planes. DepthSwapCtrl's Near/Far asymmetry — with color removed — is a cleaner test that disparity alone drives the effect, but the two experiments are not strictly comparable.
+This means color is a confound in *every* cross-experiment comparison:
 
-A parametric experiment varying depth separation while holding color constant (both fields red throughout) would be the cleanest test of how the Near reversal scales with disparity.
+- The drop from +33–45pp (no-depth, R/G) to +13pp (DepthSwapCtrl bino N, both red) reflects both the addition of stereo depth **and** the removal of color as a segmentation cue. We cannot attribute the reduction to depth alone.
+- The DepthBaseline Near reversal (0.10m, R/G) cannot be straightforwardly compared to DepthSwapCtrl's Near/Far asymmetry (0.05m, both red) — two things changed.
+
+Within DepthSwapCtrl, color is held constant across all conditions, so all ZdA/ZdB/N comparisons, Near/Far contrasts, and binocular/monocular comparisons are internally valid. The problem is only with cross-experiment comparisons.
+
+Color provides an additional segmentation cue for field identity. Without it (DepthSwapCtrl), temporal onset and disparity are the only cues — arguably a cleaner design for the research question. But the earlier large effects (especially the Near reversal at 0.10m) might be partly inflated by color-reinforced segregation. Alternatively, color may not matter much for attentional selection and the effects are primarily driven by onset timing and depth. A direct experiment — same parameters, same depth, same everything, just both-red vs R/G — would answer this.
 
 ---
 

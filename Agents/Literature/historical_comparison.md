@@ -126,7 +126,7 @@ The Z swap (earlier version, swapping all translated dots to opposite depth) com
 
 ### Key observations
 
-**1. Adding stereo depth reduces overall cueing**: No-depth baseline ~+30pp; DepthSwapCtrl N binocular +13pp. The reduction could reflect: (a) depth complexity increasing task difficulty; (b) the Near plane reversal partially canceling the Far plane advantage in the overall average; (c) genuine reduction in temporal onset salience when depth is added.
+**1. Adding stereo depth reduces overall cueing**: No-depth baseline ~+30pp; DepthSwapCtrl N binocular +13pp. The reduction could reflect: (a) depth complexity increasing task difficulty; (b) the Near plane reversal partially canceling the Far plane advantage in the overall average; (c) genuine reduction in temporal onset salience when depth is added. **Important caveat**: all pre-DepthSwapCtrl experiments used balanced R/G colors (one field red, one green), while DepthSwapCtrl used both fields red. The reduction in overall cueing conflates the addition of depth with the removal of color as a segmentation cue — these effects cannot be separated from the current data.
 
 **2. The Near/Far asymmetry is not new**: It was already present — and more extreme — at 0.10m separation. At 0.10m, Near cueing is strongly *negative* (UNCUED captures attention from the Near plane). At 0.05m (DepthSwapCtrl), Near cueing is weak but not reliably negative. The asymmetry scales with depth separation.
 
