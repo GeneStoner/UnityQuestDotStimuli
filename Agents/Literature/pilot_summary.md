@@ -117,14 +117,14 @@ The cueing effect has been measured without stereo depth at the current timing (
 
 | Dataset | n | Δ | p | Notes |
 |---------|---|---|---|-------|
-| Jan 2026 (260122 pooled) | 128 | **+45pp** | *** | No depth, no swap |
-| March 23 pooled | 192 | **+33pp** | *** | No depth, no swap |
-| DepthSwapCtrl N, binocular | ~256 | **+13pp** | * | 0.05m depth, stereo |
-| DepthSwapCtrl N, all mono | ~384 | **+7pp** | n.s. | 0.05m depth, monocular |
+| Jan 2026 (260122 pooled) | 128 | **+45pp** | *** | No depth, no swap; **R/G balanced** |
+| March 23 pooled | 192 | **+33pp** | *** | No depth, no swap; **R/G balanced** |
+| DepthSwapCtrl N, binocular | ~256 | **+13pp** | * | 0.05m depth, stereo; **both red** |
+| DepthSwapCtrl N, all mono | ~384 | **+7pp** | n.s. | 0.05m depth, monocular; **both red** |
 
-The Jan/March no-depth baselines (+33–45pp) are substantially larger than DepthSwapCtrl binocular N (+13pp). Two non-exclusive explanations: (a) adding stereo depth reduces overall cueing by introducing competing near-plane attention capture; (b) session-to-session variability at small n means the no-depth estimates are noisy. The Jan/March difference (+45 vs +33pp) with the same parameters illustrates this variability.
+The Jan/March no-depth baselines (+33–45pp) are substantially larger than DepthSwapCtrl binocular N (+13pp). However, **this comparison is confounded by color**: all pre-DepthSwapCtrl sessions used balanced R/G colors (one field red, one green, counterbalanced), while DepthSwapCtrl used both fields red throughout — confirmed from TSV `DelayedFieldColor` column. The reduction from ~+33pp to +13pp therefore conflates (a) the addition of stereo depth, (b) the removal of color as a segmentation cue, and (c) possible effects of attentional state/complexity. These cannot be disentangled from the current data. The same caveat applies to comparisons between DepthBaseline (0.10m, R/G) and DepthSwapCtrl (0.05m, both red).
 
-**Qualification**: The no-depth sessions (Jan, March) had no depth planes and no swap conditions — the observer may have been in a simpler attentional state. DepthSwapCtrl introduces Near/Far depth complexity even in the N condition, which may reduce cueing independently of stereoscopic processing per se.
+**Additional qualification**: The no-depth sessions (Jan, March) had no depth planes and no swap conditions — the observer may have been in a simpler attentional state. DepthSwapCtrl introduces Near/Far depth complexity even in the N condition, which may reduce cueing independently of stereoscopic processing per se.
 
 ### 5.2 The Near reversal — a depth-plane attentional capture effect
 

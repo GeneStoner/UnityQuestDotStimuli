@@ -114,15 +114,15 @@ The Z swap (earlier version, swapping all translated dots to opposite depth) com
 
 ## 4. Comparison: Pre-Stereo vs DepthSwapCtrl
 
-| Condition | Cueing Δ | Comments |
-|-----------|----------|----------|
-| No-depth baseline (March 23) | **+33pp *** | No stereo, no swap |
-| DepthSwapCtrl N binocular | **+13pp * | With stereo depth, 0.05m sep |
-| DepthSwapCtrl N all-mono | +7pp n.s. | Monocular, no depth |
-| DepthBaseline Far only (0.10m) | **+60pp *** | Far plane, no swap, 0.10m |
-| DepthBaseline Near only (0.10m) | **−27pp** (avg) | Near plane — reversal |
-| DepthSwapCtrl N Far (bino) | ~+56pp *** | Far plane, 0.05m sep |
-| DepthSwapCtrl N Near (bino) | ~+12pp n.s. | Near plane, 0.05m sep |
+| Condition | Cueing Δ | Colors | Comments |
+|-----------|----------|--------|----------|
+| No-depth baseline (March 23) | **+33pp** *** | R/G balanced | No stereo, no swap |
+| DepthBaseline Far only (0.10m) | **+60pp** *** | R/G balanced | Far plane, no swap |
+| DepthBaseline Near only (0.10m) | **−27pp** (avg) | R/G balanced | Near plane — reversal |
+| DepthSwapCtrl N binocular | **+13pp** * | Both red | 0.05m depth, stereo |
+| DepthSwapCtrl N all-mono | +7pp n.s. | Both red | Monocular |
+| DepthSwapCtrl N Far (bino) | ~+56pp *** | Both red | Far plane, 0.05m |
+| DepthSwapCtrl N Near (bino) | ~+12pp n.s. | Both red | Near plane, 0.05m |
 
 ### Key observations
 
