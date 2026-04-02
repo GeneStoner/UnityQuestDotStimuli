@@ -40,7 +40,7 @@
 
 ## Analysis
 
-- [ ] Regenerate `three_factors_bino_vs_mono.png` and `depthswapctrl_all_sessions_bars.png` with final pilot n (n=768 bino, n=1153 mono)
+- [x] ~~Regenerate `three_factors_bino_vs_mono.png` and `depthswapctrl_all_sessions_bars.png` with final pilot n~~ — done (n=768 bino, n=1153 mono); saved to `Agents/Figures/`
 - [ ] Add depth column support to `analyze_vr_dots_v2.py` (backburner — low priority)
 - [ ] Consider session-level mixed-effects model once n-per-session is large enough
 - [ ] Investigate display distortion under monocular viewing — cardinal heading deficit in R-eye sessions suggests response wheel appears rotated
@@ -77,7 +77,7 @@
 ## Admin / Backup
 
 - [ ] After each session batch: copy updated memory files to `Agents/Memory/` and commit+push
-- [ ] Save key figure PNGs somewhere permanent (currently only in /tmp/ between sessions — regenerate from committed scripts or copy to `Agents/Figures/`)
+- [x] ~~Save key figure PNGs somewhere permanent~~ — copied to `Agents/Figures/` and committed (2026-04-01)
 - [ ] Session TSV/sidecar data: currently in `~/Library/Application Support/ThatsRandom/VRDotsDataFiles/` (local only) — confirm Time Machine covers this path
 - [ ] Commit `wip/quest-pilot` to GitHub at end of each work session
 
