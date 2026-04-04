@@ -462,6 +462,23 @@ public class StimulusBuilder : MonoBehaviour
         sf.root.gameObject.SetActive(active);
     }
 
+    /// <summary>
+    /// Force all dot renderers in a subfield to enabled=true, overriding visibleByFrame.
+    /// Used in the preview state so Field B dots are visible even though frame-0 marks them hidden.
+    /// </summary>
+    public void ForceSubfieldRendererEnabled(int index)
+    {
+        if (Subfields == null || index < 0 || index >= Subfields.Length) return;
+        var sf = Subfields[index];
+        if (sf == null || sf.dots == null) return;
+        foreach (var t in sf.dots)
+        {
+            if (t == null) continue;
+            var r = t.GetComponent<Renderer>();
+            if (r != null) r.enabled = true;
+        }
+    }
+
     private bool IsValid(int i)
     {
         return Subfields != null

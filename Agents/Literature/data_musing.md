@@ -1,5 +1,5 @@
 # VRDots Pilot — A Musing Document
-*Last updated: 2026-04-01*
+*Last updated: 2026-04-02*
 
 ---
 
@@ -28,6 +28,37 @@ The reversal scales with depth separation: strong at 0.10m, attenuated at 0.05m,
 **Tentative interpretation**: Near-plane stimuli carry a default attentional priority — possibly related to looming or binocular prominence. When the *UNCUED* field is at Near depth and translates, its salience overrides the temporal onset cue. Far-plane translation faces no such competition and is enhanced. The temporal cue and near-plane salience are in opposition, and near-plane salience wins at large enough depth separations.
 
 This is not anticipated by prior object-based attention literature and may be a novel finding.
+
+---
+
+## DepthParam — parametric depth separation (2026-04-02)
+
+Four sessions run in a single sitting: 0.03, 0.05, 0.10, 0.15m separation. R/G balanced colors. No swaps. n=32/cell per session. Second sessions planned. Full details in `depthparam_results.md`.
+
+### The cueing effect as a function of depth separation
+
+| Depth sep | Near cueing Δ | Far cueing Δ | Overall |
+|-----------|--------------|-------------|---------|
+| 0.03 m | **+12.5pp** | +46.9pp | +29.7pp |
+| 0.05 m | −9.4pp | +46.9pp | +18.8pp |
+| 0.10 m | −21.9pp | +46.9pp | +12.5pp |
+| 0.15 m | −25.0pp | +56.2pp | +15.6pp |
+
+### What this tells us
+
+**Far cueing is essentially depth-invariant and large.** CUED Far is 84–91% at all separations. Even at 0.03m — where the depth planes are barely perceptible — Far cueing Δ is already +47pp. The temporal onset cue and Far depth are synergistic and do not require large disparities to interact.
+
+**The Near reversal has a threshold around 0.03–0.05m.** Below this the cueing effect is positive (normal direction). Above it, it reverses, and by 0.10m it has saturated at approximately −22 to −25pp. UNCUED Near performance (no temporal cue, near plane) rises from 50% at 0.03m to 75% at 0.10m and stays there — the near plane without the temporal cue becomes increasingly discriminable as disparity grows.
+
+**CUED Near decreases monotonically to chance.** At 0.15m, the translating near-plane dots with the temporal cue are at exactly 50% — indistinguishable from chance. The temporal cue provides zero benefit for near-plane translation at large disparities.
+
+**The overall effect is misleading.** The aggregate cueing effect (overall Δ) drops from +30pp to +13pp as depth increases, which could be interpreted as depth harming cueing. In reality, Far cueing is unchanged and Near cueing has reversed — the average reflects cancellation of two large bidirectional effects, not a global reduction.
+
+### A second possible mechanism: fixation-depth attentional bias
+
+The observer noted during testing that fixating the fixation cross pulls attention naturally toward the fixation plane and rearward — objects in front of fixation (Near plane) feel unattended by default. This is consistent with known vergence-driven depth attention: the attentional spotlight in depth is asymmetric around the fixation point, extending more readily to far depths than near ones. If true, this provides a second account of the Near reversal that is independent of depth-plane grouping: the near plane is simply in the attentionally suppressed region relative to the fixation plane, and larger disparities push it further into that region.
+
+These two accounts — (1) near-plane salience/looming priority and (2) fixation-coupled attentional depth bias — make different predictions about what happens when fixation distance is manipulated. If the reversal flips when the fixation plane is moved to near depth, account (2) is supported. If it remains tied to absolute near/far regardless of fixation, account (1) is supported. A direct test is feasible.
 
 ---
 

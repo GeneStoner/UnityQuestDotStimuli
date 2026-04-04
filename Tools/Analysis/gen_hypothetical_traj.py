@@ -121,34 +121,43 @@ def add_legend(ax):
     ax.legend(handles=handles, loc="upper right", fontsize=7)
 
 
+# Factor labels for each panel.
+# F1 (D+/D-): did the delayed field dots coherently translate?
+# F2 (P+/P-): did the translating dots stay in the delayed field's onset depth plane?
+# F3 (Near/Far): which depth plane contained the coherent translating dots?
 PANELS = [
-    # (swap,  cued,  title)
-    ("N",   True,  "N — CUED  (no swap)\n"
-                   "Translators: S2=Coh(Near), S3=NonCoh(Near)  [original Field B plane]"),
-    ("N",   False, "N — UNCUED  (no swap)\n"
-                   "Translators: S0=Coh(Far),  S1=NonCoh(Far)   [original Field A plane]"),
-    ("ZdA", True,  "ZdA — CUED  (S0↔S2 depth swap; cued dot moves Near→Far)\n"
-                   "Translators: S2=Coh(Far), S1=NonCoh(Far)   [both in Far]"),
-    ("ZdA", False, "ZdA — UNCUED  (S0↔S2 depth swap)\n"
-                   "Translators: S0=Coh(Near), S3=NonCoh(Near) [both in Near]"),
-    ("ZdB", True,  "ZdB — CUED  (S1↔S3 depth swap; cued dot stays Near)\n"
-                   "Translators: S2=Coh(Near), S1=NonCoh(Near) [both in Near]"),
-    ("ZdB", False, "ZdB — UNCUED  (S1↔S3 depth swap)\n"
-                   "Translators: S0=Coh(Far),  S3=NonCoh(Far)  [both in Far]"),
+    # (swap, cued, swap_label, F1,   F2,   F3,     technical detail)
+    ("N",   True,  "N",   "D+", "P+", "Near",
+     "S2=Coh(Near), S3=NonCoh(Near) — delayed field stays in onset plane"),
+    ("N",   False, "N",   "D−", "P−", "Far",
+     "S0=Coh(Far),  S1=NonCoh(Far)  — non-delayed field translates in Far"),
+    ("ZdA", True,  "ZdA", "D+", "P−", "Far",
+     "S2=Coh(Far),  S1=NonCoh(Far)  — cued dot swaps Near→Far at tStart"),
+    ("ZdA", False, "ZdA", "D−", "P+", "Near",
+     "S0=Coh(Near), S3=NonCoh(Near) — S0 swaps Far→Near; translates in onset plane"),
+    ("ZdB", True,  "ZdB", "D+", "P+", "Near",
+     "S2=Coh(Near), S1=NonCoh(Near) — cued dot stays in onset plane (Near)"),
+    ("ZdB", False, "ZdB", "D−", "P−", "Far",
+     "S0=Coh(Far),  S3=NonCoh(Far)  — non-delayed field translates in Far"),
 ]
+
+# Factor label colors
+F3_COLOR = {"Near": "#c0392b", "Far": "#1a6faf"}
 
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "hypothetical_traj.png"
 
     n = len(PANELS)
-    fig = plt.figure(figsize=(16, 6.0 * n))
-    outer = gridspec.GridSpec(n, 1, hspace=0.45)
+    fig = plt.figure(figsize=(16, 7.0 * n))
+    outer = gridspec.GridSpec(n, 1, hspace=0.55)
 
-    header = ("FieldA(S0,S1)=Far/CW/Red   FieldB(S2,S3)=Near/CCW/Red (delayed)   "
-              f"onset={ONSET}  tStart={T_START}  tEnd={T_END}\n")
+    fig.text(0.01, 1.0,
+             "FieldA(S0●S1□)=Far/CW/Red   FieldB(S2▲S3◇)=Near/CCW/Red (delayed onset)   "
+             f"onset=fr{ONSET}  tStart=fr{T_START}  tEnd=fr{T_END}   (75Hz)",
+             fontsize=8, color="#555", va="top")
 
-    for i, (swap, cued, title) in enumerate(PANELS):
+    for i, (swap, cued, swap_label, f1, f2, f3, detail) in enumerate(PANELS):
         mt, depth = build(swap, cued)
 
         inner = gridspec.GridSpecFromSubplotSpec(
@@ -157,7 +166,12 @@ def main():
         ax_depth = fig.add_subplot(inner[1], sharex=ax_mt)
 
         scatter_subfields(ax_mt, mt)
-        ax_mt.set_title(header + title, fontsize=9, loc="left")
+
+        # Clean title: swap condition + technical detail on separate lines, no overlap
+        cued_str = "CUED" if cued else "UNCUED"
+        ax_mt.set_title(f"{swap_label} — {cued_str}\n{detail}",
+                        fontsize=9, loc="left", pad=4)
+
         ax_mt.set_ylabel("motion type", fontsize=9)
         ax_mt.set_yticks([1, 2, 3, 4])
         ax_mt.set_yticklabels(["CW rot", "Trans (coh)", "Trans (noise)", "CCW rot"], fontsize=8)
@@ -165,6 +179,26 @@ def main():
         ax_mt.set_xticklabels([])
         add_phase_markers(ax_mt)
         add_legend(ax_mt)
+
+        # ── Factor label box in pre-onset space (x ~ frame 28, centre of 0..56) ──
+        f3_col = F3_COLOR[f3]
+        box_x = 28   # midpoint of pre-onset region
+        box_y = 3.55 # near top of motion axis (ylim 0.5–4.5)
+
+        factor_text = (
+            f"F1: {f1}  (delayed={'translates' if f1=='D+' else 'does NOT translate'})\n"
+            f"F2: {f2}  (trans in onset plane={'YES' if f2=='P+' else 'NO'})\n"
+            f"F3: {f3}  (translating depth plane)"
+        )
+        ax_mt.text(box_x, box_y, factor_text,
+                   fontsize=9, va="top", ha="center",
+                   color=f3_col,
+                   bbox=dict(boxstyle="round,pad=0.4", fc="white",
+                             ec=f3_col, lw=1.5, alpha=0.95),
+                   fontfamily="monospace")
+
+        # Vertical line marking pre-onset region right edge
+        ax_mt.axvline(ONSET, ls=":", color="gray", lw=0.8)
 
         scatter_subfields(ax_depth, depth)
         ax_depth.set_xlabel("frame", fontsize=9)

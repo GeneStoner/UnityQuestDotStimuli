@@ -85,6 +85,22 @@ All sessions: 192/192 trials completed, 192/192 trajectories verified (mk + colo
 
 ---
 
+## 2b. DepthParam Sessions (2026-04-02)
+
+New experiment family: `Exp_DepthParam_003m/005m/010m/015m`. R/G balanced, no swaps, 128 trials, 32/cell. Purpose: parametric depth separation to map the Near/Far cueing asymmetry. Full results in `depthparam_results.md`.
+
+| Session | Depth | N | Overall | CUED Far | UNCUED Near | CUED Near | UNCUED Far |
+|---------|-------|---|---------|----------|-------------|-----------|------------|
+| 260402_0716 | 0.03m | 128 | 62.5%** | 90.6%*** | 50.0% n.s. | 62.5% n.s. | 43.8% n.s. |
+| 260402_0757 | 0.05m | 128 | 62.5%** | 84.4%*** | 68.8%* | 59.4% n.s. | 37.5% n.s. |
+| 260402_0624 | 0.10m | 128 | 62.5%** | 84.4%*** | 75.0%** | 53.1% n.s. | 37.5% n.s. |
+| 260402_0656 | 0.15m | 128 | 56.3%* | 84.4%*** | 75.0%** | 50.0% n.s. | 28.1%* |
+
+Near cueing Δ: +12.5pp → −9.4pp → −21.9pp → −25.0pp (crosses zero between 0.03 and 0.05m).
+Far cueing Δ: +46.9pp at all depths (saturated).
+
+---
+
 ## 3. Results
 
 ### 3.1 Binocular — swap × cueing (pooled 6 sessions, n=1152)
@@ -212,3 +228,86 @@ Substantial direction-specific response biases observed (deviation from flat 12.
 - **Mac pull dirs**: `/tmp/quest_pull/`, `/tmp/quest_pull2/`, `/tmp/qp3/`–`/tmp/qp7/` (per-session pulls)
 - **Mac local**: `/Users/genestoner1/Library/Application Support/ThatsRandom/VRDotsDataFiles/`
 - **ADB pull**: `adb pull /sdcard/Android/data/com.genestoner.vrdptsrebuildX.test/files/ /tmp/qpN/`
+
+---
+
+## 2c. DepthColorLinked Sessions (2026-04-04)
+
+New experiment: `Exp_DepthColorLinked` (`DepthColorLinked_005m`). Two-color design: Near plane = Red (#CC3333), Far plane = Green (#228B22), linked to depth plane via `linkDepthColor=1`. No-swap N condition excluded (`includeNoSwapBaseline=0`). R/G balanced across trials. 256 trials/session: ZdA+ZdB × CUED/UNCUED × Near/Far × 2 RotCfg × 8 headings.
+
+### Stimulus parameters (changes from DepthSwapCtrl)
+| Parameter | DepthSwapCtrl | DepthColorLinked |
+|-----------|---------------|-----------------|
+| Colors | Both red | Near=Red, Far=Green |
+| linkDepthColor | — | 1 (color follows depth at T_S) |
+| Swap conditions | N + ZdA + ZdB | ZdA + ZdB only |
+| Trials/session | 192 | 256 |
+| balanceDelayedFieldColor | 0 | 1 |
+
+### Sessions
+
+| Session | Date | N | Overall acc | Notes |
+|---------|------|---|-------------|-------|
+| 260404_0940 | 2026-04-04 | 256 | 31.2% | Session 1 — strong ZdNoi>>ZdCoh dissociation |
+| 260404_1123 | 2026-04-04 | 256 | 33.6% | Session 2 — flatter pattern; UNCUED elevated |
+
+### Factor framing (new 2×2 design)
+
+| Factor | Definition |
+|--------|-----------|
+| F1 Dot Cueing ✓/✗ | Does the delayed-onset dot field translate? (CUED vs UNCUED) |
+| F2 Depth Cueing ✓/✗ | Does translation occur at the depth where the cued field appeared? |
+
+Mapping:
+- Depth✓ = CUED+ZdNoi OR UNCUED+ZdCoh (translator at DFD during window)
+- Depth✗ = CUED+ZdCoh OR UNCUED+ZdNoi (translator at opp(DFD))
+
+### Results — Combined (n=512)
+
+| Condition | k | n | % correct | pp > chance | sig |
+|-----------|---|---|-----------|-------------|-----|
+| CUED + Depth✓ (ZdNoi) | 64 | 128 | 50.0% | +37.5pp | *** |
+| CUED + Depth✗ (ZdCoh) | 45 | 128 | 35.2% | +22.7pp | *** |
+| UNCUED + Depth✓ (ZdCoh) | 28 | 128 | 21.9% | +9.4pp | *** |
+| UNCUED + Depth✗ (ZdNoi) | 29 | 128 | 22.7% | +10.2pp | *** |
+
+**F1 Dot Cueing: +20.3pp *** (p<0.001)**
+**F2 Depth Cueing: +7.0pp * (p=0.045)**
+
+Dot cueing effect split by Depth Cueing:
+- Depth✓ conditions: CUED+ZdNoi vs UNCUED+ZdNoi = +27.3pp
+- Depth✗ conditions: CUED+ZdCoh vs UNCUED+ZdCoh = +13.3pp
+- Difference (~14pp) is the F1×F2 interaction: swapping depth+color costs ~half the cueing advantage
+
+### Between-session variability
+
+| | Session 1 | Session 2 | Combined |
+|--|-----------|-----------|---------|
+| CUED+ZdNoi | +46.9pp *** | +28.1pp *** | +37.5pp *** |
+| CUED+ZdCoh | +18.8pp *** | +26.6pp *** | +22.7pp *** |
+| UNCUED+ZdCoh | +3.1pp n.s. | +15.6pp *** | +9.4pp *** |
+| UNCUED+ZdNoi | +6.2pp † | +14.1pp *** | +10.2pp *** |
+| F1 Dot Cueing | +28.1pp *** | +12.5pp * | +20.3pp *** |
+| F2 Depth Cueing | +12.5pp * | +1.6pp n.s. | +7.0pp * |
+
+Session 2 was subjectively harder; observer unaware of strategy change. UNCUED elevation in S2 is suspicious (criterion shift? noise at n=64/cell?).
+
+### Comparison to DepthSwapCtrl (all-red, ZdA+ZdB only, matched)
+
+| Experiment | CUED | UNCUED | Cue effect |
+|-----------|------|--------|-----------|
+| DepthSwapCtrl (all-red, n=384) | +34.6pp | +20.8pp | +13.8pp *** |
+| DepthColorLinked (R/G, n=256) | +30.1pp | +9.8pp | +20.3pp *** |
+
+Larger cueing effect with color is driven by lower UNCUED baseline, not higher CUED. Color differentiation may make UNCUED trials harder (harder to accidentally track non-cued field). Needs more data.
+
+### Main finding
+Dot cueing effect is significantly reduced when the translating dots change depth plane AND color at the moment of translation (ZdCoh vs ZdNoi). Depth change alone (DepthSwapCtrl all-red) is sufficient to produce this disruption — adding color does not clearly make it worse, and may slightly reduce it. Color vs depth contributions cannot be separated within this experiment (they co-occur). A color-only swap experiment is needed to dissociate.
+
+### New code
+- `Assets/Scripts/ExpSpecTestPhase.cs`: new fields `linkDepthColor` (bool) and `includeNoSwapBaseline` (bool)
+- `Assets/ExperimentSpecs/Exp_DepthColorLinked.asset`: new experiment asset
+- `Tools/Analysis/depth_color_linked_fig.py` → `Agents/Figures/depth_color_linked_results.png`
+- `Tools/Analysis/depth_color_linked_writeup.py` → `Agents/WriteUps/depth_color_linked_writeup.pdf` (3 pages: design+trajectories, results, interpretation)
+- `Tools/Analysis/depth_color_linked_traj.py` → `Agents/Figures/depth_color_linked_traj.png` (frame-by-frame trajectories with R/G depth-color coding)
+

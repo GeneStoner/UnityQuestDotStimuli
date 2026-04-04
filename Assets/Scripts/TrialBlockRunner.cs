@@ -627,15 +627,12 @@ public class TrialBlockRunner : MonoBehaviour
         builder.BuildFromCondition(_currentCond);
         builder.SetDotsActive(false);
 
-        // Show both fields (sub0–sub3) at frame-0 positions during WaitingForStart so
-        // the observer can fuse both depth planes before triggering the trial.
-        // Sub2/sub3 (Field B) vanish at trial onset (frame 0) as usual.
+        // Show Field A (sub0/sub1) at frame-0 positions during WaitingForStart
+        // so vergence is established before the trial starts.
         if (showFieldAPreview)
         {
             builder.SetSubfieldActive(0, true);
             builder.SetSubfieldActive(1, true);
-            builder.SetSubfieldActive(2, true);
-            builder.SetSubfieldActive(3, true);
             builder.ApplyAppearance(_currentCond, 0);
             builder.ApplyDepthOffsets(_currentCond, 0);
         }

@@ -36,6 +36,15 @@ public class ExpSpecTestPhase : ExperimentSpec
     [Tooltip("Include ZdB trials (S1↔S3 depth swap; both translators in Near; cued dot stays in plane). Mutually exclusive with ZdA per trial.")]
     public bool includeDepth50BSwaps = false;
 
+    [Tooltip("When false, the no-swap baseline condition (swapFlags=0) is excluded from trial generation. " +
+             "Default true for backward compatibility.")]
+    public bool includeNoSwapBaseline = true;
+
+    [Tooltip("When true, dot colors follow depth-plane assignment: Near=rgbaRed, Far=rgbaGreen " +
+             "(determined per trial by delayedFieldColorCode + DFD). Colors change at tStart when " +
+             "subfields swap depth planes under ZdA/ZdB. Requires balanceDelayedFieldColor=true.")]
+    public bool linkDepthColor = false;
+
     // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
@@ -55,6 +64,8 @@ public class ExpSpecTestPhase : ExperimentSpec
         // ZdA and ZdB are mutually exclusive per trial; enabling both adds 2 conditions (not 3)
         if (includeDepth50ASwaps && includeDepth50BSwaps) swapFactor *= 3;
         else if (includeDepth50ASwaps || includeDepth50BSwaps) swapFactor *= 2;
+        // Remove the no-swap baseline if excluded
+        if (!includeNoSwapBaseline && swapFactor > 1) swapFactor -= 1;
 
         return condFactor * headingFactor * rotFactor * colorFactor * depthFactor * swapFactor;
     }
@@ -89,6 +100,9 @@ public class ExpSpecTestPhase : ExperimentSpec
         // ZdA and ZdB are mutually exclusive: remove any trial that has both set
         int bothAB = (int)SwapFlags.Depth50A | (int)SwapFlags.Depth50B;
         swapValues.RemoveAll(v => (v & bothAB) == bothAB);
+        // Optionally exclude the no-swap baseline
+        if (!includeNoSwapBaseline)
+            swapValues.Remove(0);
 
         // This is now the ONLY repetition knob.
         int reps = Mathf.Max(1, repeatsPerStimulus);
@@ -363,6 +377,17 @@ public class ExpSpecTestPhase : ExperimentSpec
                     cond.subfields[2].depthByFrame[f] = fieldADepth; // S2: Near→Far
                     cond.subfields[3].depthByFrame[f] = fieldBDepth; // S3: stays Near
                 }
+
+                // When depth-color is linked, colors follow depth-plane assignment after swap.
+                // S0→fieldBDepth (delayedColor), S1 stays fieldADepth (nonDelayedColor),
+                // S2→fieldADepth (nonDelayedColor), S3 stays fieldBDepth (delayedColor).
+                if (linkDepthColor)
+                {
+                    cond.subfields[0].colorByFrame[f] = delayedColor;
+                    cond.subfields[1].colorByFrame[f] = nonDelayedColor;
+                    cond.subfields[2].colorByFrame[f] = afterOnset ? nonDelayedColor : rgbaBlack;
+                    cond.subfields[3].colorByFrame[f] = afterOnset ? delayedColor    : rgbaBlack;
+                }
             }
 
             // ── ZdB: S1↔S3 depth swap; both translators stay in fieldBDepth (Near) ──
@@ -382,6 +407,17 @@ public class ExpSpecTestPhase : ExperimentSpec
                     cond.subfields[1].depthByFrame[f] = fieldBDepth; // S1: Far→Near
                     cond.subfields[2].depthByFrame[f] = fieldBDepth; // S2: stays Near
                     cond.subfields[3].depthByFrame[f] = fieldADepth; // S3: Near→Far
+                }
+
+                // When depth-color is linked, colors follow depth-plane assignment after swap.
+                // S0 stays fieldADepth (nonDelayedColor), S1→fieldBDepth (delayedColor),
+                // S2 stays fieldBDepth (delayedColor), S3→fieldADepth (nonDelayedColor).
+                if (linkDepthColor)
+                {
+                    cond.subfields[0].colorByFrame[f] = nonDelayedColor;
+                    cond.subfields[1].colorByFrame[f] = delayedColor;
+                    cond.subfields[2].colorByFrame[f] = afterOnset ? delayedColor    : rgbaBlack;
+                    cond.subfields[3].colorByFrame[f] = afterOnset ? nonDelayedColor : rgbaBlack;
                 }
             }
         }

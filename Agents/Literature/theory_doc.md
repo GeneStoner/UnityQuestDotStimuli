@@ -351,4 +351,92 @@ VRDots relevance: in VRDots, observers run multiple trials within a session. The
 
 ---
 
+## 9. Depth Attention Gradients: The Near/Far Asymmetry in Context
+
+*Added 2026-04-01. Motivated by the VRDots observation that Far >> Near cueing is the dominant and most robust finding, and by the user's phenomenological observation that during fixation, attention "embraces" the fixation point and everything beyond it (Far), not stimuli in front (Near).*
+
+### 9.1 The Phenomenological Observation and Its Framing
+
+The observer notes that, when fixating, attention is more naturally drawn to depths at or beyond the fixation plane rather than to depths in front of it. This is not merely anecdotal — it is consistent with a gradient model of attention in depth: attention is strongest at the fixation plane and falls off asymmetrically, with a shallower gradient toward Far depths and a steeper gradient toward Near (inside-fixation) depths. On this account, the Near depth plane in VRDots (1.975m, 25mm in front of the 2.0m fixation plane) sits inside the fixation-plane boundary — in the least-attended region of the depth gradient — while the Far plane (2.025m) sits just beyond it, in the naturally attended region.
+
+This directly maps onto the VRDots Near/Far cueing asymmetry: if attention is weaker for Near depths, the advantage conferred by the delayed-onset cue should be smaller (or inverted) for Near trials — precisely what is observed (Near: −5.9pp n.s. binocularly; Far: +30.9pp***).
+
+### 9.2 Two Candidate Mechanisms: Vergence-Driven vs. Disparity-Driven
+
+The phenomenological observation raises a mechanistic question: is the depth attention gradient *vergence-driven* (attention follows the motor state of the eyes, spreading outward from where the vergence muscles are aimed) or *disparity-driven* (depth is encoded from retinal disparity patterns, and attention follows the disparity-defined depth signal, independent of eye position)?
+
+This distinction has direct experimental and theoretical consequences:
+
+**Vergence-driven account**: Fixation drives vergence to converge at the fixation plane. The vergence motor state could drive an attentional gradient: objects requiring further convergence (Near) are actively suppressed because they are "behind" the current vergence effort; objects requiring relaxation (Far) are more easily accessible. Under this account, moving the fixation target to a Near point should reverse the gradient — Far becomes the unfixated side, and Near becomes the attended region.
+
+**Disparity-driven account**: The depth gradient arises from how the visual system represents crossed (Near) vs. uncrossed (Far) disparities, independent of the vergence state. On this account, moving the fixation depth would not flip the attentional gradient, because the disparity sign asymmetry is intrinsic to the cortical representation.
+
+### 9.3 Evidence From the Literature
+
+**Papers supporting Far > Near (consistent with VRDots):**
+
+**Parks & Corballis (2006, NeuroReport)** recorded ERPs during an attentional cueing paradigm with stereoscopic depth. P1 amplitude was enhanced only for far-attended conditions — no P1 modulation was found for near-attended targets. They proposed a viewer-centered gradient model in which the attended depth gradient is non-monotonic: centered at or just beyond the fixation plane, with suppression for depths inside fixation. This is the closest published prediction to the VRDots Near inversion.
+
+**Caziot, Rolfs & Backus (2023, PNAS Nexus)** directly tested the vergence-driven account using nonius lines and oculometry to measure vergence during a stereoscopic cueing task. They found a directional Far > Near trend (p=0.076, non-significant) and — crucially — *no vergence shift during depth cueing*. Vergence did not move when attention was directed to a different depth plane. This is the strongest published evidence against the vergence-driven account: the gradient is present without vergence change, implicating a disparity-driven mechanism.
+
+**Papers supporting Near > Far (contradicting VRDots):**
+
+**Andersen & Kramer (1993, P&P)** is the most-cited paper in the stereoscopic attention literature and found the opposite result: larger attentional facilitation for crossed (Near) than uncrossed (Far) disparities. This paper is widely cited as establishing a Near advantage and directly contradicts the VRDots result. The discrepancy is methodologically significant: Andersen & Kramer used a simple RT task with stationary stimuli and crossed/uncrossed disparity pedestals, not a surface-based motion paradigm. The VRDots task — selection of a coherent transparent surface via a temporal-onset cue — may recruit a fundamentally different form of depth-selective processing than the spatial cueing task used in Andersen & Kramer.
+
+**Chen, Meng, Matthews & Qian (2012, J Neurosci)** found a Near advantage in attentional reorienting and explicitly tested whether the asymmetry is vergence-driven by varying fixation depth across conditions. Critical finding: changing fixation depth did *not* reverse the Near > Far asymmetry. This argues against the vergence-driven account even for the Near-advantage literature. The persistence of the asymmetry despite fixation depth changes suggests a disparity-sign asymmetry intrinsic to cortical depth representations — but one that produces Near > Far in their paradigm, opposite to VRDots. The Chen et al. paradigm difference from VRDots is important: they used reflexive (involuntary) attention reorienting, not sustained object-based surface selection.
+
+**Mechanistic convergence across papers: disparity-driven, not vergence-driven:**
+
+**Arnott & Shedden (2000, P&P)** used autostereograms, in which the vergence posture is fixed at the screen distance regardless of perceived depth. The attentional asymmetry in depth persisted despite vergence being locked. This provides converging evidence that the gradient is in the disparity representation, not the vergence state.
+
+**Solé Puig et al. (2013, PLOS ONE)** found that vergence microsaccades track the attended depth (vergence follows attention) but do not predict RT improvements — they are a consequence of attention, not a cause. This dissociates the metric of vergence from the functional effect of depth-attention gradients.
+
+**Taken together, the literature converges on a disparity-driven mechanism for depth attention gradients**, despite disagreement on the direction of the gradient (Near > Far in most published work; Far > Near in Parks & Corballis 2006, Caziot et al. 2023, and VRDots).
+
+### 9.4 Surface-Based Selection in Depth: He & Nakayama
+
+**He & Nakayama (1992, Science; 1995, Psychological Review)** demonstrated that attention in three-dimensional scenes is organized around *surfaces*, not depth planes per se. In their paradigm, attention spread obligatorily across a coherent surface (defined by texture and disparity) and was blocked by surface boundaries. The unit of attentional selection is the surface as a perceptual object, not the depth plane as a spatial location. This is directly relevant to VRDots: in our paradigm, the attended entity is a coherent rotating-surface defined partly by its depth plane. The He & Nakayama surface-priority principle predicts that what matters is the coherence of the surface representation, not just the depth value — and depth contributes to surface coherence (consistent with our depth-field cueing result).
+
+**Nakayama & Silverman (1986, Science)** established that disparity is a preattentive dimension: conjunction search with depth is efficient (parallel), unlike conjunctions of other features. This means depth-based grouping precedes voluntary attention and can serve as an early basis for surface segregation — consistent with depth facilitating surface-based selection in VRDots.
+
+**Theeuwes, Atchley & Kramer (1998)** showed that depth-plane filtering effectiveness is feature-contingent: same-color stimuli across depth planes reduce the ability to filter by depth plane. This is directly relevant to VRDots' same-color (COLOR_RED) design — in the same-color condition, depth-plane filtering is weakened relative to two-color conditions, predicting reduced depth-field cueing. This partially explains why DepthSwapCtrl (same-color) shows weaker overall cueing than DepthBaseline (two-color), beyond the color-dimension reduction in the Point-Set.
+
+### 9.5 VR-Specific Considerations
+
+**Maringelli et al. (2001, Psychological Science)** showed that in immersive virtual environments without a visible virtual body, participants shift attention outward — toward Far depths — relative to standard lab settings. The absence of body representation in VR removes the Near reference frame (arms, torso at ~0.5–1m) that normally anchors attention to peripersonal space. In VRDots, the observer sees a VR scene with no body representation and with the display plane at 2m — a fixation-distance context in which the "body zone" attentional anchor is absent. This could produce a stronger Far bias in VR than would be observed in conventional stereoscope paradigms, contributing to a more pronounced Far > Near asymmetry.
+
+**Jänig et al. (2025)** ran an ERP experiment using a two-depth-plane random-dot kinematogram paradigm that is the nearest published analog to VRDots. This is important as a methodological comparison: if their paradigm reveals motion-onset ERP modulation by depth-plane attention, this validates the ERP approach for VRDots. The paradigm differences from VRDots (if any) bear on the interpretation of their results and the design choices for a future VRDots ERP study.
+
+### 9.6 Synthesis: Why Far > Near in VRDots?
+
+The published literature does not provide a definitive account. What can be said:
+
+1. **The Near inversion is binocular and absent monocularly** — it is generated by the stereoscopic depth representation, not a response bias or direction-encoding artifact.
+
+2. **Most published work finds Near > Far** (Andersen & Kramer 1993; Chen et al. 2012) — VRDots finds the opposite. This means VRDots is not simply replicating a known near-advantage in attention; the Far advantage is a genuine divergence from prior literature.
+
+3. **The Parks & Corballis (2006) ERP result** provides the best published precedent for a Far advantage and for Near suppression — their P1 result (enhanced only for Far-attended conditions) is fully consistent with the VRDots Near inversion. The difference from Andersen & Kramer may reflect task: surface-based selection of transparent motion fields vs. simple RT to isolated target stimuli.
+
+4. **The Caziot et al. (2023) result argues against vergence-drive**: even without vergence shift, a directional Far advantage was found. Combined with the VRDots monocular data (Near inversion absent monocularly but Far advantage partially survives), the most parsimonious account is: **the gradient is disparity-driven, with crossed (Near) and uncrossed (Far) disparities producing asymmetric attentional gradients, and the direction of the asymmetry may depend on task (reflexive reorienting vs. sustained surface-based selection)**.
+
+5. **The user's phenomenological report** (attention embraces Far, not Near, during fixation) is consistent with a viewing context in which there is nothing of interest at near distances (no peripersonal objects, no body representation in VR), and the functional task demand is to track moving fields at 2m. This is a context where Far (beyond fixation) is the naturally attended region.
+
+6. **Theeuwes et al. (1998)** warns that same-color design weakens depth-plane filtering. This reduces the strength of the depth-field cueing effect (Factor 2) but should not reverse it. The Near inversion is therefore probably not an artifact of the same-color design, since it is also present in the two-color DepthBaseline sessions.
+
+### 9.7 The Key Unresolved Experiment: Fixation-Distance Reversal
+
+The cleanest test to dissociate vergence-driven from disparity-driven accounts — and to test the phenomenological observation directly — is a **fixation-distance manipulation within VRDots**:
+
+- **Condition A** (current VRDots): fixation at 2.0m; surfaces at 1.975m (Near) and 2.025m (Far). Expect: Far > Near (observed).
+- **Condition B**: fixation at 2.025m (the current Far plane); surfaces at 2.0m (now Near relative to fixation) and 2.05m (now Far relative to fixation). Vergence-driven account predicts the asymmetry reverses. Disparity-driven account predicts the asymmetry stays in the same direction relative to the display, or at least does not fully reverse.
+- **Condition C**: fixation at 1.975m (the current Near plane); surfaces at 1.925m (Far of fixation) and 1.975m+small offset (Near of fixation). Same logic.
+
+If the gradient reverses with fixation distance, it is vergence-driven. If it does not reverse, it is disparity-driven. **No published paper has done this cleanly in a transparent-motion surface-selection paradigm.** Chen et al. (2012) varied fixation depth but used a reflexive attention paradigm; their fixation depth change did not reverse the asymmetry, arguing for disparity-drive. A VRDots version of this test would be the first clean test in a surface-selection context.
+
+---
+
+*Section 9 added 2026-04-01. Literature search: Parks & Corballis 2006, Caziot et al. 2023, Andersen & Kramer 1993, Chen et al. 2012, Arnott & Shedden 2000, Solé Puig et al. 2013, He & Nakayama 1992/1995, Nakayama & Silverman 1986, Theeuwes et al. 1998, Maringelli et al. 2001, Jänig et al. 2025.*
+
+---
+
 *Document generated 2026-03-31. Approved paper list as specified in Literature Agent task brief.*

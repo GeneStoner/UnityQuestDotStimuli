@@ -201,7 +201,15 @@ This is the most robust and theoretically novel finding. No prior published stud
 
 **d) Perceptual stability**: Near surfaces may be more prone to vergence fluctuation and perceptual instability than Far surfaces in HMD viewing (vergence-accommodation conflict is greater for near stimuli). An unstable Near surface would produce a weaker or noisier point-set representation.
 
-**The monocular data is informative**: the Near inversion is absent monocularly (Near becomes +1.8pp n.s. monocularly vs −5.9pp binocularly). This means the Near inversion is specifically stereoscopic — not a response bias or direction-encoding artifact. It is generated or amplified by the binocular disparity representation of the Near plane.
+**e) Vergence-driven attentional gradient (phenomenological account)**: The observer reports that fixation attention naturally embraces the fixation point and everything beyond it — Far — not stimuli in front. This maps directly onto a depth attention gradient model (Parks & Corballis 2006): the attentional gradient is strongest at/beyond the fixation plane and drops off steeply for depths inside fixation (Near). Parks & Corballis (2006) found P1 ERP enhancement *only* for far-attended conditions, with no Near P1 modulation — consistent with VRDots Near cueing being near zero or inverted.
+
+However, if this is a vergence-driven gradient — attention spreading along the direction of vergence relaxation (Far) and being suppressed in the direction of increased convergence (Near) — then **moving the fixation plane** to match the Near surface should reverse the gradient. **Caziot, Rolfs & Backus (2023)** directly tested vergence involvement by measuring vergence with nonius lines during a depth cueing task and found *no vergence shift* during depth cueing, supporting a **disparity-driven** mechanism rather than a vergence-driven one. Chen et al. (2012) varied fixation depth and found the Near > Far asymmetry (in their reflexive attention paradigm) did *not* reverse — again pointing away from vergence drive.
+
+**Additionally, Theeuwes, Atchley & Kramer (1998)** showed that depth-plane filtering is weakened when stimuli are same-color across planes. VRDots' same-color design may amplify the Near/Far asymmetry if same-color dots reduce the sharpness of depth-plane boundaries, making Near (smaller disparity relative to Far from the perspective of monocular blur?) relatively harder to isolate.
+
+**The monocular data is informative**: the Near inversion is absent monocularly (Near becomes +1.8pp n.s. monocularly vs −5.9pp binocularly). This means the Near inversion is specifically stereoscopic — not a response bias or direction-encoding artifact. It is generated or amplified by the binocular disparity representation of the Near plane. This is consistent with a disparity-driven gradient: the gradient exists only when disparity is available to drive it.
+
+**Published context**: Most published work (Andersen & Kramer 1993, the most-cited paper in this area) reports a Near > Far advantage for simple RT. VRDots finds the opposite. The divergence may reflect task type: reflexive RT to isolated targets (Near > Far) vs. sustained surface-based selection via delayed-onset motion cue (Far > Near). Parks & Corballis (2006) and Caziot et al. (2023) are the closest published analogs supporting a Far advantage, both using tasks with sustained attention components rather than reflexive cueing.
 
 ### 3.3 ZdA/ZdB dissociation: stereoscopic surface-identity
 
@@ -239,6 +247,11 @@ Khoe et al. (2008) found that the ERP P1 modulation of surface-based attention a
 
 3. **Two-color + depth condition**: the V1 Point-Set model predicts that two-color, depth-separated stimuli should produce the strongest cueing of any condition tested. Running DepthSwapCtrl with two-color stimuli would directly test the color × depth facilitation prediction and allow the first within-experiment comparison of same-color vs. two-color with depth present.
 
+4. **Fixation-distance reversal test (vergence-driven vs. disparity-driven)** — HIGH PRIORITY FOLLOW-UP: the user's phenomenological observation that attention "embraces" Far during fixation motivates a direct test of whether the Far > Near asymmetry is vergence-driven or disparity-driven. In VRDots this is testable by manipulating where the fixation target is set:
+   - **Condition A** (current): fixation at 2.0m; Near plane at 1.975m, Far at 2.025m → Far > Near observed
+   - **Condition B**: fixation at 2.025m (current Far plane); surfaces at 2.0m (now inside fixation) and 2.05m (now beyond) → if vergence-driven, gradient should flip; if disparity-driven, asymmetry should follow disparity sign, not fixation position
+   - This is the *cleanest* dissociation test available in VRDots and would be the first published test of this dissociation in a surface-based transparent-motion paradigm. Chen et al. (2012) varied fixation depth in a reflexive attention paradigm and found no reversal (supporting disparity drive), but no published study has done this in a sustained surface-selection context.
+
 ### Methodological
 
 4. **Single observer (GS)**: all data from one person. Floaters in R eye reduce reliability of R-eye monocular sessions. L-eye monocular data is cleaner. Scaling to additional observers is essential before any of these effects can be published.
@@ -270,4 +283,4 @@ Khoe et al. (2008) found that the ERP P1 modulation of surface-based attention a
 
 ---
 
-*Document created 2026-04-01 by Literature agent. Sources: VRDots pilot data through 260401_1705; Mitchell et al. (2003); Catak et al. (2022); Khoe et al. (2008); Qian et al. (1994, 1997); Mitchell et al. (2004); V1 Point-Set model (Stoner 2010/2018). Update §2 after each new session block.*
+*Document created 2026-04-01 by Literature agent. Sources: VRDots pilot data through 260401_1705; Mitchell et al. (2003); Catak et al. (2022); Khoe et al. (2008); Qian et al. (1994, 1997); Mitchell et al. (2004); V1 Point-Set model (Stoner 2010/2018); Parks & Corballis (2006); Caziot et al. (2023); Andersen & Kramer (1993); Chen et al. (2012); Theeuwes et al. (1998); Maringelli et al. (2001). Update §2 after each new session block.*

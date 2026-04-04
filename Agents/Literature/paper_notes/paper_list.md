@@ -134,6 +134,26 @@
 
 ---
 
+## GROUP 8: Depth Attention Gradients — Near/Far Asymmetry
+*Papers on stereoscopic depth and attentional selection: vergence-driven vs. disparity-driven accounts. Integrated in theory_doc.md §9 and pilot_results_summary.md §3.2.*
+
+| # | Citation | Key Finding | PDF | Integrated? |
+|---|---------|-------------|-----|-------------|
+| 70 | **Parks & Corballis (2006)** *NeuroReport* 17:643–647 | P1 ERP enhanced only for far-attended, not near-attended; viewer-centered gradient model; attention gradient drops off for depths inside fixation | ✗ | ✓ theory_doc §9, summary §3.2 |
+| 71 | **Caziot, Rolfs & Backus (2023)** *PNAS Nexus* 2:pgad314 | Directional far advantage trend (p=0.076); vergence measured with nonius lines/oculometry — NO vergence shift during depth cueing; strongest evidence for disparity-driven (not vergence-driven) mechanism | ✗ | ✓ theory_doc §9, summary §3.2 |
+| 72 | **Andersen & Kramer (1993)** *Perception & Psychophysics* 53:658–664 | Near > Far for attentional facilitation (crossed > uncrossed disparities); most-cited paper in this literature; contradicts VRDots Far > Near result | ✗ | ✓ theory_doc §9, summary §3.2 |
+| 73 | **Chen, Meng, Matthews & Qian (2012)** *J Neuroscience* 32:13352–13362 | Near advantage in attentional reorienting; fixation depth varied but asymmetry did NOT reverse — argues against vergence-driven account | ✗ | ✓ theory_doc §9 |
+| 74 | **Arnott & Shedden (2000)** *Perception & Psychophysics* 62:1459–1473 | Autostereogram paradigm (vergence locked at screen depth); attentional gradient still asymmetric — supports disparity-driven mechanism independent of vergence | ✗ | ✓ theory_doc §9 |
+| 75 | **Solé Puig, Pérez-Bellido, Cuenta, de la Torre & Rodríguez-Fornells (2013)** *PLOS ONE* 8:e52955 | Vergence microsaccades track attended depth but do not predict RT — vergence tracks attention, does not drive it | ✗ | ✓ theory_doc §9 |
+| 76 | **Nakayama & Silverman (1986)** *Science* 231:1381–1383 | Depth (disparity) is a preattentive dimension: conjunction search with depth is efficient — depth supports rapid parallel grouping | ✗ | ✓ theory_doc §9 |
+| 77 | **He & Nakayama (1992)** *Science* 257:1144–1147 | Surfaces, not depth planes per se, drive attentional selection in 3D; attention spreads obligatorily across a coherent surface | ✗ | ✓ theory_doc §9 |
+| 78 | **He & Nakayama (1995)** *Psychological Review* 102:651–670 | Theoretical extension: perceptual units (surfaces) rather than features are the units of attention; depth defines surface boundaries | ✗ | ✓ theory_doc §9 |
+| 79 | **Theeuwes, Atchley & Kramer (1998)** in *Visual Attention* (Parasuraman, ed.) | Depth-plane filtering is feature-contingent; same-color stimuli reduce effectiveness of depth-plane filtering — directly relevant to VRDots same-color conditions | ✗ | ✓ theory_doc §9, summary §3.2 |
+| 80 | **Maringelli, McCarthy, Steed, Slater & Umiltà (2001)** *Psychological Science* 12:214–220 | No virtual body in VR environment → attention directed outward (far) relative to observer; supports Far > Near in VR contexts | ✗ | ✓ theory_doc §9 |
+| 81 | **Jänig, Keitel, Schreiber, Skerbelis & Schneider (2025)** *[venue TBD]* | ERPs in two-depth-plane RDK paradigm; nearest published VRDots analog; motion-onset ERP in stereoscopic transparent-motion display | ✗ | ✓ theory_doc §9 |
+
+---
+
 ## FLAGGED: Not Published Papers
 
 | File | Status |
@@ -146,4 +166,5 @@
 
 *Created 2026-03-31. Updated 2026-04-01 with Tier 1/2 papers from Doostani et al. (2023) reference list.*
 *Updated 2026-04-01: added rivalry follow-up papers #66–69 (Stoner 2005, Paffen 2006, Khoe 2008, Mishra 2009).*
-*69 papers tracked; 43 integrated; 26 pending.*
+*Updated 2026-04-01: added Group 8 depth attention gradient papers #70–81 (Parks 2006, Caziot 2023, Andersen 1993, Chen 2012, Arnott 2000, Solé Puig 2013, Nakayama 1986, He 1992, He 1995, Theeuwes 1998, Maringelli 2001, Jänig 2025).*
+*81 papers tracked; 55 integrated; 26 pending.*
