@@ -154,6 +154,23 @@
 
 ---
 
+## GROUP 9: Color Cueing — Exogenous Capture & Object Identity
+*Papers bearing on the color-null result in DecoupledDots. To be retrieved and integrated into color_cueing_review.md.*
+
+| # | Citation | Key Finding | PDF | Integrated? |
+|---|---------|-------------|-----|-------------|
+| 82 | **Theeuwes (1992)** *Perception & Psychophysics* 51:599 | Color singletons capture attention even when task-irrelevant — strong stimulus-driven capture claim | ✗ | ✓ color_cueing_review §3.2 |
+| 83 | **Folk, Remington & Johnston (1992)** *JEP:HPP* 18:1030 | Contingent capture: color only captures when task set matches; onset set → onset capture, color set → color capture | ✗ | ✓ color_cueing_review §3.2 |
+| 84 | **Bacon & Egeth (1994)** *Perception & Psychophysics* 55:485 | Theeuwes capture explained by singleton detection mode; not true stimulus-driven capture | ✗ | ✓ color_cueing_review §3.2 |
+| 85 | **Yantis & Jonides (1984)** *JEP:HPP* 10:601 | Abrupt onsets exogenously capture attention independent of top-down goals; the truly exogenous cue | ✗ | ✓ color_cueing_review §3.1 |
+| 86 | **Kahneman, Treisman & Gibbs (1992)** *Cognitive Psychology* 24:175 | Object files: spatiotemporal continuity is primary binding glue; color secondary | ✗ | ✓ color_cueing_review §4.2 |
+| 87 | **Scholl (2001)** *Cognition* 80:1 | Object persistence: spatiotemporal continuity overrides color change for object identity | ✗ | ✓ color_cueing_review §4.2 |
+| 88 | **Theeuwes (2019)** *Atten Percept Psychophys* 81:2149 | Meta-analysis: exogenous feature-based attention is "elusive at best"; FBA is primarily top-down | ✗ | ✓ color_cueing_review §3.3 |
+| 89 | **Jonikaitis & Theeuwes (2017)** *APP* 79:2466 | Color-feature attention weaker than motion or spatial attention; suppression applies more readily to static color | ✗ | ✓ color_cueing_review §3.3 |
+| 90 | **Treisman (1998)** *Phil Trans R Soc B* 353:1295 | Feature binding: attention binds color to object post-selection; color does not exogenously guide spatial selection | ✗ | ✓ color_cueing_review §4.3 |
+
+---
+
 ## FLAGGED: Not Published Papers
 
 | File | Status |
@@ -167,4 +184,5 @@
 *Created 2026-03-31. Updated 2026-04-01 with Tier 1/2 papers from Doostani et al. (2023) reference list.*
 *Updated 2026-04-01: added rivalry follow-up papers #66–69 (Stoner 2005, Paffen 2006, Khoe 2008, Mishra 2009).*
 *Updated 2026-04-01: added Group 8 depth attention gradient papers #70–81 (Parks 2006, Caziot 2023, Andersen 1993, Chen 2012, Arnott 2000, Solé Puig 2013, Nakayama 1986, He 1992, He 1995, Theeuwes 1998, Maringelli 2001, Jänig 2025).*
-*81 papers tracked; 55 integrated; 26 pending.*
+*Updated 2026-04-06: added Group 9 color cueing papers #82–90 (Theeuwes 1992, Folk et al. 1992, Bacon & Egeth 1994, Yantis & Jonides 1984, Kahneman et al. 1992, Scholl 2001, Theeuwes 2019, Jonikaitis & Theeuwes 2017, Treisman 1998) — motivated by DecoupledDots color-null result.*
+*90 papers tracked; 55 integrated; 35 pending.*

@@ -45,6 +45,12 @@ public class ExpSpecTestPhase : ExperimentSpec
              "subfields swap depth planes under ZdA/ZdB. Requires balanceDelayedFieldColor=true.")]
     public bool linkDepthColor = false;
 
+    [Tooltip("When true (default), the translating field (Sub2+Sub3, Field B) has the delayed onset — " +
+             "the temporal cue correctly identifies the translator (Dots✓). " +
+             "When false, the rotating field (Sub0+Sub1, Field A) has the delayed onset — " +
+             "the temporal cue points to the rotator, not the translator (Dots✗, converse conditions).")]
+    public bool delayTranslator = true;
+
     // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
@@ -276,41 +282,49 @@ public class ExpSpecTestPhase : ExperimentSpec
             bool sub1isA = !(dots50Swap && afterSwap);
             bool sub3isA =  (dots50Swap && afterSwap);
 
+            // Which field carries the delayed onset?
+            // delayTranslator=true  (default): Field B (Sub2+Sub3) hidden before onset — Dots✓
+            // delayTranslator=false (converse): Field A (Sub0+Sub1) hidden before onset — Dots✗
+            bool aVisible = delayTranslator ? true       : afterOnset;
+            bool bVisible = delayTranslator ? afterOnset : true;
+            Color aHiddenColor = delayTranslator ? fieldAColor : (afterOnset ? fieldAColor : rgbaBlack);
+            Color bHiddenColor = delayTranslator ? (afterOnset ? fieldBColor : rgbaBlack) : fieldBColor;
+
             // Sub0: always Field A
             cond.subfields[0].motionKindByFrame[f] = curARot;
-            cond.subfields[0].colorByFrame[f]   = fieldAColor;
-            cond.subfields[0].visibleByFrame[f] = true;
+            cond.subfields[0].colorByFrame[f]   = aHiddenColor;
+            cond.subfields[0].visibleByFrame[f] = aVisible;
 
             // Sub1: Field A by default, Field B if dots50 swapped
             cond.subfields[1].motionKindByFrame[f] = sub1isA ? curARot : curBRot;
             if (sub1isA)
             {
-                cond.subfields[1].colorByFrame[f]   = fieldAColor;
-                cond.subfields[1].visibleByFrame[f] = true;
+                cond.subfields[1].colorByFrame[f]   = aHiddenColor;
+                cond.subfields[1].visibleByFrame[f] = aVisible;
             }
             else
             {
-                cond.subfields[1].colorByFrame[f]   = afterOnset ? fieldBColor : rgbaBlack;
-                cond.subfields[1].visibleByFrame[f] = afterOnset;
+                cond.subfields[1].colorByFrame[f]   = bHiddenColor;
+                cond.subfields[1].visibleByFrame[f] = bVisible;
             }
 
             // Sub2: always Field B
             cond.subfields[2].motionKindByFrame[f] = curBRot;
-            cond.subfields[2].colorByFrame[f]   = afterOnset ? fieldBColor : rgbaBlack;
-            cond.subfields[2].visibleByFrame[f] = afterOnset;
+            cond.subfields[2].colorByFrame[f]   = bHiddenColor;
+            cond.subfields[2].visibleByFrame[f] = bVisible;
 
             // Sub3: Field B by default, Field A if dots50 swapped
             if (sub3isA)
             {
                 cond.subfields[3].motionKindByFrame[f] = curARot;
-                cond.subfields[3].colorByFrame[f]   = fieldAColor;
-                cond.subfields[3].visibleByFrame[f] = true;
+                cond.subfields[3].colorByFrame[f]   = aHiddenColor;
+                cond.subfields[3].visibleByFrame[f] = aVisible;
             }
             else
             {
                 cond.subfields[3].motionKindByFrame[f] = curBRot;
-                cond.subfields[3].colorByFrame[f]   = afterOnset ? fieldBColor : rgbaBlack;
-                cond.subfields[3].visibleByFrame[f] = afterOnset;
+                cond.subfields[3].colorByFrame[f]   = bHiddenColor;
+                cond.subfields[3].visibleByFrame[f] = bVisible;
             }
 
             // Eye always binocular

@@ -32,7 +32,7 @@ DATA_DIR = os.path.expanduser(
 OUT_PATH = os.path.expanduser(
     "~/Projects/ObjectBasedAttention/VRDots/Agents/Figures/depth_color_linked_results.png")
 
-SESSIONS = ['260404_0940']
+SESSIONS = ['260404_0940', '260404_1123', '260406_1001']
 
 # ── Stats helpers ─────────────────────────────────────────────────────────────
 def normal_cdf(x): return 0.5 * (1 + math.erf(x / math.sqrt(2)))
@@ -226,7 +226,7 @@ def make_figure(data):
     fig.patch.set_facecolor('white')
 
     fig.text(0.5, 0.975,
-        f'DepthColorLinked_005m — Session 260404_0940   (n={n_valid} trials)',
+        f'DepthColorLinked_005m — Sessions 260404_0940 + 1123 + 260406_1001   (n={n_valid} trials)',
         ha='center', va='top', fontsize=12, fontweight='bold', color='#111')
     fig.text(0.5, 0.950,
         'Near plane = Red   •   Far plane = Green   •   depth = 0.05 m   •   8-AFC',

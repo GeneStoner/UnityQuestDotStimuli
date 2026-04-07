@@ -250,6 +250,7 @@ New experiment: `Exp_DepthColorLinked` (`DepthColorLinked_005m`). Two-color desi
 |---------|------|---|-------------|-------|
 | 260404_0940 | 2026-04-04 | 256 | 31.2% | Session 1 — strong ZdNoi>>ZdCoh dissociation |
 | 260404_1123 | 2026-04-04 | 256 | 33.6% | Session 2 — flatter pattern; UNCUED elevated |
+| 260406_1001 | 2026-04-06 | 256 | 27.7% | Session 3 — similar to S2; UNCUED+ZdNoi elevated (Far asymmetry) |
 
 ### Factor framing (new 2×2 design)
 
@@ -262,47 +263,67 @@ Mapping:
 - Depth✓ = CUED+ZdNoi OR UNCUED+ZdCoh (translator at DFD during window)
 - Depth✗ = CUED+ZdCoh OR UNCUED+ZdNoi (translator at opp(DFD))
 
-### Results — Combined (n=512)
+### Results — Combined (n=768, 3 sessions)
+
+*Updated 2026-04-06 to include session 260406_1001.*
 
 | Condition | k | n | % correct | pp > chance | sig |
 |-----------|---|---|-----------|-------------|-----|
-| CUED + Depth✓ (ZdNoi) | 64 | 128 | 50.0% | +37.5pp | *** |
-| CUED + Depth✗ (ZdCoh) | 45 | 128 | 35.2% | +22.7pp | *** |
-| UNCUED + Depth✓ (ZdCoh) | 28 | 128 | 21.9% | +9.4pp | *** |
-| UNCUED + Depth✗ (ZdNoi) | 29 | 128 | 22.7% | +10.2pp | *** |
+| CUED + Depth✓ (ZdNoi) | 91 | 192 | 47.4% | +34.9pp | *** |
+| CUED + Depth✗ (ZdCoh) | 61 | 192 | 31.8% | +19.3pp | *** |
+| UNCUED + Depth✓ (ZdCoh) | 38 | 192 | 19.8% | +7.3pp | ** |
+| UNCUED + Depth✗ (ZdNoi) | 46 | 192 | 24.0% | +11.5pp | *** |
 
-**F1 Dot Cueing: +20.3pp *** (p<0.001)**
-**F2 Depth Cueing: +7.0pp * (p=0.045)**
+**F1 Dot Cueing: +17.7pp *** **
+**F2 Depth Cueing: +5.7pp * **
 
 Dot cueing effect split by Depth Cueing:
-- Depth✓ conditions: CUED+ZdNoi vs UNCUED+ZdNoi = +27.3pp
-- Depth✗ conditions: CUED+ZdCoh vs UNCUED+ZdCoh = +13.3pp
-- Difference (~14pp) is the F1×F2 interaction: swapping depth+color costs ~half the cueing advantage
+- Depth✓ conditions: CUED+ZdNoi vs UNCUED+ZdNoi = +23.4pp
+- Depth✗ conditions: CUED+ZdCoh vs UNCUED+ZdCoh = +12.0pp
+- Difference (~11pp) is the F1×F2 interaction: swapping depth+color costs roughly half the cueing advantage
 
 ### Between-session variability
 
-| | Session 1 | Session 2 | Combined |
-|--|-----------|-----------|---------|
-| CUED+ZdNoi | +46.9pp *** | +28.1pp *** | +37.5pp *** |
-| CUED+ZdCoh | +18.8pp *** | +26.6pp *** | +22.7pp *** |
-| UNCUED+ZdCoh | +3.1pp n.s. | +15.6pp *** | +9.4pp *** |
-| UNCUED+ZdNoi | +6.2pp † | +14.1pp *** | +10.2pp *** |
-| F1 Dot Cueing | +28.1pp *** | +12.5pp * | +20.3pp *** |
-| F2 Depth Cueing | +12.5pp * | +1.6pp n.s. | +7.0pp * |
+| | Session 1 (260404_0940) | Session 2 (260404_1123) | Session 3 (260406_1001) | Combined |
+|--|-----------|-----------|-----------|---------|
+| CUED+ZdNoi | +46.9pp *** | +28.1pp *** | +29.7pp *** | +34.9pp *** |
+| CUED+ZdCoh | +18.8pp *** | +26.6pp *** | +12.5pp ** | +19.3pp *** |
+| UNCUED+ZdCoh | +3.1pp n.s. | +15.6pp *** | +3.1pp n.s. | +7.3pp ** |
+| UNCUED+ZdNoi | +6.2pp † | +14.1pp *** | +14.1pp *** | +11.5pp *** |
+| F1 Dot Cueing | +28.1pp *** | +12.5pp * | +12.5pp * | +17.7pp *** |
+| F2 Depth Cueing | +12.5pp * | +1.6pp n.s. | +3.1pp n.s. | +5.7pp * |
 
-Session 2 was subjectively harder; observer unaware of strategy change. UNCUED elevation in S2 is suspicious (criterion shift? noise at n=64/cell?).
+Session 1 had the strongest F2; sessions 2 and 3 are similar to each other and weaker on F2. F1 is consistent across sessions 2 and 3.
+
+### The UNCUED+Depth✗ (ZdNoi) apparent anomaly — resolved
+
+UNCUED+ZdNoi performs at +11.5pp *** rather than near chance. Initial concern: this is the "hardest" cell (non-delayed field translates AND translator is NOT at the delayed field's depth). Breakdown reveals the source:
+
+| Split | k | n | % correct | pp > chance | sig |
+|-------|---|---|-----------|-------------|-----|
+| DFD=Near (translator=Far) | 32 | 96 | 33.3% | +20.8pp | *** |
+| DFD=Far (translator=Near) | 14 | 96 | 14.6% | +2.1pp | n.s. |
+| DFC=Green (delayed=Far) | 29 | 96 | 30.2% | +17.7pp | *** |
+| DFC=Red (delayed=Near) | 17 | 96 | 17.7% | +5.2pp | † |
+
+**Explanation**: This is not a cueing anomaly — it is the Far > Near translation depth asymmetry (established in DepthParam) bleeding through. In UNCUED+ZdNoi, when DFD=Near the non-delayed (translating) field is at Far depth, and Far translation is intrinsically easier regardless of cueing. When DFD=Far the translating field is Near, and performance is at chance — exactly as expected. The DFC split mirrors this because Near=Red and Far=Green are linked in this experiment. The cell-level average is inflated by the easy DFD=Near sub-cell.
+
+**Implication**: F2 Depth Cueing as computed conflates the depth-plane identity factor with the absolute Far > Near performance asymmetry. A cleaner analysis would compute F2 separately for Far-translating and Near-translating sub-cells, or residualize out translation depth before computing depth cueing effects.
+
+### 90° heading spike in UNCUED+ZdNoi
+45.8% correct at 90° (upward) vs 12.5–29% at other headings. Consistent with a known observer heading response bias toward vertical/upward directions, plus a possible perceptual bias toward vertical translation detection. Not specific to this condition — present across conditions to varying degrees.
 
 ### Comparison to DepthSwapCtrl (all-red, ZdA+ZdB only, matched)
 
 | Experiment | CUED | UNCUED | Cue effect |
 |-----------|------|--------|-----------|
 | DepthSwapCtrl (all-red, n=384) | +34.6pp | +20.8pp | +13.8pp *** |
-| DepthColorLinked (R/G, n=256) | +30.1pp | +9.8pp | +20.3pp *** |
+| DepthColorLinked (R/G, n=768) | +27.1pp | +9.4pp | +17.7pp *** |
 
-Larger cueing effect with color is driven by lower UNCUED baseline, not higher CUED. Color differentiation may make UNCUED trials harder (harder to accidentally track non-cued field). Needs more data.
+Larger cueing effect with color is driven by lower UNCUED baseline, not higher CUED. Color differentiation makes UNCUED harder (harder to accidentally track non-cued field). Pattern stable across 3 sessions.
 
 ### Main finding
-Dot cueing effect is significantly reduced when the translating dots change depth plane AND color at the moment of translation (ZdCoh vs ZdNoi). Depth change alone (DepthSwapCtrl all-red) is sufficient to produce this disruption — adding color does not clearly make it worse, and may slightly reduce it. Color vs depth contributions cannot be separated within this experiment (they co-occur). A color-only swap experiment is needed to dissociate.
+Dot cueing effect is significantly reduced when the translating dots change depth plane AND color simultaneously (ZdCoh vs ZdNoi): +34.9pp vs +19.3pp under CUED. F2 Depth Cueing is significant pooled across 3 sessions (+5.7pp *) but driven primarily by the CUED conditions — UNCUED cells are near chance throughout (once Far > Near asymmetry is accounted for). Color vs depth contributions remain confounded; a color-only swap experiment is needed to dissociate them.
 
 ### New code
 - `Assets/Scripts/ExpSpecTestPhase.cs`: new fields `linkDepthColor` (bool) and `includeNoSwapBaseline` (bool)

@@ -371,3 +371,5 @@ SessionID,Date,Experiment,N_trials,SwapTypes,DelayedFieldColors,DepthSep_m,EyeCo
 260402_1559,2026-04-02,DepthParam_005m,4,N,G/R,,Binocular,Aborted,,
 260404_0940,2026-04-04,DepthColorLinked_005m,256,ZdA/ZdB,G/R,,,NEW,,
 260404_1123,2026-04-04,DepthColorLinked_005m,256,ZdA/ZdB,G/R,,,NEW,,
+260406_1001,2026-04-06,DepthColorLinked_005m,256,ZdA/ZdB,G/R,,,NEW,,
+260406_1034,2026-04-06,DepthColorLinked_005m,256,ZdA/ZdB,G/R,,,NEW,,

@@ -31,6 +31,8 @@ OUT_PDF  = os.path.expanduser(
 SESSIONS = [
     ('260404_0940', 'Session 1  (260404_0940)'),
     ('260404_1123', 'Session 2  (260404_1123)'),
+    ('260406_1001', 'Session 3  (260406_1001)'),
+    ('260406_1034', 'Session 4  (260406_1034)'),
 ]
 
 PW, PH = 8.5, 11; DPI = 150
@@ -313,9 +315,9 @@ fig2.text(0.50,0.950,
     'Bars = % correct above chance (12.5%) with 95% Wilson CI',
     ha='center',va='top',fontsize=8,color='#555')
 
-# Three columns: S1, S2, Combined
-res_gs = gridspec.GridSpec(1,3,top=0.775,bottom=0.36,
-    left=LMAR+0.02,right=RMAR-0.01,wspace=0.35)
+# Five columns: S1, S2, S3, S4, Combined
+res_gs = gridspec.GridSpec(1,5,top=0.775,bottom=0.36,
+    left=LMAR,right=RMAR,wspace=0.22)
 
 # 4 conditions in 2×2 display order
 CELL_ORDER = [('CUED','YES'),('CUED','NO'),('UNCUED','YES'),('UNCUED','NO')]
@@ -379,11 +381,8 @@ def draw_result_panel(ax, cnt, title, n_tot):
     ax.grid(axis='y',which='major',lw=0.5,alpha=0.45,zorder=0)
     ax.tick_params(labelsize=7)
 
-datasets = [
-    (session_data[SESSIONS[0][0]], SESSIONS[0][1], 256),
-    (session_data[SESSIONS[1][0]], SESSIONS[1][1], 256),
-    (combined_data, 'Combined', n_combined),
-]
+datasets = ([(session_data[sid], lbl, 256) for sid,lbl in SESSIONS]
+            + [(combined_data, 'Combined  (n={})'.format(n_combined), n_combined)])
 for col_i,(cnt,title,ntot) in enumerate(datasets):
     ax = fig2.add_subplot(res_gs[0,col_i])
     draw_result_panel(ax,cnt,title,ntot)
@@ -394,8 +393,8 @@ fig2.text(LMAR,0.340,'Session comparison — main 2×2 cells (% correct above ch
 
 swap_map = {('CUED','YES'):'ZdNoi',('CUED','NO'):'ZdCoh',
             ('UNCUED','YES'):'ZdCoh',('UNCUED','NO'):'ZdNoi'}
-col_xs = [LMAR, LMAR+0.23, LMAR+0.41, LMAR+0.59, LMAR+0.74]
-hdrs   = ['Condition','Session 1','Session 2','Combined','sig (comb)']
+col_xs = [LMAR, LMAR+0.165, LMAR+0.275, LMAR+0.385, LMAR+0.495, LMAR+0.615, LMAR+0.755]
+hdrs   = ['Condition','S1','S2','S3','S4','Combined','sig']
 FS2 = 7.5
 ty = 0.315
 for cx,h in zip(col_xs,hdrs):
@@ -409,15 +408,12 @@ row_bgs = ['#EEF8EE','#FFFAEE','#EEF2FF','#F5F5F5','#E8E8E8']
 for ri,key in enumerate(CELL_ORDER):
     swap_lbl = swap_map[key]
     lbl = '{} Depth{} ({})'.format(key[0],'✓' if key[1]=='YES' else '✗',swap_lbl)
-    k1,n1=session_data[SESSIONS[0][0]].get(key,[0,1])
-    k2,n2=session_data[SESSIONS[1][0]].get(key,[0,1])
+    per_sess = [session_data[sid].get(key,[0,1]) for sid,_ in SESSIONS]
     kc,nc=combined_data.get(key,[0,1])
     s,_ = sig_vs_chance(kc,nc)
-    cells = [lbl,
-             '{:+.1f}pp  ({}/{})'.format(pp(k1,n1),k1,n1),
-             '{:+.1f}pp  ({}/{})'.format(pp(k2,n2),k2,n2),
-             '{:+.1f}pp  ({}/{})'.format(pp(kc,nc),kc,nc),
-             s]
+    cells = ([lbl]
+             + ['{:+.1f}pp ({}/{})'.format(pp(k,n),k,n) for k,n in per_sess]
+             + ['{:+.1f}pp ({}/{})'.format(pp(kc,nc),kc,nc), s])
     for cx,cell in zip(col_xs,cells):
         fig2.text(cx,ty,cell,ha='left',va='top',fontsize=FS2,
                   color='#222',style='normal')
@@ -429,9 +425,8 @@ fig2.add_artist(plt.Line2D([LMAR,RMAR],[ty,ty],
     transform=fig2.transFigure,color='#AAAAAA',lw=0.5,ls='--'))
 ty -= 0.005
 
-for data_set,label in [(session_data[SESSIONS[0][0]],'S1'),
-                        (session_data[SESSIONS[1][0]],'S2'),
-                        (combined_data,'Combined')]:
+for data_set,label in ([(session_data[sid],'S{}'.format(i+1)) for i,(sid,_) in enumerate(SESSIONS)]
+                        + [(combined_data,'Combined')]):
     cy_k,cy_n=data_set.get(('CUED','YES'),[0,1])
     cn_k,cn_n=data_set.get(('CUED','NO'),[0,1])
     uy_k,uy_n=data_set.get(('UNCUED','YES'),[0,1])
@@ -479,44 +474,64 @@ def wrap_txt(fig, x, y, s, fs=8, col='#333', width=105, indent=0):
         y = txt(fig, x, y, line, fs=fs, col=col, indent=indent)
     return y
 
-y3 = section(fig3, y3, 'Key Findings')
+y3 = section(fig3, y3, 'Key Findings  (4 sessions combined, n=1024)')
 y3 = wrap_txt(fig3, LMAR, y3,
-    'F1 Dot Cueing: +20.3pp *** (combined, n=512). Cued trials substantially outperform '
-    'uncued across both sessions. This is the core temporal-onset cueing effect and replicates '
-    'robustly.', fs=8.5)
+    'F1 Dot Cueing: CUED substantially outperforms UNCUED (exact values page 2). This is '
+    'the core temporal-onset cueing effect and replicates robustly across all three sessions.', fs=8.5)
 y3 -= 0.004
 y3 = wrap_txt(fig3, LMAR, y3,
-    'F2 Depth Cueing: +7.0pp * (combined, p=0.045). When the translation occurs at the depth '
-    'plane the cued field occupied, performance is better. This replicates the ZdA vs ZdB '
+    'F2 Depth Cueing: translation at the cued field\'s depth plane yields better performance '
+    'than translation at the opposite plane (exact values page 2). Replicates the ZdA vs ZdB '
     'dissociation seen in DepthSwapCtrl (all-red).', fs=8.5)
 y3 -= 0.004
 y3 = wrap_txt(fig3, LMAR, y3,
-    'Best condition: CUED+ZdNoi (Dot✓, Depth✓) = +37.5pp *** combined. Translator keeps '
-    'its depth-plane identity and color — both cueing signals align.',fs=8.5)
+    'Best condition: CUED+Depth✓ (ZdNoi). Translator keeps depth-plane identity and color — '
+    'both cueing signals align. Dot cueing dominates: CUED+Depth✗ (ZdCoh) also exceeds UNCUED.', fs=8.5)
 y3 -= 0.004
 y3 = wrap_txt(fig3, LMAR, y3,
-    'Worst condition: UNCUED+either ≈ +9–10pp (near chance). Depth/color plane identity '
-    'alone provides no meaningful benefit without the temporal onset cue — dots win over depth.', fs=8.5)
+    'UNCUED performance: appears near-chance on average, but is heterogeneous by delayed-field '
+    'depth (F3; see anomaly note below).', fs=8.5)
 y3 -= 0.010
 
-y3 = section(fig3, y3, 'Between-Session Variability')
+y3 = section(fig3, y3, 'Between-Session Variability  (4 sessions, n=256/session)')
 y3 = wrap_txt(fig3, LMAR, y3,
-    'Session 1 showed a clear ZdNoi >> ZdCoh dissociation (+47pp vs +19pp CUED), '
-    'with UNCUED near chance (+3–6pp). Session 2 was flatter: ZdNoi ≈ ZdCoh (both ~+28pp '
-    'CUED), and UNCUED came up substantially (+14–16pp).', fs=8.5)
+    'S1 (260404_0940): strong ZdNoi >> ZdCoh (CUED +47pp vs +19pp); UNCUED near chance. '
+    'S2 (260404_1123): flatter — ZdNoi ≈ ZdCoh (~+28pp CUED); UNCUED elevated (+14–16pp). '
+    'S3 (260406_1001): moderate ZdNoi >> ZdCoh (CUED +36pp vs +14pp); UNCUED ~+12pp. '
+    'S4 (260406_1034): ZdNoi >> ZdCoh (CUED +36pp vs +14pp); F2 Depth Cueing strongest '
+    'yet (**); F1 Dot Cueing modest (+12.5pp *). Observer reported low perceived performance.', fs=8.5)
 y3 -= 0.004
 y3 = wrap_txt(fig3, LMAR, y3,
-    'The UNCUED rise in Session 2 is suspicious. Possible causes: (1) response criterion '
-    'shift — more liberal/biased responding; (2) strategy change — less reliance on temporal '
-    'onset cue, more on global motion grouping; (3) sampling noise at n=64/cell.', fs=8.5)
+    'F1 (Dot Cueing) is significant in all 4 sessions but varies in magnitude (S1=+28pp, '
+    'S2–S4≈+12pp). F2 (Depth Cueing) significant in S1 (*) and S4 (**), near-null in S2–S3. '
+    'Four-session combined n=256/cell provides reliable cell estimates.', fs=8.5)
 y3 -= 0.004
 y3 = wrap_txt(fig3, LMAR, y3,
-    'Error analysis (Session 1): reversal rate CUED=6.2% < chance (12.5%), UNCUED=12.5% '
-    '= chance. Heading distribution perfectly uniform (32/direction). No labeling issues detected.', fs=8.5)
+    'Response bias: 90° and 270° headings are over-represented across sessions (observer '
+    'motor/pointing bias plus possible vertical perceptual anisotropy). Not condition-specific.', fs=8.5)
+y3 -= 0.010
+
+y3 = section(fig3, y3, 'UNCUED+Depth✗ (ZdNoi) Anomaly — Resolved')
+y3 = wrap_txt(fig3, LMAR, y3,
+    'UNCUED+ZdNoi is nominally the "hardest" cell (Dot✗, Depth✗) yet performs above chance '
+    '(~+11pp ***). This is not paradoxical — it is explained by F3 (translating-field depth).', fs=8.5)
 y3 -= 0.004
 y3 = wrap_txt(fig3, LMAR, y3,
-    'Response bias: 270° direction over-represented (52 vs expected 32 in S1). Likely a '
-    'motor/pointing bias, not a labeling artifact. Monitor across sessions.', fs=8.5)
+    'In UNCUED+ZdNoi: the non-delayed (non-cued) field translates; ZdNoi leaves the '
+    'non-coh companion in its original depth plane. The translating field is at the depth '
+    'OPPOSITE to the delayed field (DFD). When DFD=Near, the translator is at Far (easy); '
+    'when DFD=Far, translator is at Near (hard).', fs=8.5)
+y3 -= 0.004
+y3 = wrap_txt(fig3, LMAR, y3,
+    'DFD=Near sub-cell: translator Far → +20.8pp *** (consistent with DepthParam Far >> Near). '
+    'DFD=Far sub-cell: translator Near → +2.1pp n.s. (chance). The anomalous average (+11pp) '
+    'is simply the average of an easy Far trial and a hard Near trial.', fs=8.5)
+y3 -= 0.004
+y3 = wrap_txt(fig3, LMAR, y3,
+    'Implication: F2 Depth Cueing as currently defined is confounded with F3 (translating-field '
+    'depth). A translating-field-depth reanalysis is needed to cleanly separate the two. '
+    'The DepthParam parametric sweep (0.03–0.15 m) confirms Far translation is intrinsically '
+    'easier, regardless of cueing condition.', fs=8.5)
 y3 -= 0.010
 
 y3 = section(fig3, y3, 'Design Notes')
@@ -557,13 +572,15 @@ y3 -= 0.008
 
 y3 = section(fig3, y3, 'Planned Next Steps')
 next_steps = [
-    'More sessions: n=64/cell → target n≥128/cell for interpretable secondary factors.',
-    'Cross-experiment comparison at matched n: DepthColorLinked vs DepthSwapCtrl '
-     '(all-red) → isolate color contribution to ZdCoh disruption.',
+    'Translating-field-depth reanalysis (F3): re-bin all cells by which depth plane '
+     '(Near vs Far) translates, collapsing F1 and F2. Expect Far >> Near regardless of cueing.',
+    'Cross-experiment comparison at matched n: DepthColorLinked (n=192/cell) vs '
+     'DepthSwapCtrl all-red (n=64/cell bino) → isolate color contribution to ZdCoh disruption.',
     'Color-only swap experiment (linkDepthColor=0, no depth change): complete the '
-     '2×2 of depth-only × color-only.',
-    'Error analysis across sessions: track UNCUED accuracy and 270° bias for '
-     'criterion/strategy monitoring.',
+     '2×2 of depth-only × color-only to dissociate depth vs color contributions.',
+    'Second observer and/or second observer sessions to assess generalizability.',
+    'SOA experiment: vary delay between Field A onset and Field B onset to probe '
+     'temporal window of cueing effect.',
 ]
 for step in next_steps:
     y3 = wrap_txt(fig3, LMAR, y3, '• ' + step, fs=8.5, width=102)
