@@ -34,16 +34,21 @@ from scipy.stats import chi2_contingency
 # ── Paths ──────────────────────────────────────────────────────────────────────
 DATA_S1 = "/tmp/quest_pull2/files/vr_dots_session_260406_1532.tsv"
 DATA_S2 = "/tmp/quest_pull2/files/vr_dots_session_260406_1754.tsv"
+DATA_S3 = "/tmp/quest_pull3/files/vr_dots_session_260407_0643.tsv"
+DATA_S4 = "/tmp/quest_pull3/files/vr_dots_session_260407_0731.tsv"
 
 FIG_DIR = os.path.expanduser(
     "~/Projects/ObjectBasedAttention/VRDots/Agents/Figures/")
 
-OUT_S2   = os.path.join(FIG_DIR, "decoupled_dots_260406_1754.png")
-OUT_COMB = os.path.join(FIG_DIR, "decoupled_dots_combined.png")
+OUT_S1       = os.path.join(FIG_DIR, "decoupled_dots_260406_1532.png")
+OUT_S2       = os.path.join(FIG_DIR, "decoupled_dots_260406_1754.png")
+OUT_S3       = os.path.join(FIG_DIR, "decoupled_dots_260407_0643.png")
+OUT_S4       = os.path.join(FIG_DIR, "decoupled_dots_260407_0731.png")
+OUT_COMB     = os.path.join(FIG_DIR, "decoupled_dots_combined.png")
+OUT_COMB4    = os.path.join(FIG_DIR, "decoupled_dots_combined_s1s2s3s4.png")
+OUT_SESS_CMP = os.path.join(FIG_DIR, "decoupled_dots_session_comparison.png")
 
 CHANCE = 1/8
-
-OUT_S1   = os.path.join(FIG_DIR, "decoupled_dots_260406_1532.png")
 
 # ── Field-cueing factor membership ────────────────────────────────────────────
 # Depth-field cued ✓ = translator ends up in same plane delayed field first appeared
@@ -705,7 +710,8 @@ def make_figure_s2(data, cueing_effects):
                  '  •  depth=0.05m  •  8-AFC  •  chance=12.5%')
 
 # ── Figure 2: Combined ─────────────────────────────────────────────────────────
-def make_figure_combined(data, cueing_effects):
+def make_figure_combined(data, cueing_effects,
+                         title_line1=None, title_line2=None, out_path=None):
     n_valid      = data['n_valid']
     main         = data['main']
     SWAP_ORDER   = data['SWAP_ORDER']
@@ -714,17 +720,22 @@ def make_figure_combined(data, cueing_effects):
     fc_depth_dot = data['fc_depth_dot']
     fc_color_dot = data['fc_color_dot']
 
+    if title_line1 is None:
+        title_line1 = (f'DecoupledDots — Combined Sessions 260406_1532 + 260406_1754   '
+                       f'(n={n_valid} trials)')
+    if title_line2 is None:
+        title_line2 = ('Sessions: delayTranslator=true (1532) + delayTranslator=false/inverted (1754)  •  '
+                       'Swap types: N / C (color) / Z (depth) / CZ (color+depth)'
+                       '  •  depth=0.05m  •  8-AFC  •  chance=12.5%')
+    if out_path is None:
+        out_path = OUT_COMB
+
     fig = plt.figure(figsize=(16, 13))
     fig.patch.set_facecolor('white')
 
-    fig.text(0.5, 0.984,
-             f'DecoupledDots — Combined Sessions 260406_1532 + 260406_1754   '
-             f'(n={n_valid} trials)',
+    fig.text(0.5, 0.984, title_line1,
              ha='center', va='top', fontsize=13, fontweight='bold', color='#111')
-    fig.text(0.5, 0.960,
-             'Sessions: delayTranslator=true (1532) + delayTranslator=false/inverted (1754)  •  '
-             'Swap types: N / C (color) / Z (depth) / CZ (color+depth)'
-             '  •  depth=0.05m  •  8-AFC  •  chance=12.5%',
+    fig.text(0.5, 0.960, title_line2,
              ha='center', va='top', fontsize=8.5, color='#555')
 
     # Row 0: main bars (3 wide) + dot cueing summary (1 wide)
@@ -772,13 +783,131 @@ def make_figure_combined(data, cueing_effects):
              ha='center', va='bottom', fontsize=6, color='#666')
 
     os.makedirs(FIG_DIR, exist_ok=True)
-    fig.savefig(OUT_COMB, dpi=150, bbox_inches='tight', facecolor='white')
-    print(f"Saved: {OUT_COMB}")
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', facecolor='white')
+    print(f"Saved: {out_path}")
     plt.close(fig)
+
+
+# ── Figure 3: Per-session comparison ──────────────────────────────────────────
+def make_figure_sessions_comparison(session_list, out_path=None):
+    """
+    session_list: list of dicts with keys:
+        label      — short label (e.g. 'S1\n260406_1532')
+        asset      — asset name
+        invert     — bool
+        data       — aggregate() output
+        cueing     — cueing_effects dict from print_summary
+        anomaly    — str or None (footnote annotation)
+    """
+    if out_path is None:
+        out_path = OUT_SESS_CMP
+
+    n_sess = len(session_list)
+    FACTORS = ['Dot\ncueing', 'Depth-field\ncueing', 'Color-field\ncueing']
+    FCOLS   = [C_CUED, C_DEPTH_FC, C_COLOR_FC]
+    SWAP_ORDER = ['N', 'C', 'Z', 'CZ']
+
+    def _three_factor_effects(d):
+        """Return [(eff_pp, p), ...] for dot/depth/color."""
+        main     = d['main']
+        fc_depth = d['fc_depth']
+        fc_color = d['fc_color']
+
+        kc  = sum(main.get(('CUED',   s), [0,0])[0] for s in SWAP_ORDER)
+        nc  = sum(main.get(('CUED',   s), [0,0])[1] for s in SWAP_ORDER)
+        ku  = sum(main.get(('UNCUED', s), [0,0])[0] for s in SWAP_ORDER)
+        nu  = sum(main.get(('UNCUED', s), [0,0])[1] for s in SWAP_ORDER)
+        dot_eff = acc_pp(kc, nc) - acc_pp(ku, nu)
+        _, dot_p, _ = chi2_2x2(kc, nc, ku, nu)
+
+        kd_c, nd_c = fc_depth['cued']
+        kd_u, nd_u = fc_depth['uncued']
+        dep_eff = acc_pp(kd_c, nd_c) - acc_pp(kd_u, nd_u)
+        _, dep_p, _ = chi2_2x2(kd_c, nd_c, kd_u, nd_u)
+
+        kco_c, nco_c = fc_color['cued']
+        kco_u, nco_u = fc_color['uncued']
+        col_eff = acc_pp(kco_c, nco_c) - acc_pp(kco_u, nco_u)
+        _, col_p, _ = chi2_2x2(kco_c, nco_c, kco_u, nco_u)
+
+        return [(dot_eff, dot_p), (dep_eff, dep_p), (col_eff, col_p)]
+
+    # Group layout: each session is a cluster of 3 bars
+    grp_width  = 0.9
+    bar_width  = 0.25
+    grp_gap    = 0.55
+    offsets    = [-bar_width, 0, bar_width]  # dot / depth / color within group
+
+    fig, ax = plt.subplots(figsize=(14, 5.5))
+    fig.patch.set_facecolor('white')
+
+    xtick_pos = []
+    xtick_lbl = []
+
+    for si, sess in enumerate(session_list):
+        fxs = _three_factor_effects(sess['data'])
+        n   = sess['data']['n_valid']
+        x_grp = si * (grp_width + grp_gap)
+
+        for fi, ((eff, p), fc, off) in enumerate(zip(fxs, FCOLS, offsets)):
+            xb = x_grp + off
+            s  = stars(p)
+            ax.bar(xb, eff, bar_width * 0.88, color=fc, alpha=0.85, zorder=3,
+                   edgecolor='white', linewidth=0.5,
+                   label=FACTORS[fi] if si == 0 else None)
+            # sig label
+            y_lbl = eff + 1.5 if eff >= 0 else eff - 2.5
+            va_lbl = 'bottom' if eff >= 0 else 'top'
+            ax.text(xb, y_lbl, s, ha='center', va=va_lbl, fontsize=7.5, color='#333')
+            # value label inside bar
+            if abs(eff) > 5:
+                ax.text(xb, eff / 2, f'{eff:+.0f}pp',
+                        ha='center', va='center', fontsize=6, color='white', fontweight='bold')
+            else:
+                ax.text(xb, eff + (3 if eff >= 0 else -5), f'{eff:+.0f}pp',
+                        ha='center', va='bottom', fontsize=6, color='#333')
+
+        # anomaly marker
+        if sess.get('anomaly'):
+            ax.text(x_grp, -20, '⚠', ha='center', va='bottom', fontsize=11, color='#CC4400')
+
+        xtick_pos.append(x_grp)
+        xtick_lbl.append(f"{sess['label']}\n(n={n})")
+
+    ax.axhline(0, color='#888', lw=0.8, ls='--', zorder=2)
+    ax.set_xticks(xtick_pos)
+    ax.set_xticklabels(xtick_lbl, fontsize=8.5)
+    ax.set_ylabel('Δ pp (cued − uncued)', fontsize=9)
+    ax.set_ylim(-24, 38)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.grid(axis='y', lw=0.4, alpha=0.4, zorder=0)
+
+    # Legend
+    patches = [mpatches.Patch(color=fc, label=lbl)
+               for fc, lbl in zip(FCOLS, ['Dot cueing', 'Depth-field cueing', 'Color-field cueing'])]
+    ax.legend(handles=patches, fontsize=8, loc='upper right', framealpha=0.9)
+
+    # Anomaly footnotes
+    notes = [s['anomaly'] for s in session_list if s.get('anomaly')]
+    if notes:
+        ax.text(0.01, 0.02, '⚠ ' + '  |  '.join(notes),
+                transform=ax.transAxes, fontsize=7, color='#CC4400', va='bottom')
+
+    fig.suptitle(
+        'DecoupledDots — Per-session three-factor effects\n'
+        '(bars = Dot / Depth-field / Color-field cueing Δpp within each session)',
+        fontsize=11, fontweight='bold', y=1.01)
+
+    os.makedirs(FIG_DIR, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', facecolor='white')
+    print(f"Saved: {out_path}")
+    plt.close(fig)
+
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    # Load session data
+    # ── Load all sessions ─────────────────────────────────────────────────────
     print("\nLoading Session 1 (260406_1532, DecoupledDots_005m, delayTranslator=true) ...")
     valid_s1 = load_data(DATA_S1, invert_cond=False)
     print(f"  → {len(valid_s1)} valid trials")
@@ -786,6 +915,14 @@ if __name__ == '__main__':
     print("Loading Session 2 (260406_1754, DecoupledDots_Inv_005m, delayTranslator=false, labels inverted) ...")
     valid_s2 = load_data(DATA_S2, invert_cond=True)
     print(f"  → {len(valid_s2)} valid trials (after label flip)")
+
+    print("Loading Session 3 (260407_0643, DecoupledDots_Inv_005m, delayTranslator=false, labels inverted) ...")
+    valid_s3 = load_data(DATA_S3, invert_cond=True)
+    print(f"  → {len(valid_s3)} valid trials (after label flip)")
+
+    print("Loading Session 4 (260407_0731, DecoupledDots_005m, delayTranslator=true) ...")
+    valid_s4 = load_data(DATA_S4, invert_cond=False)
+    print(f"  → {len(valid_s4)} valid trials")
 
     # ── Part A: Session 1 alone ────────────────────────────────────────────────
     data_s1 = aggregate(valid_s1)
@@ -806,12 +943,76 @@ if __name__ == '__main__':
         label='PART B: Session 2 alone — 260406_1754 (DecoupledDots_Inv_005m, labels flipped)')
     make_figure_s2(data_s2, cueing_s2)
 
-    # ── Part C: Combined ──────────────────────────────────────────────────────
-    valid_comb = valid_s1 + valid_s2
-    data_comb  = aggregate(valid_comb)
-    cueing_comb = print_summary(
-        data_comb,
-        label='PART C: Combined — 260406_1532 + 260406_1754  (n≈1026 trials)')
-    make_figure_combined(data_comb, cueing_comb)
+    # ── Part C: Session 3 alone ────────────────────────────────────────────────
+    data_s3 = aggregate(valid_s3)
+    cueing_s3 = print_summary(
+        data_s3,
+        label='PART C: Session 3 alone — 260407_0643 (DecoupledDots_Inv_005m, labels flipped)')
+    make_figure_session(
+        data_s3, cueing_s3, OUT_S3,
+        session_label='DecoupledDots_Inv_005m — Session 260407_0643  (labels flipped)',
+        subtitle='delayTranslator=false  •  Cond labels inverted  •  '
+                 'Swap types: N / C (color) / Z (depth) / CZ (color+depth)'
+                 '  •  depth=0.05m  •  8-AFC  •  chance=12.5%')
 
-    print("Done.")
+    # ── Part D: Session 4 alone ────────────────────────────────────────────────
+    data_s4 = aggregate(valid_s4)
+    cueing_s4 = print_summary(
+        data_s4,
+        label='PART D: Session 4 alone — 260407_0731 (DecoupledDots_005m, delayTranslator=true)')
+    make_figure_session(
+        data_s4, cueing_s4, OUT_S4,
+        session_label='DecoupledDots_005m — Session 260407_0731  [ANOMALOUS: flat dot cueing]',
+        subtitle='delayTranslator=true  •  '
+                 'Dot cueing anomalously low (+4.8pp n.s.) — elevated UNCUED, not depressed CUED  •  '
+                 'Noted: ±22.5° criterion difficulty; mild jerky-motion sensation; no post-hoc exclusion criterion  •  '
+                 'depth=0.05m  •  8-AFC  •  chance=12.5%')
+
+    # ── Part E: S1+S2 Combined (original 2-session figure) ────────────────────
+    valid_comb12 = valid_s1 + valid_s2
+    data_comb12  = aggregate(valid_comb12)
+    cueing_comb12 = print_summary(
+        data_comb12,
+        label='PART E: Combined S1+S2 — 260406_1532 + 260406_1754  (n≈1026 trials)')
+    make_figure_combined(data_comb12, cueing_comb12)   # writes OUT_COMB (original)
+
+    # ── Part F: All 4 sessions combined ───────────────────────────────────────
+    valid_comb4 = valid_s1 + valid_s2 + valid_s3 + valid_s4
+    data_comb4  = aggregate(valid_comb4)
+    cueing_comb4 = print_summary(
+        data_comb4,
+        label='PART F: Combined S1+S2+S3+S4 — all 4 sessions')
+    n4 = data_comb4['n_valid']
+    make_figure_combined(
+        data_comb4, cueing_comb4,
+        title_line1=(f'DecoupledDots — Combined S1+S2+S3+S4   (n={n4} trials)'),
+        title_line2=('Sessions: 260406_1532(DT) + 260406_1754(DTinv) + '
+                     '260407_0643(DTinv) + 260407_0731(DT)  •  '
+                     'S4 anomalous (flat cueing, elevated UNCUED)  •  '
+                     'depth=0.05m  •  8-AFC  •  chance=12.5%'),
+        out_path=OUT_COMB4)
+
+    # ── Part G: Per-session comparison figure ─────────────────────────────────
+    session_list = [
+        dict(label='S1\n260406_1532\nDT_005m',
+             data=data_s1, cueing=cueing_s1, anomaly=None),
+        dict(label='S2\n260406_1754\nDTinv_005m',
+             data=data_s2, cueing=cueing_s2, anomaly=None),
+        dict(label='S3\n260407_0643\nDTinv_005m',
+             data=data_s3, cueing=cueing_s3, anomaly=None),
+        dict(label='S4\n260407_0731\nDT_005m',
+             data=data_s4, cueing=cueing_s4,
+             anomaly='S4: dot cueing flat (+4.8pp n.s.); elevated UNCUED, '
+                     'not depressed CUED; ±22.5° criterion difficulty noted; '
+                     'jerky motion sensation; included (no pre-defined exclusion criterion)'),
+    ]
+    make_figure_sessions_comparison(session_list)
+
+    print("\nDone.")
+    print(f"  Individual: {OUT_S1}")
+    print(f"             {OUT_S2}")
+    print(f"             {OUT_S3}")
+    print(f"             {OUT_S4}")
+    print(f"  Combined (S1+S2):    {OUT_COMB}")
+    print(f"  Combined (S1–S4):    {OUT_COMB4}")
+    print(f"  Session comparison:  {OUT_SESS_CMP}")

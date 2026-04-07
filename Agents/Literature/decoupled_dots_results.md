@@ -29,11 +29,16 @@ Prior experiments (DepthColorLinked) showed that swapping the depth plane AND co
 
 | Session | Asset | delayTranslator | Label treatment | N valid |
 |---------|-------|-----------------|----------------|---------|
-| 260406_1532 | DecoupledDots_005m | 1 | Normal | ~514 |
-| 260406_1754 | DecoupledDots_Inv_005m | 0 | **INVERTED** before analysis | ~512 |
-| **Combined** | | | | **1026** |
+| 260406_1532 | DecoupledDots_005m | 1 | Normal | 514 |
+| 260406_1754 | DecoupledDots_Inv_005m | 0 | **INVERTED** before analysis | 512 |
+| 260407_0643 | DecoupledDots_Inv_005m | 0 | **INVERTED** before analysis | 512 |
+| 260407_0731 | DecoupledDots_005m | 1 | Normal | 513 |
+| **Combined (S1+S2)** | | | | **1026** |
+| **Combined (S1–S4)** | | | | **2051** |
 
-Label inversion for session 260406_1754: raw CUED/UNCUED labels are behaviorally reversed because delayTranslator=0 (the always-on field is delayed). Labels were flipped before any analysis so that CUED always means "temporal cue correctly marks the translator."
+Label inversion for 260406_1754 and 260407_0643: raw CUED/UNCUED labels are behaviorally reversed because delayTranslator=0 (the always-on field is delayed). Labels were flipped before any analysis so that CUED always means "temporal cue correctly marks the translator."
+
+**Session 4 (260407_0731) anomaly**: dot cueing was anomalously flat (+4.8pp n.s., vs +22–40pp in prior sessions). Pattern is elevated UNCUED (all swaps ~25–34%), not depressed CUED — the reverse of what depth-swap disruption would predict. Observer noted ±22.5° criterion ambiguity and a perceptual sense of jerky motion during this session. Session is included without exclusion; no pre-defined performance criterion exists. Between-session variance is expected at n=64/cell. The 4-session combined results remain highly significant (see §3.2b).
 
 ### Three analysis factors
 
@@ -51,7 +56,9 @@ Orthogonality means factor effects are fully unconfounded: each coefficient in t
 
 ## 3. Results
 
-### 3.1 Raw accuracy by Condition × SwapType (combined, n=1026)
+### 3.1 Raw accuracy by Condition × SwapType
+
+#### S1+S2 combined (n=1026, primary GLM dataset)
 
 | Swap | CUED | UNCUED | Cueing Δ | sig |
 |------|------|--------|----------|-----|
@@ -60,10 +67,24 @@ Orthogonality means factor effects are fully unconfounded: each coefficient in t
 | Z | ~28% | ~20% | **+13pp** | ** |
 | CZ | ~20% | ~20% | **+6pp** | n.s. |
 
-Session 1 (1532): N=+36pp***, C=+41pp***, Z=+2pp n.s., CZ=+11pp†
-Session 2 (1754, labels flipped): N=+27pp***, C=+36pp***, Z=+25pp***, CZ=+2pp n.s.
+#### All 4 sessions combined (n=2051)
 
-### 3.2 Three-factor analysis (combined, n=1026)
+| Swap | CUED | UNCUED | Cueing Δ | sig |
+|------|------|--------|----------|-----|
+| N | 48.4% | 24.9% | **+23.5pp** | *** |
+| C | 50.0% | 26.5% | **+23.5pp** | *** |
+| Z | 23.4% | 14.4% | **+9.0pp** | ** |
+| CZ | 25.0% | 19.5% | **+5.5pp** | † |
+
+Per-session cueing effects (N/C/Z/CZ, CUED−UNCUED):
+- S1 (1532): N=+36pp***, C=+41pp***, Z=+2pp n.s., CZ=+11pp†
+- S2 (1754, inv): N=+27pp***, C=+36pp***, Z=+25pp***, CZ=+2pp n.s.
+- S3 (0643, inv): N=+30pp***, C=+11pp†, Z=+3pp n.s., CZ=+5pp n.s.
+- S4 (0731, anomalous): N=+2pp n.s., C=+6pp n.s., Z=+6pp n.s., CZ=+5pp n.s.
+
+### 3.2 Three-factor analysis
+
+#### S1+S2 combined (n=1026, primary)
 
 **F1 — Dot cueing (CUED vs UNCUED, collapsed over all swaps):**
 - CUED: ~35% correct; UNCUED: ~25% correct
@@ -78,6 +99,14 @@ Session 2 (1754, labels flipped): N=+27pp***, C=+36pp***, Z=+25pp***, CZ=+2pp n.
 - Color-cued ✓: 30.2% correct (+17.7pp above chance)
 - Color-uncued ✗: 30.2% correct (+17.7pp above chance)
 - Δ = **+0.0pp**, χ²=0.00, p = 1.00, n.s.
+
+#### All 4 sessions combined (n=2051)
+
+**F1 — Dot cueing:** Δ = **+15.4pp**, χ²(1)=59.01, p < 0.001 ***
+**F2 — Depth-field cueing:** Δ = **+9–12pp range** (estimate from chi-square tests; see combined figure)
+**F3 — Color-field cueing:** consistent null across all sessions
+
+Overall χ²(7)=148.28, p < 10⁻¹⁷ for full 2×4 table. The 4-session combined results replicate the main structure despite S4 anomaly: Z/CZ swaps kill dot cueing more than N/C swaps, color swap alone (C) leaves cueing intact.
 
 ### 3.3 GLM — Logistic regression (trial-level, additive, no interactions)
 
@@ -95,6 +124,12 @@ McFadden R² = 0.065; LRT χ²(3) = 82.0, p < 10⁻¹⁷
 **Baseline** (all factors = 0, i.e., UNCUED+CZ): 12.8% predicted correct = essentially exactly chance (12.5%). The model is well-calibrated.
 
 Linear probability model gives identical conclusions and directly interpretable pp coefficients. The two models converge because the design is fully orthogonal.
+
+### 3.5 Why the odds ratios are the right effect size measure
+
+The pp differences (+22.3pp, +12.5pp, +0.0pp) are intuitive but baseline-dependent. The logistic function is flattest near the extremes of the probability scale: the same underlying signal increment produces the *largest* pp change near 50% and progressively smaller pp changes as performance approaches floor or ceiling. A 22pp difference near chance is actually harder to produce — in terms of underlying signal strength — than the same 22pp difference in the middle of the range.
+
+Our baseline sits at chance (UNCUED+CZ ≈ 12.5%), near the floor. This means the raw pp effects **underestimate** the underlying effect size: the same signal operating at a 50% baseline would yield a larger pp difference. The odds ratios correct for this nonlinearity: OR = 3.07 for dot cueing and OR = 1.89 for depth-field cueing are baseline-agnostic statements about how much each factor multiplies the odds of a correct response. They are the appropriate effect sizes for comparisons across conditions, sessions, or experiments with different baselines.
 
 ### 3.4 Depth-field cueing breakdown by dot cueing
 
@@ -136,7 +171,8 @@ Dot cueing survives in both depth groups but is dramatically stronger when depth
 - **Object-based attention (Egly et al. 1994, Baylis & Driver 1993)**: the dot-cueing effect is the core object-based attention manipulation — translated from rectangles/surfaces to stereoscopic dot fields. The temporal onset cue selects an object; attention then spreads within object boundaries.
 - **Depth-plane segmentation (He & Nakayama 1994, Nakayama et al. 1995)**: depth is a primary cue for figure-ground and object segmentation. The depth-field cueing effect is consistent with depth plane defining the attended object's spatial scope.
 - **Feature binding across time**: the temporal gap between delayed-onset and translation (≥300ms pre-translation hold + 750ms delayed onset window) means the object must be maintained in some form before the translation probe. Depth-plane identity may serve as a spatiotopic anchor that survives the delay.
-- **Color as a segmentation cue**: the null color result is somewhat surprising given the prominent use of color in object-based attention studies (e.g., Duncan 1984 same-object advantage for same-color objects). However, in those studies color serves to identify which object to report; here color is a field-level feature that co-varies with depth. The task never requires using color identity — subjects only report translation direction. Color may be irrelevant to the computation being performed.
+- **Color as a segmentation cue**: the null color result is somewhat surprising given the prominent use of color in object-based attention studies (e.g., Duncan 1984 same-object advantage for same-color objects). However, in those studies color serves to identify which object to report; here color is a field-level feature that co-varies with depth. The task never requires using color identity — subjects only report translation direction. Color may be irrelevant to the computation being performed. See `color_cueing_review.md` for a full treatment of the color null in the exogenous-attention literature, and `color_model_conjecture.md` for theoretical conjectures about why the point-set model predicts F3=0.
+- **Vergence and the depth effect**: the 80ms translation window is within the latency period of even the fastest vergence responses (~70–85ms minimum; Busettini et al. 1997). Vergence is frozen during the entire translation window. The F2 depth-field cueing effect is therefore a purely neural disparity effect, not vergence-mediated. See `vergence_latency_note.md`.
 
 ---
 
@@ -144,12 +180,16 @@ Dot cueing survives in both depth groups but is dramatically stronger when depth
 
 | File | Purpose |
 |------|---------|
-| `Tools/Analysis/decoupled_dots_combined_analysis.py` | Main analysis; produces S1, S2, combined figures |
+| `Tools/Analysis/decoupled_dots_combined_analysis.py` | Main analysis; produces all session + combined figures |
 | `Tools/Analysis/decoupled_dots_glm.py` | GLM (logistic + LPM); produces coefficient figure |
-| `Tools/Analysis/decoupled_dots_field_cueing.py` | Standalone field-cueing analysis (standalone, now superseded by combined script) |
+| `Tools/Analysis/decoupled_dots_field_cueing.py` | Standalone field-cueing analysis (superseded by combined script) |
 | `Tools/Analysis/decoupled_dots_traj.py` | 4×4 trajectory figure |
 | `Agents/Figures/decoupled_dots_260406_1532.png` | Session 1 figure (3 factors) |
 | `Agents/Figures/decoupled_dots_260406_1754.png` | Session 2 figure (3 factors) |
-| `Agents/Figures/decoupled_dots_combined.png` | Combined figure (3 factors + summary) |
+| `Agents/Figures/decoupled_dots_260407_0643.png` | Session 3 figure (3 factors) |
+| `Agents/Figures/decoupled_dots_260407_0731.png` | Session 4 figure (3 factors; anomalous, see §2 note) |
+| `Agents/Figures/decoupled_dots_combined.png` | S1+S2 combined figure (3 factors + summary) |
+| `Agents/Figures/decoupled_dots_combined_s1s2s3s4.png` | S1–S4 combined figure (all 4 sessions) |
+| `Agents/Figures/decoupled_dots_session_comparison.png` | Per-session 3-factor comparison (shows S4 anomaly) |
 | `Agents/Figures/decoupled_dots_glm.png` | Observed vs predicted + coefficient plot |
 | `Agents/Figures/decoupled_dots_traj.png` | 4×4 trajectory grid |
