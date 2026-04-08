@@ -171,6 +171,22 @@
 
 ---
 
+## GROUP 10: Endogenous Color Attention — Feature-Based Selection
+*Papers bearing on endogenous color attention in transparent motion and overlapping-surface paradigms. Integrated into endogenous_color_hillyard.md.*
+
+| # | Citation | Key Finding | PDF | Integrated? |
+|---|---------|-------------|-----|-------------|
+| 91 | **Schoenfeld, Hopf et al. (2007)** *Cerebral Cortex* 17:2468 | Feature dimension attention (color OR motion) activates cortex at 90–120ms; color → V4v, motion → hMT; dimension attention faster than value attention | ✗ | ✓ endogenous_color §3.1 |
+| 92 | **Anllo-Vento & Hillyard (1996)** *P&P* 58:191 | Color SN (ventral scalp) and motion SN (dorsal scalp) anatomically distinct; both hierarchically dependent on prior spatial P1/N1; feature selection on top of surface selection | ✗ | ✓ endogenous_color §3.2 |
+| 93 | **Anllo-Vento, Luck & Hillyard (1998)** *Hum Brain Map* 6:216 | Color attention timecourse: lateral occipital ~100ms → fusiform 160–240ms; 50ms automatic color is unmodulated by attention | ✗ | ✓ endogenous_color §3.3 |
+| 94 | **Zhang & Luck (2009)** *Nat Neurosci* 12:24 | Color feature-based attention modulates feedforward processing within ~100ms under high stimulus competition | ✗ | ✓ endogenous_color §3.4 |
+| 95 | **Motter (1994)** *J Neurosci* 14:2178 | V4 neurons ~2x enhanced for attended color; onset ~200ms; spatially independent feature-based effect | ✗ | ✓ endogenous_color §3.5 |
+| 96 | **Saenz, Buracas & Boynton (2002)** *Nat Neurosci* 5:631 | Color and motion attention both spread globally across visual field; effects quantitatively similar — color-indexed feature-similarity gain | ✗ | ✓ endogenous_color §3.6 |
+| 97 | **Saenz, Buracas & Boynton (2003)** *Vision Research* 43:629 | Behavioral confirmation: dual-task benefit when two attended stimuli share color or motion direction; global and equal for both features | ✗ | ✓ endogenous_color §3.6 |
+| 98 | **Corbetta et al. (1991)** *J Neurosci* 11:2383 | PET: color attention → ventral occipital; motion attention → parietal; anatomical double dissociation | ✗ | ✓ endogenous_color §3.6 (background) |
+
+---
+
 ## FLAGGED: Not Published Papers
 
 | File | Status |
@@ -185,4 +201,5 @@
 *Updated 2026-04-01: added rivalry follow-up papers #66–69 (Stoner 2005, Paffen 2006, Khoe 2008, Mishra 2009).*
 *Updated 2026-04-01: added Group 8 depth attention gradient papers #70–81 (Parks 2006, Caziot 2023, Andersen 1993, Chen 2012, Arnott 2000, Solé Puig 2013, Nakayama 1986, He 1992, He 1995, Theeuwes 1998, Maringelli 2001, Jänig 2025).*
 *Updated 2026-04-06: added Group 9 color cueing papers #82–90 (Theeuwes 1992, Folk et al. 1992, Bacon & Egeth 1994, Yantis & Jonides 1984, Kahneman et al. 1992, Scholl 2001, Theeuwes 2019, Jonikaitis & Theeuwes 2017, Treisman 1998) — motivated by DecoupledDots color-null result.*
-*90 papers tracked; 55 integrated; 35 pending.*
+*Updated 2026-04-06: added Group 10 endogenous color attention papers #91–98 (Schoenfeld 2007, Anllo-Vento & Hillyard 1996, Anllo-Vento et al. 1998, Zhang & Luck 2009, Motter 1994, Saenz et al. 2002, Saenz et al. 2003, Corbetta et al. 1991) — integrated into endogenous_color_hillyard.md.*
+*98 papers tracked; 63 integrated; 35 pending.*

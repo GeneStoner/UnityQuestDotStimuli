@@ -1,0 +1,244 @@
+"""
+decoupled_C_traj.py
+-------------------
+Stimulus trajectory figure for Exp_DecoupledDots_005m, C (color swap) condition.
+All 16 permutations as 8 CUED/UNCUED pairs following S&B Fig 1B / Fig 5 convention.
+
+C swap: at tStart, field colors exchange.
+  - Motion track: lines switch color+style at tStart (while one also dips)
+  - Depth track: lines switch color+style at tStart; depth LEVELS stay constant
+
+Line-style convention (tied to color, not field identity):
+  Green = dotted  (:)   Red = solid  (-)
+  Before tStart: original colors.  After tStart: swapped colors.
+  Delayed field = line absent (nan) before ONSET frame.
+
+Output: Agents/Figures/decoupled_C_all_perms.pdf / .png
+"""
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
+from matplotlib.backends.backend_pdf import PdfPages
+
+# ── Timing ────────────────────────────────────────────────────────────────────
+ONSET   = 56
+T_START = 78
+T_END   = 84
+TOTAL   = 114
+SIM_HZ  = 75.0
+t = np.arange(TOTAL) / SIM_HZ
+
+Y_CW, Y_TRANS, Y_CCW = 2, 1, 0
+
+COL_GREEN = '#228B22'
+COL_RED   = '#CC3333'
+LS_GREEN  = ':'
+LS_RED    = '-'
+LW        = 1.8
+
+# ── Row definitions (same as N — pairing logic unchanged) ─────────────────────
+ROWS = [
+    dict(label='Green/CW/Far',
+         cued  =dict(rot_cfg=1, b_green=True,  b_near=False),
+         uncued=dict(rot_cfg=0, b_green=False, b_near=True)),
+    dict(label='Green/CW/Near',
+         cued  =dict(rot_cfg=1, b_green=True,  b_near=True),
+         uncued=dict(rot_cfg=0, b_green=False, b_near=False)),
+    dict(label='Red/CW/Far',
+         cued  =dict(rot_cfg=1, b_green=False, b_near=False),
+         uncued=dict(rot_cfg=0, b_green=True,  b_near=True)),
+    dict(label='Red/CW/Near',
+         cued  =dict(rot_cfg=1, b_green=False, b_near=True),
+         uncued=dict(rot_cfg=0, b_green=True,  b_near=False)),
+    dict(label='Green/CCW/Far',
+         cued  =dict(rot_cfg=0, b_green=True,  b_near=False),
+         uncued=dict(rot_cfg=1, b_green=False, b_near=True)),
+    dict(label='Green/CCW/Near',
+         cued  =dict(rot_cfg=0, b_green=True,  b_near=True),
+         uncued=dict(rot_cfg=1, b_green=False, b_near=False)),
+    dict(label='Red/CCW/Far',
+         cued  =dict(rot_cfg=0, b_green=False, b_near=False),
+         uncued=dict(rot_cfg=1, b_green=True,  b_near=True)),
+    dict(label='Red/CCW/Near',
+         cued  =dict(rot_cfg=0, b_green=False, b_near=True),
+         uncued=dict(rot_cfg=1, b_green=True,  b_near=False)),
+]
+
+
+def make_tracks(rot_cfg, b_green, b_near, cued):
+    """Compute motion and depth trajectories for C (color swap) condition."""
+    y_B = Y_CW  if rot_cfg == 1 else Y_CCW
+    y_A = Y_CCW if rot_cfg == 1 else Y_CW
+
+    # Original colors (pre-swap)
+    col_B = COL_GREEN if b_green else COL_RED
+    col_A = COL_RED   if b_green else COL_GREEN
+    ls_B  = LS_GREEN  if b_green else LS_RED
+    ls_A  = LS_RED    if b_green else LS_GREEN
+
+    # Post-swap colors (A gets B's original color and vice versa)
+    col_A2, ls_A2 = col_B, ls_B
+    col_B2, ls_B2 = col_A, ls_A
+
+    dep_B = 1.0 if b_near else 0.0   # Near=1, Far=0  (depth unchanged by C swap)
+    dep_A = 0.0 if b_near else 1.0
+
+    # ── Motion: Field A ───────────────────────────────────────────────────────
+    # pre-swap segment: 0 → T_START-1, constant at y_A
+    a_mot_pre = np.full(TOTAL, float(y_A))
+    a_mot_pre[T_START:] = np.nan
+
+    # post-swap segment: T_START → end, y_A (with dip if UNCUED)
+    a_mot_post = np.full(TOTAL, np.nan)
+    a_mot_post[T_START:] = y_A
+    if not cued:
+        a_mot_post[T_START:T_END] = Y_TRANS
+
+    # ── Motion: Field B (delayed, absent before ONSET) ────────────────────────
+    # pre-swap segment: ONSET → T_START-1
+    b_mot_pre = np.full(TOTAL, np.nan)
+    b_mot_pre[ONSET:T_START] = y_B
+
+    # post-swap segment: T_START → end (with dip if CUED)
+    b_mot_post = np.full(TOTAL, np.nan)
+    b_mot_post[T_START:] = y_B
+    if cued:
+        b_mot_post[T_START:T_END] = Y_TRANS
+
+    # ── Depth: Field A (depth level constant; color changes at T_START) ───────
+    a_dep_pre = np.full(TOTAL, dep_A)
+    a_dep_pre[T_START:] = np.nan
+
+    a_dep_post = np.full(TOTAL, np.nan)
+    a_dep_post[T_START:] = dep_A
+
+    # ── Depth: Field B (absent before ONSET; depth level constant) ────────────
+    b_dep_pre = np.full(TOTAL, np.nan)
+    b_dep_pre[ONSET:T_START] = dep_B
+
+    b_dep_post = np.full(TOTAL, np.nan)
+    b_dep_post[T_START:] = dep_B
+
+    return dict(
+        a_mot_pre=a_mot_pre,  b_mot_pre=b_mot_pre,
+        a_mot_post=a_mot_post, b_mot_post=b_mot_post,
+        a_dep_pre=a_dep_pre,  b_dep_pre=b_dep_pre,
+        a_dep_post=a_dep_post, b_dep_post=b_dep_post,
+        col_A=col_A,   col_B=col_B,   ls_A=ls_A,   ls_B=ls_B,
+        col_A2=col_A2, col_B2=col_B2, ls_A2=ls_A2, ls_B2=ls_B2,
+    )
+
+
+def draw_cell(ax_mot, ax_dep, tr,
+              show_xlabel=False, row_label='', col_title=''):
+    t_on = ONSET   / SIM_HZ
+    t_s  = T_START / SIM_HZ
+    t_e  = T_END   / SIM_HZ
+
+    for ax in (ax_mot, ax_dep):
+        ax.axvspan(t_s, t_e, color='gray', alpha=0.18, zorder=0)
+        ax.axvline(t_on, color='gray', lw=0.8, ls='--', zorder=1)
+        ax.axvline(t_s,  color='gray', lw=0.8, ls=':',  zorder=1)
+        ax.set_xlim(0, TOTAL / SIM_HZ)
+
+    # ── Motion track ──────────────────────────────────────────────────────────
+    # Pre-swap segments (original colors)
+    ax_mot.plot(t, tr['a_mot_pre'],  color=tr['col_A'],  ls=tr['ls_A'],  lw=LW)
+    ax_mot.plot(t, tr['b_mot_pre'],  color=tr['col_B'],  ls=tr['ls_B'],  lw=LW)
+    # Post-swap segments (swapped colors)
+    ax_mot.plot(t, tr['a_mot_post'], color=tr['col_A2'], ls=tr['ls_A2'], lw=LW)
+    ax_mot.plot(t, tr['b_mot_post'], color=tr['col_B2'], ls=tr['ls_B2'], lw=LW)
+
+    ax_mot.set_yticks([Y_CCW, Y_TRANS, Y_CW])
+    ax_mot.set_yticklabels(['CCW', 'TRANS', 'CW'], fontsize=6.5)
+    ax_mot.set_ylim(-0.5, 2.5)
+    ax_mot.tick_params(labelbottom=False, bottom=False)
+
+    if col_title:
+        ax_mot.set_title(col_title, fontsize=11, fontweight='bold', pad=4)
+    if row_label:
+        ax_mot.set_ylabel(row_label, fontsize=7, labelpad=4, va='center')
+
+    # ── Depth track ───────────────────────────────────────────────────────────
+    ax_dep.plot(t, tr['a_dep_pre'],  color=tr['col_A'],  ls=tr['ls_A'],  lw=LW)
+    ax_dep.plot(t, tr['b_dep_pre'],  color=tr['col_B'],  ls=tr['ls_B'],  lw=LW)
+    ax_dep.plot(t, tr['a_dep_post'], color=tr['col_A2'], ls=tr['ls_A2'], lw=LW)
+    ax_dep.plot(t, tr['b_dep_post'], color=tr['col_B2'], ls=tr['ls_B2'], lw=LW)
+
+    ax_dep.set_yticks([0.0, 1.0])
+    ax_dep.set_yticklabels(['Far', 'Near'], fontsize=6.5)
+    ax_dep.set_ylim(-0.3, 1.3)
+
+    if show_xlabel:
+        ax_dep.set_xlabel('Time (s)', fontsize=8)
+        ax_dep.tick_params(axis='x', labelsize=7)
+    else:
+        ax_dep.tick_params(labelbottom=False, bottom=False)
+
+
+# ── Figure builder ────────────────────────────────────────────────────────────
+TITLE = ('Unity Asset: Exp_DecoupledDots_005m  ·  C (color swap)  ·  '
+         'All 16 permutations  ·  Heading = 0°')
+
+LEG_HANDLES = [
+    mpatches.Patch(facecolor='gray', alpha=0.35, label='Translation window'),
+]
+
+
+def build_figure(row_subset, figsize):
+    n = len(row_subset)
+    fig = plt.figure(figsize=figsize)
+    fig.suptitle(TITLE, fontsize=10, fontweight='bold', y=0.99)
+
+    hr = [2, 0.8] * n
+    gs = gridspec.GridSpec(
+        n * 2, 2,
+        height_ratios=hr,
+        hspace=0.07, wspace=0.28,
+        top=0.87, bottom=0.06, left=0.14, right=0.97,
+    )
+
+    for ri, row in enumerate(row_subset):
+        for ci, side in enumerate(['cued', 'uncued']):
+            params = row[side]
+            tr = make_tracks(**params, cued=(side == 'cued'))
+            ax_m = fig.add_subplot(gs[ri * 2,     ci])
+            ax_d = fig.add_subplot(gs[ri * 2 + 1, ci])
+            draw_cell(
+                ax_m, ax_d, tr,
+                show_xlabel=(ri == n - 1),
+                row_label=row['label'] if ci == 0 else '',
+                col_title=('CUED' if ci == 0 else 'UNCUED') if ri == 0 else '',
+            )
+
+    fig.legend(handles=LEG_HANDLES, loc='upper right', fontsize=8,
+               bbox_to_anchor=(0.97, 0.94), framealpha=0.9)
+    return fig
+
+
+# ── Output paths ─────────────────────────────────────────────────────────────
+BASE = os.path.normpath(os.path.join(
+    os.path.dirname(__file__), '../../Agents/Figures'))
+os.makedirs(BASE, exist_ok=True)
+OUT_PNG = os.path.join(BASE, 'decoupled_C_all_perms.png')
+OUT_PDF = os.path.join(BASE, 'decoupled_C_all_perms.pdf')
+
+# Single tall PNG
+fig_all = build_figure(ROWS, figsize=(10, 20))
+fig_all.savefig(OUT_PNG, dpi=150, bbox_inches='tight')
+print(f'Saved PNG: {OUT_PNG}')
+plt.close(fig_all)
+
+# Multi-page PDF (2 rows per page, letter size)
+ROWS_PER_PAGE = 2
+with PdfPages(OUT_PDF) as pdf:
+    for i in range(0, len(ROWS), ROWS_PER_PAGE):
+        fig_p = build_figure(ROWS[i:i+ROWS_PER_PAGE], figsize=(8.5, 11))
+        pdf.savefig(fig_p, bbox_inches='tight')
+        plt.close(fig_p)
+
+print(f'Saved PDF: {OUT_PDF}')
