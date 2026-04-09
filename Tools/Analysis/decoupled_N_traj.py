@@ -126,15 +126,17 @@ def make_tracks(rot_cfg, b_green, b_near, cued):
     )
 
 
+T_MID_S = (T_START + T_END) / 2 / SIM_HZ
+X_FRAC  = (T_START + T_END) / 2 / TOTAL   # axes-fraction for trans label
+
+
 def draw_cell(ax_mot, ax_dep, tr,
-              show_xlabel=False, row_label='', col_title=''):
-    t_on = ONSET   / SIM_HZ
+              show_xlabel=False, row_label='', col_title='', trans_label=''):
     t_s  = T_START / SIM_HZ
     t_e  = T_END   / SIM_HZ
 
     for ax in (ax_mot, ax_dep):
         ax.axvspan(t_s, t_e, color='gray', alpha=0.18, zorder=0)
-        ax.axvline(t_on, color='gray', lw=0.8, ls='--', zorder=1)
         ax.set_xlim(0, TOTAL / SIM_HZ)
 
     # Motion track
@@ -146,9 +148,19 @@ def draw_cell(ax_mot, ax_dep, tr,
     ax_mot.tick_params(labelbottom=False, bottom=False)
 
     if col_title:
-        ax_mot.set_title(col_title, fontsize=11, fontweight='bold', pad=4)
+        cc = '#1a3a8b' if col_title.startswith('Dot✓') else '#884400'
+        ax_mot.set_title(col_title, fontsize=9, fontweight='bold', pad=6, color=cc,
+                         bbox=dict(boxstyle='round,pad=0.4',
+                                   facecolor='#f0f4ff' if col_title.startswith('Dot✓') else '#fff4e8',
+                                   edgecolor=cc, lw=0.9))
     if row_label:
         ax_mot.set_ylabel(row_label, fontsize=7, labelpad=4, va='center')
+    if trans_label:
+        ax_dep.text(X_FRAC, 1.22, trans_label,
+                    ha='center', va='bottom', fontsize=5.5, color='#111111',
+                    transform=ax_dep.transAxes, clip_on=False,
+                    bbox=dict(boxstyle='round,pad=0.25', facecolor='#f8f8f8',
+                              edgecolor='#888888', lw=0.6))
 
     # Depth track
     ax_dep.plot(t, tr['a_dep'], color=tr['col_A'], ls=tr['ls_A'], lw=LW)
@@ -171,6 +183,9 @@ LEG_HANDLES = [
 ]
 
 TITLE = 'Unity Asset: Exp_DecoupledDots_005m  ·  N (no swap)  ·  All 16 permutations  ·  Heading = 0°'
+
+CUED_TITLE   = 'Dot✓   Depth✓   Color✓'
+UNCUED_TITLE = 'Dot✗   Depth✗   Color✗'
 
 
 def build_figure(row_subset, figsize):
@@ -198,7 +213,8 @@ def build_figure(row_subset, figsize):
                 ax_m, ax_d, tr,
                 show_xlabel=(ri == n - 1),
                 row_label=row['label'] if ci == 0 else '',
-                col_title=('CUED' if ci == 0 else 'UNCUED') if ri == 0 else '',
+                col_title=(CUED_TITLE if ci == 0 else UNCUED_TITLE) if ri == 0 else '',
+                trans_label=row['label'],
             )
 
     fig.legend(handles=LEG_HANDLES, loc='upper right', fontsize=8,
