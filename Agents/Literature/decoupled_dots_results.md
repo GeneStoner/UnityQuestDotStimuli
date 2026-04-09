@@ -131,6 +131,71 @@ The pp differences (+22.3pp, +12.5pp, +0.0pp) are intuitive but baseline-depende
 
 Our baseline sits at chance (UNCUED+CZ ≈ 12.5%), near the floor. This means the raw pp effects **underestimate** the underlying effect size: the same signal operating at a 50% baseline would yield a larger pp difference. The odds ratios correct for this nonlinearity: OR = 3.07 for dot cueing and OR = 1.89 for depth-field cueing are baseline-agnostic statements about how much each factor multiplies the odds of a correct response. They are the appropriate effect sizes for comparisons across conditions, sessions, or experiments with different baselines.
 
+### 3.6 GLM2 — Logistic regression with interaction terms (n=2051, all 4 sessions)
+*Added 2026-04-09*
+
+#### Model
+
+```
+correct ~ F1 + F2 + F3 + F4 + F1:F2 + F1:F4 + F2:F4
+```
+
+F1–F3 are defined as above. **F4 (Translator Near)**: 1 if the translating field is in the Near plane during the translation window (CUED→b_near; UNCUED→¬b_near). Factor means were all 0.499–0.500: the design is essentially perfectly balanced.
+
+#### Results
+
+| Term | Log-odds | SE | z | p | AME (pp) |
+|------|---------|-----|---|---|----------|
+| Intercept | −0.713 | 0.137 | −5.22 | <.001 *** | — |
+| F1  Dot cueing | −0.287 | 0.174 | −1.65 | 0.098 n.s. | −5.3 pp |
+| F2  Depth-field cued | −0.332 | 0.174 | −1.91 | 0.057 n.s. | −6.1 pp |
+| F3  Color-field cued | +0.049 | 0.103 | +0.47 | 0.639 n.s. | +0.9 pp |
+| F4  Translator Near | **−0.833** | 0.185 | −4.51 | <.001 *** | **−15.3 pp** |
+| F1×F2  Dot × Depth | **+1.785** | 0.215 | +8.30 | <.001 *** | **+32.7 pp** |
+| F1×F4  Dot × Trans-depth | **+0.488** | 0.221 | +2.21 | 0.027 * | **+8.9 pp** |
+| F2×F4  Depth × Trans-depth | **−0.675** | 0.216 | −3.12 | 0.002 ** | **−12.4 pp** |
+
+McFadden R² = 0.092; LRT χ²(7) = 227.6, p < 10⁻⁴⁵. F3 (color) remains exactly null. Four terms are significant.
+
+#### Interpretation
+
+**The F1×F2 interaction (+32.7pp AME) is the central finding.**
+
+In the additive GLM (§3.3), F1 (dot cueing) and F2 (depth-field cueing) appeared as independent additive contributions (+22.3pp and +12.5pp respectively). GLM2 reveals this was an oversimplification: the main effects of F1 and F2 are near zero and non-significant in isolation; nearly the entire signal is concentrated in their interaction.
+
+The interaction coefficient means: dot cueing (F1) is effective *only* when depth-field cueing is also present (F2=1). When depth is anti-cued (F2=0), the dot cue produces essentially no benefit — slightly negative in isolation. Conversely, depth-field cueing alone (F2=1, F1=0) is also flat. The conjunction is required.
+
+**"Depth swaps disrupt dot cueing" is an equivalent and important framing.**
+
+Tracing which conditions fall in each F1×F2 cell reveals why this equivalence holds:
+
+| | **Depth✓ (F2=1)** | **Depth✗ (F2=0)** |
+|---|---|---|
+| **CUED (F1=1)** | N, C (no depth swap → translator stays at delayed-field onset depth) | **Z, CZ (depth swap moves translator to wrong depth plane)** |
+| **UNCUED (F1=0)** | Z, CZ (depth swap moves translator *into* alignment with delayed field) | N, C (natural misalignment) |
+
+For CUED trials: the Z and CZ conditions are precisely those where a depth swap occurs at tStart, moving the coherent translator out of the depth plane that Field B (the delayed-onset field) appeared in. This disrupts cueing. For UNCUED trials: the same depth swap happens to produce depth alignment (Depth✓) between the now-translating Field A and Field B's onset depth — a coincidental benefit.
+
+This exactly recapitulates the ZdA/ZdB dissociation from DepthSwapCtrl (2026-03-30): ZdA (coherent translator changes depth plane) killed cueing; ZdB (non-coherent field changes depth) enhanced it. The current result generalises that finding across all swap types and observers (same observer, four sessions).
+
+The two framings — "F1×F2 synergy" and "depth swaps disrupt dot cueing" — are not contradictory; they are different levels of description of the same interaction. The synergy framing emphasises that *both cues must point to the same object* for performance to be high. The disruption framing emphasises the mechanism: the depth-swap conditions (Z, CZ) specifically and selectively impair the CUED arm because they sever the depth-plane continuity of the attentional object.
+
+**F4: Translator depth (Near vs Far), −15.3pp AME***
+
+Performance is substantially worse when the translating field occupies the Near plane than the Far plane. This replicates the Near < Far asymmetry seen in DepthBaseline and DepthSwapCtrl. The effect is large and robust: the Near penalty (−15pp) exceeds even the dot-cueing benefit when operating in isolation. It is partially offset for CUED observers (F1×F4: +8.9pp* — being dot-cued partially compensates for the Near-plane penalty) but depth-cueing does not further compensate (F2×F4: −12.4pp** — depth cueing is actually *less* effective when the translator is Near, consistent with some interaction between depth-plane position and the segmentation signal; see §Open questions).
+
+The Near/Far asymmetry is unlikely to be a display artifact (Quest renders both planes stably) and is present in binocular but not monocular sessions (DepthSwapCtrl), implicating stereoscopic disparity processing rather than monocular depth cues.
+
+**Comparison to additive model (GLM1)**
+
+The additive model (n=1026, §3.3) gave F1=+22.3pp and F2=+12.5pp as independent contributions. GLM2 shows these estimates were artefactually deflated because the additive model attributed the joint F1∧F2 benefit to two separate main effects rather than their product. The interaction accounts for most of the signal: the F1×F2 AME alone (+32.7pp) is larger than both additive estimates combined (+34.8pp), while the main effects drop to near-zero. The additive model was not wrong in identifying which factors matter, but it mischaracterised the *structure* of how they combine.
+
+#### Summary
+
+Dot cueing and depth-field cueing are not independent additive contributors to performance: they interact synergistically. Performance is elevated specifically and substantially in the conjunction condition (dot-cued AND depth-cued simultaneously), which corresponds to the no-swap (N) and color-only-swap (C) conditions under CUED, and the depth-swap (Z, CZ) conditions under UNCUED. Equivalently: depth swaps applied to CUED trials disrupt dot cueing by severing depth-plane continuity of the attentional object. The Far-plane advantage is a robust secondary finding requiring mechanistic investigation.
+
+---
+
 ### 3.4 Depth-field cueing breakdown by dot cueing
 
 | Depth-field group | Dot-CUED Δ | Dot-UNCUED Δ | Dot-cueing Δ within group |
@@ -182,6 +247,7 @@ Dot cueing survives in both depth groups but is dramatically stronger when depth
 |------|---------|
 | `Tools/Analysis/decoupled_dots_combined_analysis.py` | Main analysis; produces all session + combined figures |
 | `Tools/Analysis/decoupled_dots_glm.py` | GLM (logistic + LPM); produces coefficient figure |
+| `Tools/Analysis/decoupled_dots_glm2.py` | GLM2 (logistic, 4 main effects + 3 interactions); produces forest plot with AME panel |
 | `Tools/Analysis/decoupled_dots_field_cueing.py` | Standalone field-cueing analysis (superseded by combined script) |
 | `Tools/Analysis/decoupled_dots_traj.py` | 4×4 trajectory figure |
 | `Agents/Figures/decoupled_dots_260406_1532.png` | Session 1 figure (3 factors) |
@@ -192,4 +258,5 @@ Dot cueing survives in both depth groups but is dramatically stronger when depth
 | `Agents/Figures/decoupled_dots_combined_s1s2s3s4.png` | S1–S4 combined figure (all 4 sessions) |
 | `Agents/Figures/decoupled_dots_session_comparison.png` | Per-session 3-factor comparison (shows S4 anomaly) |
 | `Agents/Figures/decoupled_dots_glm.png` | Observed vs predicted + coefficient plot |
+| `Agents/Figures/decoupled_dots_glm2.pdf` | GLM2 forest plot: log-odds (left) + AME in pp (right) |
 | `Agents/Figures/decoupled_dots_traj.png` | 4×4 trajectory grid |

@@ -332,3 +332,61 @@ Dot cueing effect is significantly reduced when the translating dots change dept
 - `Tools/Analysis/depth_color_linked_writeup.py` → `Agents/WriteUps/depth_color_linked_writeup.pdf` (3 pages: design+trajectories, results, interpretation)
 - `Tools/Analysis/depth_color_linked_traj.py` → `Agents/Figures/depth_color_linked_traj.png` (frame-by-frame trajectories with R/G depth-color coding)
 
+---
+
+## 2d. DecoupledDots Sessions (2026-04-06 — 2026-04-07)
+*Last updated: 2026-04-09*
+
+**Asset**: `Exp_DecoupledDots_005m` (delayTranslator=1) + `Exp_DecoupledDots_Inv_005m` (delayTranslator=0, labels behaviorally inverted before analysis)
+**Key change from DepthColorLinked**: `linkDepthColor=0` — color and depth swap independently. Adds full N and C swap conditions.
+
+### Sessions
+
+| Session | Asset | Label inversion | N valid |
+|---------|-------|-----------------|---------|
+| 260406_1532 | DecoupledDots_005m | Normal | 514 |
+| 260406_1754 | DecoupledDots_Inv_005m | **INVERTED** | 512 |
+| 260407_0643 | DecoupledDots_Inv_005m | **INVERTED** | 512 |
+| 260407_0731 | DecoupledDots_005m | Normal | 513 |
+| **Combined S1–S4** | | | **2051** |
+
+**S4 anomaly**: dot cueing only +4.8pp n.s.; elevated UNCUED baseline. Included without exclusion.
+
+### Raw accuracy (S1–S4 combined, n=2051)
+
+| Swap | CUED | UNCUED | Δ | sig |
+|------|------|--------|---|-----|
+| N | 48.4% | 24.9% | +23.5pp | *** |
+| C | 50.0% | 26.5% | +23.5pp | *** |
+| Z | 23.4% | 14.4% | +9.0pp | ** |
+| CZ | 25.0% | 19.5% | +5.5pp | † |
+
+Z and CZ approximately halve the dot-cueing effect relative to N and C.
+
+### GLM1 — Additive (S1+S2, n=1026)
+
+F1 Dot cueing: **+22.3pp *****, F2 Depth-field cueing: **+12.5pp *****, F3 Color: **+0.0pp n.s.**
+Color is null. The DepthColorLinked "color effect" was entirely the depth factor.
+
+### GLM2 — Interaction model (S1–S4, n=2051) — KEY RESULT
+
+Model: `correct ~ F1 + F2 + F3 + F4 + F1:F2 + F1:F4 + F2:F4`
+
+| Term | AME (pp) | p |
+|------|----------|---|
+| F1 Dot cueing (main) | −5.3 | n.s. |
+| F2 Depth-field cued (main) | −6.1 | n.s. |
+| F3 Color-field cued | +0.9 | n.s. |
+| F4 Translator Near | **−15.3** | *** |
+| **F1×F2 Dot × Depth** | **+32.7** | *** |
+| F1×F4 Dot × Trans-depth | **+8.9** | * |
+| F2×F4 Depth × Trans-depth | **−12.4** | ** |
+
+**The central finding**: F1 and F2 are synergistic — neither does much alone; performance is high only when both are present. Equivalently: depth swaps (Z, CZ) applied to CUED trials disrupt dot cueing by severing depth-plane continuity of the attentional object. This directly recapitulates ZdA (coherent translator changes depth = kills cueing) from DepthSwapCtrl. Translator Near/Far asymmetry (F4 = −15pp ***) is a robust secondary finding.
+
+Full write-up and analysis tables: `Agents/Literature/decoupled_dots_results.md` → `Agents/WriteUps/decoupled_dots_results.pdf`
+
+### Analysis scripts
+
+`decoupled_dots_glm.py`, `decoupled_dots_glm2.py`, `decoupled_dots_combined_analysis.py`, `decoupled_dots_traj.py`, `decoupled_N/C/Z/CZ_traj.py`, `decoupled_dots_N_2x2.py`, `decoupled_dots_field_properties.py`, `decoupled_dots_results_pdf.py`
+
