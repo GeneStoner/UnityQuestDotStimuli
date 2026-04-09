@@ -119,11 +119,13 @@ def make_tracks(rot_cfg, b_green, b_near, cued):
     )
 
 
-X_FRAC = (T_START + T_END) / 2 / TOTAL
+X_FRAC    = (T_START + T_END) / 2 / TOTAL
+X_ON_FRAC = ONSET / TOTAL
 
 
 def draw_cell(ax_mot, ax_dep, tr,
-              show_xlabel=False, row_label='', col_title='', trans_label=''):
+              show_xlabel=False, row_label='', col_title='',
+              trans_label='', delayed_label=''):
     t_s  = T_START / SIM_HZ
     t_e  = T_END   / SIM_HZ
 
@@ -148,9 +150,17 @@ def draw_cell(ax_mot, ax_dep, tr,
                                    edgecolor=cc, lw=0.9))
     if row_label:
         ax_mot.set_ylabel(row_label, fontsize=7, labelpad=4, va='center')
+    # Delayed-onset field label — left side of gap, gold border
+    if delayed_label:
+        ax_dep.text(0.03, 1.10, f'* {delayed_label}',
+                    ha='left', va='bottom', fontsize=5.5, color='#111111',
+                    transform=ax_dep.transAxes, clip_on=False,
+                    bbox=dict(boxstyle='round,pad=0.25', facecolor='#fffde7',
+                              edgecolor='#997700', lw=0.6))
+    # Translator label — right side of gap, gray border
     if trans_label:
-        ax_dep.text(X_FRAC, 1.22, trans_label,
-                    ha='center', va='bottom', fontsize=5.5, color='#111111',
+        ax_dep.text(0.97, 1.10, f'▶ {trans_label}',
+                    ha='right', va='bottom', fontsize=5.5, color='#111111',
                     transform=ax_dep.transAxes, clip_on=False,
                     bbox=dict(boxstyle='round,pad=0.25', facecolor='#f8f8f8',
                               edgecolor='#888888', lw=0.6))
@@ -172,7 +182,13 @@ def draw_cell(ax_mot, ax_dep, tr,
 
 TITLE = ('Unity Asset: Exp_DecoupledDots_005m  ·  CZ (color + depth swap)  ·  '
          'All 16 permutations  ·  Heading = 0°')
-LEG_HANDLES = [mpatches.Patch(facecolor='gray', alpha=0.35, label='Translation window')]
+LEG_HANDLES = [
+    mpatches.Patch(facecolor='gray', alpha=0.35, label='Translation window'),
+    mpatches.Patch(facecolor='#fffde7', edgecolor='#997700', lw=0.8,
+                   label='* = delayed-field onset'),
+    mpatches.Patch(facecolor='#f8f8f8', edgecolor='#888888', lw=0.8,
+                   label='▶ = translating field'),
+]
 
 CUED_TITLE   = 'Dot✓   Depth✗   Color✗'
 UNCUED_TITLE = 'Dot✗   Depth✓   Color✓'
@@ -184,20 +200,62 @@ def build_figure(row_subset, figsize):
     fig.suptitle(TITLE, fontsize=10, fontweight='bold', y=0.99)
     hr = [2, 0.8] * n
     gs = gridspec.GridSpec(n * 2, 2, height_ratios=hr,
-                           hspace=0.07, wspace=0.28,
+                           hspace=0.18, wspace=0.28,
                            top=0.87, bottom=0.06, left=0.14, right=0.97)
     for ri, row in enumerate(row_subset):
         for ci, side in enumerate(['cued', 'uncued']):
-            tr = make_tracks(**row[side], cued=(side == 'cued'))
+            params = row[side]
+            tr = make_tracks(**params, cued=(side == 'cued'))
+            delayed_label = (f"{'Grn' if params['b_green'] else 'Red'}/"
+                             f"{'CW' if params['rot_cfg']==1 else 'CCW'}/"
+                             f"{'Near' if params['b_near'] else 'Far'}")
             ax_m = fig.add_subplot(gs[ri * 2,     ci])
             ax_d = fig.add_subplot(gs[ri * 2 + 1, ci])
             draw_cell(ax_m, ax_d, tr,
                       show_xlabel=(ri == n - 1),
                       row_label=row['label'] if ci == 0 else '',
                       col_title=(CUED_TITLE if ci == 0 else UNCUED_TITLE) if ri == 0 else '',
-                      trans_label=row['label'])
-    fig.legend(handles=LEG_HANDLES, loc='upper right', fontsize=8,
-               bbox_to_anchor=(0.97, 0.94), framealpha=0.9)
+                      trans_label=row['label'],
+                      delayed_label=delayed_label)
+    fig.legend(handles=LEG_HANDLES, loc='upper center', ncol=3, fontsize=7,
+               bbox_to_anchor=(0.5, 0.975), framealpha=0.9)
+    return fig
+
+
+def build_condensed_figure(figsize=(11, 17)):
+    """All 16 permutations in 4 quadrants on one page (2×2 layout)."""
+    fig = plt.figure(figsize=figsize)
+    fig.suptitle(TITLE, fontsize=9, fontweight='bold', y=0.99)
+
+    outer = gridspec.GridSpec(2, 2, hspace=0.22, wspace=0.22,
+                              top=0.91, bottom=0.04, left=0.09, right=0.97)
+
+    quad_slices = [ROWS[0:2], ROWS[2:4], ROWS[4:6], ROWS[6:8]]
+    for qi, row_subset in enumerate(quad_slices):
+        qr, qc = divmod(qi, 2)
+        inner = gridspec.GridSpecFromSubplotSpec(
+            4, 2, subplot_spec=outer[qr, qc],
+            height_ratios=[2, 0.8, 2, 0.8],
+            hspace=0.18, wspace=0.28,
+        )
+        for ri, row in enumerate(row_subset):
+            for ci, side in enumerate(['cued', 'uncued']):
+                params = row[side]
+                tr = make_tracks(**params, cued=(side == 'cued'))
+                delayed_label = (f"{'Grn' if params['b_green'] else 'Red'}/"
+                                 f"{'CW' if params['rot_cfg']==1 else 'CCW'}/"
+                                 f"{'Near' if params['b_near'] else 'Far'}")
+                ax_m = fig.add_subplot(inner[ri * 2,     ci])
+                ax_d = fig.add_subplot(inner[ri * 2 + 1, ci])
+                draw_cell(ax_m, ax_d, tr,
+                          show_xlabel=(ri == 1),
+                          row_label=row['label'] if ci == 0 else '',
+                          col_title=(CUED_TITLE if ci == 0 else UNCUED_TITLE) if ri == 0 else '',
+                          trans_label=row['label'],
+                          delayed_label=delayed_label)
+
+    fig.legend(handles=LEG_HANDLES, loc='upper center', ncol=3, fontsize=7,
+               bbox_to_anchor=(0.5, 0.975), framealpha=0.9)
     return fig
 
 
@@ -215,3 +273,10 @@ with PdfPages(os.path.join(BASE, 'decoupled_CZ_all_perms.pdf')) as pdf:
         pdf.savefig(fig_p, bbox_inches='tight')
         plt.close(fig_p)
 print(f'Saved PDF: {BASE}/decoupled_CZ_all_perms.pdf')
+
+# Condensed 4-quadrant single-page PDF
+fig_c = build_condensed_figure(figsize=(11, 17))
+with PdfPages(os.path.join(BASE, 'decoupled_CZ_condensed.pdf')) as pdf:
+    pdf.savefig(fig_c, bbox_inches='tight')
+plt.close(fig_c)
+print(f'Saved condensed PDF: {BASE}/decoupled_CZ_condensed.pdf')
