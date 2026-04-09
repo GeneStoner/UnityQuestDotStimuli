@@ -77,6 +77,14 @@ SWAP_TITLES = {
     'CZ': 'CZ — color + depth swap',
 }
 
+# Cueing triad labels per swap condition (CUED, UNCUED)
+CUEING_LABELS = {
+    'N':  ('Dot✓  Depth✓  Color✓', 'Dot✗  Depth✗  Color✗'),
+    'C':  ('Dot✓  Depth✓  Color✗', 'Dot✗  Depth✗  Color✓'),
+    'Z':  ('Dot✓  Depth✗  Color✓', 'Dot✗  Depth✓  Color✗'),
+    'CZ': ('Dot✓  Depth✗  Color✗', 'Dot✗  Depth✓  Color✓'),
+}
+
 # Stimulus page groupings (indices into ROWS)
 PAGES = [(0, 1), (2, 3), (4, 5), (6, 7)]
 
@@ -174,14 +182,18 @@ def draw_subplot(ax, swap, row_a_idx, row_b_idx, counts,
     # Chance line
     ax.axhline(CHANCE * 100, color='#cc4444', lw=0.8, ls='--', zorder=1)
 
-    # CUED / UNCUED column headers
+    # Cueing triad column headers
     cued_cx   = (x_ca + x_cb) / 2 + BAR_W / 2
     uncued_cx = (x_ua + x_ub) / 2 + BAR_W / 2
-    ymax = ax.get_ylim()[1] if ax.get_ylim()[1] > 10 else 100
-    ax.text(cued_cx,   103, 'CUED',   ha='center', va='bottom',
-            fontsize=7, fontweight='bold')
-    ax.text(uncued_cx, 103, 'UNCUED', ha='center', va='bottom',
-            fontsize=7, fontweight='bold')
+    cued_lbl, uncued_lbl = CUEING_LABELS[swap]
+    ax.text(cued_cx,   103, cued_lbl,   ha='center', va='bottom',
+            fontsize=6.5, fontweight='bold', color='#1a3a8b',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='#f0f4ff',
+                      edgecolor='#1a3a8b', lw=0.8))
+    ax.text(uncued_cx, 103, uncued_lbl, ha='center', va='bottom',
+            fontsize=6.5, fontweight='bold', color='#884400',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='#fff4e8',
+                      edgecolor='#884400', lw=0.8))
 
     # Dividing line between CUED and UNCUED groups
     div_x = (x_cb + BAR_W + x_ua) / 2
@@ -225,8 +237,8 @@ def build_page(swap, counts, figsize=(8.5, 11)):
                      page_title=PAGE_LABELS[gi])
 
     leg_handles = [
-        Patch(facecolor='#555555', label='CUED'),
-        Patch(facecolor='#aaaaaa', label='UNCUED'),
+        Patch(facecolor='#555555', label='Dot✓ (CUED)'),
+        Patch(facecolor='#aaaaaa', label='Dot✗ (UNCUED)'),
         Patch(facecolor='none', edgecolor='#cc4444',
               linestyle='--', linewidth=0.8, label='Chance (12.5%)'),
     ]
