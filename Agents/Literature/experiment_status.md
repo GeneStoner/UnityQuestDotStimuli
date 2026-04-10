@@ -231,7 +231,8 @@ Substantial direction-specific response biases observed (deviation from flat 12.
 
 ---
 
-## 2c. DepthColorLinked Sessions (2026-04-04)
+## 2c. DepthColorLinked Sessions (2026-04-04 — 2026-04-06)
+*Last updated: 2026-04-09*
 
 New experiment: `Exp_DepthColorLinked` (`DepthColorLinked_005m`). Two-color design: Near plane = Red (#CC3333), Far plane = Green (#228B22), linked to depth plane via `linkDepthColor=1`. No-swap N condition excluded (`includeNoSwapBaseline=0`). R/G balanced across trials. 256 trials/session: ZdA+ZdB × CUED/UNCUED × Near/Far × 2 RotCfg × 8 headings.
 
@@ -248,9 +249,11 @@ New experiment: `Exp_DepthColorLinked` (`DepthColorLinked_005m`). Two-color desi
 
 | Session | Date | N | Overall acc | Notes |
 |---------|------|---|-------------|-------|
-| 260404_0940 | 2026-04-04 | 256 | 31.2% | Session 1 — strong ZdNoi>>ZdCoh dissociation |
-| 260404_1123 | 2026-04-04 | 256 | 33.6% | Session 2 — flatter pattern; UNCUED elevated |
-| 260406_1001 | 2026-04-06 | 256 | 27.7% | Session 3 — similar to S2; UNCUED+ZdNoi elevated (Far asymmetry) |
+| 260404_0940 | 2026-04-04 | 256 | 31.2% | S1 — strong ZdNoi>>ZdCoh dissociation |
+| 260404_1123 | 2026-04-04 | 256 | 33.6% | S2 — flatter; UNCUED elevated |
+| 260406_1001 | 2026-04-06 | 256 | 27.7% | S3 — similar to S2; Far asymmetry visible |
+| 260406_1034 | 2026-04-06 | 256 | 32.4% | S4 — added 2026-04-09 |
+| **Combined** | | **1024** | | **4 sessions** |
 
 ### Factor framing (new 2×2 design)
 
@@ -263,24 +266,29 @@ Mapping:
 - Depth✓ = CUED+ZdNoi OR UNCUED+ZdCoh (translator at DFD during window)
 - Depth✗ = CUED+ZdCoh OR UNCUED+ZdNoi (translator at opp(DFD))
 
-### Results — Combined (n=768, 3 sessions)
+### Results — Combined (n=1024, 4 sessions)
 
-*Updated 2026-04-06 to include session 260406_1001.*
+*Updated 2026-04-09 to include session 260406_1034 and GLM.*
 
-| Condition | k | n | % correct | pp > chance | sig |
-|-----------|---|---|-----------|-------------|-----|
-| CUED + Depth✓ (ZdNoi) | 91 | 192 | 47.4% | +34.9pp | *** |
-| CUED + Depth✗ (ZdCoh) | 61 | 192 | 31.8% | +19.3pp | *** |
-| UNCUED + Depth✓ (ZdCoh) | 38 | 192 | 19.8% | +7.3pp | ** |
-| UNCUED + Depth✗ (ZdNoi) | 46 | 192 | 24.0% | +11.5pp | *** |
+| Condition | % correct | n | Cueing Δ | sig |
+|-----------|-----------|---|----------|-----|
+| ZdNoi · CUED · Far  | 59.4% | 128 | — | — |
+| ZdNoi · CUED · Near | 35.9% | 128 | — | — |
+| ZdNoi · UNCUED · Far  | 28.1% | 128 | — | — |
+| ZdNoi · UNCUED · Near | 15.6% | 128 | — | — |
+| ZdCoh · CUED · Far  | 36.7% | 128 | — | — |
+| ZdCoh · CUED · Near | 24.2% | 128 | — | — |
+| ZdCoh · UNCUED · Far  | 35.2% | 128 | — | — |
+| ZdCoh · UNCUED · Near | 11.7% | 128 | — | — |
 
-**F1 Dot Cueing: +17.7pp *** **
-**F2 Depth Cueing: +5.7pp * **
+**Cueing by condition (pooled Near+Far):**
 
-Dot cueing effect split by Depth Cueing:
-- Depth✓ conditions: CUED+ZdNoi vs UNCUED+ZdNoi = +23.4pp
-- Depth✗ conditions: CUED+ZdCoh vs UNCUED+ZdCoh = +12.0pp
-- Difference (~11pp) is the F1×F2 interaction: swapping depth+color costs roughly half the cueing advantage
+| | CUED | UNCUED | Δ | sig |
+|--|------|--------|---|-----|
+| ZdNoi (translator stable) | 47.7% | 21.9% | **+25.8pp** | *** |
+| ZdCoh (translator changes) | 30.5% | 23.4% | **+7.0pp** | † |
+
+Disruption from ZdNoi→ZdCoh: −18.8pp in cueing effect.
 
 ### Between-session variability
 
@@ -322,15 +330,34 @@ UNCUED+ZdNoi performs at +11.5pp *** rather than near chance. Initial concern: t
 
 Larger cueing effect with color is driven by lower UNCUED baseline, not higher CUED. Color differentiation makes UNCUED harder (harder to accidentally track non-cued field). Pattern stable across 3 sessions.
 
-### Main finding
-Dot cueing effect is significantly reduced when the translating dots change depth plane AND color simultaneously (ZdCoh vs ZdNoi): +34.9pp vs +19.3pp under CUED. F2 Depth Cueing is significant pooled across 3 sessions (+5.7pp *) but driven primarily by the CUED conditions — UNCUED cells are near chance throughout (once Far > Near asymmetry is accounted for). Color vs depth contributions remain confounded; a color-only swap experiment is needed to dissociate them.
+### GLM — Logistic regression with interactions (n=1024)
 
-### New code
-- `Assets/Scripts/ExpSpecTestPhase.cs`: new fields `linkDepthColor` (bool) and `includeNoSwapBaseline` (bool)
-- `Assets/ExperimentSpecs/Exp_DepthColorLinked.asset`: new experiment asset
-- `Tools/Analysis/depth_color_linked_fig.py` → `Agents/Figures/depth_color_linked_results.png`
-- `Tools/Analysis/depth_color_linked_writeup.py` → `Agents/WriteUps/depth_color_linked_writeup.pdf` (3 pages: design+trajectories, results, interpretation)
-- `Tools/Analysis/depth_color_linked_traj.py` → `Agents/Figures/depth_color_linked_traj.png` (frame-by-frame trajectories with R/G depth-color coding)
+Model: `logit(correct) ~ F1 + F2 + F3 + F1:F2 + F1:F3 + F2:F3`
+F1=dot cueing, F2=depth+color continuity (confounded), F3=translator Near.
+
+| Term | AME (pp) | p | sig |
+|------|----------|---|-----|
+| F1 Dot cueing | +5.2pp | .253 | n.s. |
+| F2 Depth+Color continuity | −2.2pp | .635 | n.s. |
+| F3 Translator Near | **−21.4pp** | <.001 | *** |
+| F1×F2 | **+16.5pp** | .003 | ** |
+| F1×F3 | +5.4pp | .346 | n.s. |
+| F2×F3 | +1.1pp | .844 | n.s. |
+
+Same qualitative structure as DecoupledDots GLM2: F1×F2 dominates, main effects null, Near penalty large.
+
+### Key mechanistic constraint (added 2026-04-09)
+
+ZdNoi and ZdCoh are **matched for total scene depth+color change** — same number of dots (50%) swap on every trial in both conditions. The difference is which dots swap: the coherent translator (ZdCoh) vs the incoherent background (ZdB). The F2 main effect ≈ 0 (background depth change provides nothing) while F1×F2 is the entire signal. This rules out a general scene-disruption account and localises the effect to the coherent object's depth identity specifically.
+
+### Main finding
+Dot cueing is nearly abolished when the coherent translating dots change depth+color plane (ZdCoh: +7.0pp †) vs when the background dots change instead (ZdNoi: +25.8pp ***). The UNCUED arm is flat across conditions (+21.9% vs +23.4%). Depth+color continuity benefits ONLY the dot-cued observer — it is a feature of the attended object, not a general spatial cue. Color vs depth contributions remain confounded within this experiment; DecoupledDots resolves this (color is null, depth drives the effect).
+
+### Current analysis files
+- `Tools/Analysis/depthcolorlinked_cueing_figure.py` → `Agents/Figures/depthcolorlinked_cueing.pdf`
+- `Tools/Analysis/depthcolorlinked_glm.py` → `Agents/Figures/depthcolorlinked_glm.pdf`
+- `Tools/Analysis/depth_color_linked_traj.py` → `Agents/Figures/depth_color_linked_traj.pdf`
+- `Agents/Literature/depthcolorlinked_results.md` → `Agents/WriteUps/depthcolorlinked_results.pdf`
 
 ---
 

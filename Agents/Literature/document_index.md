@@ -200,6 +200,7 @@ Full 2×4 χ²(7)=148.28 p<10⁻¹⁷.
 | `endogenous_color_summary_and_design.md` | Summary + possible design for endogenous color cueing follow-up |
 | `pending_papers.md` | Papers to read/integrate |
 | `paper_notes/` | Directory of individual paper notes |
+| `depth_ordering_lit_review.md` | Literature review: perceptual depth-ordering in transparent motion displays. Topics: bistability, disparity resolution, Stoner & Albright, Mamassian & Wallace, attentional topology. (2026-04-09) |
 | `document_index.md` | This file |
 
 ---

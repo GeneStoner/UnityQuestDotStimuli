@@ -60,6 +60,33 @@ One constraint worth noting: the translation in VRDots is in-plane — dots tran
 
 ---
 
+## An alternative account: bounded attentional depth window
+
+*Added 2026-04-09. Proposed by observer GS based on phenomenological report.*
+
+A second alternative to the gradient migration account holds that the attentional spotlight in depth is not symmetric around the attended plane — it has a directional bias extending *beyond* the attended plane (i.e., further from the observer). When attention is directed to the Near plane, the window is open-ended: nothing lies inside fixation to bound it, so it leaks into the Far plane. When attention is directed to the Far plane, the window is already near the outer boundary of the display — nothing lies further, so the spotlight is effectively clipped and concentrated.
+
+Under this account, Near-attending produces a diluted attentional signal: the Near translator competes with Far-plane dot motion that has leaked into the window. Far-attending produces a clean signal because the window is bounded and the Far translator is not competing with anything beyond it.
+
+**Strengths of this account:**
+- It explains the stereoscopic origin of the asymmetry (depth-plane leakage requires binocular disparity to define plane boundaries).
+- It is compatible with the partial compensation by exogenous dot cueing (F1×F4 = +8.9pp*): a salient onset cue sharpens the depth window around the cued object, partially counteracting the Near-to-Far leakage.
+- The UNCUED arm being at chance regardless of Near/Far is consistent — without a cue there is no attentional window to be directional.
+
+**Distinguishing predictions (vs. gradient migration account):**
+- *SOA invariance*: Unlike gradient migration (which predicts the asymmetry shrinks at longer SOA as migration completes), the bounded-window account predicts a structural asymmetry that is SOA-independent — it is a property of the attentional volume at the time of selection, not a dynamic process. SOA experiment (open question 9) directly dissociates the two accounts.
+- *Third depth plane*: If a third plane is added *beyond* Far, Far-attending should degrade (now it has something to leak into), while Near-attending might improve (gradient-migration account makes no such prediction). This is a strong qualitative discriminator.
+- *Fixation-depth reversal*: If fixation is moved to the current Near plane (1.975m), gradient migration predicts the asymmetry weakens or disappears (gradient re-anchors). The bounded-window account makes the same prediction if "beyond" means "further than fixation" — the asymmetry should flip or disappear. But if "beyond" is anchored to the far side of the display regardless of fixation, it would not reverse. This is the fixation-depth reversal experiment (open question 10; prediction 2 in this doc).
+
+**Weaknesses:**
+- The mechanism for *why* the attentional depth window spreads "beyond" rather than symmetrically is not explained. It requires that the depth-attention gradient is monotonic rather than Gaussian around the attended plane — a specific neural claim.
+- At 0.05m depth separation (~2.5 arcmin disparity at 2m), the attentional depth window would need to be broad enough that the Far plane lies within it during Near-attending. Whether depth-attention resolution is coarse enough for this is not established; estimates of depth-attention bandwidth in the literature vary widely.
+- The account does not obviously predict the *parametric scaling* of the Near penalty with depth separation — as depth increases, the two planes are further apart, so if anything the leak should decrease (planes become more segregable). The gradient migration account predicts the asymmetry grows with depth; the bounded-window account predicts it might shrink. This is a potential falsification point at larger depths.
+
+**Current status**: viable and worth tracking alongside gradient migration. The SOA manipulation is the cleanest near-term test. The third-plane manipulation is the most diagnostic long-term test.
+
+---
+
 ## A constraint from the 2D literature
 
 The cue-to-translation interval — approximately 293ms (22 frames at 75Hz, from Field B onset to translation onset) — was chosen because prior work on these transparent-motion stimuli, without depth differences, showed it produces a large positive cueing effect near the maximum observed across a range of durations.

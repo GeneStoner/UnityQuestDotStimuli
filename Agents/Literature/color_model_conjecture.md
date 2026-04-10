@@ -175,4 +175,19 @@ The most defensible position is that Conjectures 1 and 3 are simultaneously true
 
 ---
 
-*See also*: `modeling_lit.md §6` (point-set model), `color_cueing_review.md` (behavioral literature), `decoupled_dots_results.md` (data)
+## DepthColorLinked Confirmation of F3 = 0 in the UNCUED Arm
+*Added 2026-04-09*
+
+The DepthColorLinked experiment (4 sessions, n=1024; `linkDepthColor=1`, ZdA+ZdB, Near=Red, Far=Green) provides an additional confirmation that is directly relevant to the M-pathway conjecture above.
+
+In DepthColorLinked, the F2 factor captures continuity of *both* depth and color simultaneously — the two are perfectly confounded. Despite this, the UNCUED arm is flat across both conditions: ZdNoi+UNCUED = 21.9% correct vs. ZdCoh+UNCUED = 23.4% correct (1.5pp, n.s.; F2 main effect AME = −2.2pp, p = .635). When the coherent translator changes depth+color simultaneously (ZdCoh, UNCUED arm) vs. when the background changes depth+color (ZdNoi, UNCUED arm), performance is indistinguishable.
+
+This is consistent with all four conjectures' prediction that **F3 = 0 for the UNCUED arm**, but it is most naturally interpreted under the M-pathway account (Conjecture 2) and the drastic formulation: the onset cue (F1) is necessary to engage the depth-identity mechanism. Without the temporal dot cue, swapping both depth and color of the coherent translator — a maximally disruptive change to both the dorsal-stream (depth) and ventral-stream (color) surface representations — has no measurable effect on performance. The UNCUED observer cannot exploit either depth or color continuity without first being directed to the correct object by the temporal onset transient.
+
+This rules out any account in which color continuity alone — even when paired with depth continuity — provides a task-independent navigational signal for surface tracking. The conjunction (F1 AND depth continuity) is required; color continuity never contributes above zero, even when maximally available and confirmed by the UNCUED data.
+
+The GLM2 result from DecoupledDots (color factor F3 = +0.9pp, p = .994) combined with DepthColorLinked's flat UNCUED arm creates a consistent picture: the point-set model's prediction of non-zero color-field cueing is empirically ruled out at both the within-model (DecoupledDots isolates color) and cross-model (DepthColorLinked maximizes color+depth together) levels.
+
+---
+
+*See also*: `modeling_lit.md §6` (point-set model), `color_cueing_review.md` (behavioral literature), `decoupled_dots_results.md` (data), `depthcolorlinked_results.md` (DepthColorLinked GLM)

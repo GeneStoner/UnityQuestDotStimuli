@@ -1,6 +1,8 @@
 # VRDots Pilot — A Musing Document
 *Last updated: 2026-04-02*
 
+> **⚠ LABELING NOTE (added 2026-04-09):** This document was written before the Near/Far labeling correction. Throughout, "Near reversal" and "Near inversion" refer to a *labeling artifact*: the original CUED-Near minus UNCUED-Near comparison simultaneously flipped both cue location and translation depth, making Far translation (easy) appear as the baseline for Near cueing. With the corrected translation-depth framing, CUED > UNCUED holds at both Near and Far throughout. What IS real: Near *translation* is harder than Far *translation* (genuine Far > Near performance gap, binocular only), and the Near cueing effect is smaller than the Far cueing effect. No condition genuinely shows CUED < UNCUED. All references to "Near reversal" in this document should be read as "Near translation performs worse than Far translation" — a real finding that is correctly framed in `depth_ior_hypothesis.md`.
+
 ---
 
 ## The basic phenomenon
