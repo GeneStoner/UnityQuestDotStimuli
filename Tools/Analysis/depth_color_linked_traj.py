@@ -33,6 +33,7 @@ Output: Agents/Figures/depth_color_linked_traj.png / .pdf
 """
 
 import os
+import datetime
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -41,6 +42,8 @@ import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
 import matplotlib.patches as mpatches
 from matplotlib.backends.backend_pdf import PdfPages
+
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
 
 BASE     = os.path.normpath(os.path.join(os.path.dirname(__file__),
                                           '../../Agents/Figures'))
@@ -234,8 +237,6 @@ def plot_panel(ax_mt, ax_dep, mt, dep, row, delayed_depth, cued):
     # Phase markers
     for ax in (ax_mt, ax_dep):
         ax.axvspan(T_START, T_END, alpha=0.12, color='steelblue', zorder=1)
-        ax.axvline(ONSET,   color='#CCCCCC', lw=0.7, ls=':', zorder=2)
-        ax.axvline(T_START, color='#6688AA', lw=0.8, ls='--', zorder=2)
 
     # Gold band at translator depth
     ax_dep.axhspan(t_dep - 0.40, t_dep + 0.40,
@@ -376,14 +377,14 @@ legend_handles = [
                    label='Translator depth plane'),
     mpatches.Patch(facecolor='steelblue', alpha=0.2, edgecolor='none',
                    label='Translation window'),
-    Line2D([0],[0], color='#CCCCCC', lw=0.8, ls=':', label='Field B onset'),
-    Line2D([0],[0], color='#6688AA', lw=0.8, ls='--', label='tStart'),
 ]
 
 fig.legend(handles=legend_handles, loc='lower center', ncol=5,
            fontsize=7, frameon=True, framealpha=0.95,
            edgecolor='#CCC', bbox_to_anchor=(0.5, -0.05))
 
+fig.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}', fontsize=5, color='#888888', ha='left', va='bottom')
+fig.text(0.99, 0.005, f'p. 1/1', fontsize=5, color='#888888', ha='right', va='bottom')
 os.makedirs(BASE, exist_ok=True)
 fig.savefig(OUT_PATH, dpi=150, bbox_inches='tight', facecolor='white')
 with PdfPages(OUT_PDF) as pdf:

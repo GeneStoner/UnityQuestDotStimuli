@@ -1,5 +1,7 @@
 # SwapPilot — Current Results Package
-*Assembled 2026-04-09 · Single observer (GS)*
+*Assembled 2026-04-09 · Updated 2026-04-10 · Single observer (GS)*
+
+> **Note on generating scripts**: `decoupled_traj_condensed_all.pdf` was generated in an interactive session; the script was not saved to `Tools/Analysis/`. The per-condition scripts (`decoupled_N_traj.py`, `decoupled_C_traj.py`, `decoupled_Z_traj.py`, `decoupled_CZ_traj.py`) produce the individual-condition versions.
 
 This folder contains the canonical figures, write-ups, and analysis scripts
 for the two completed swap pilot experiments. All files are copies of the
@@ -65,7 +67,7 @@ current versions from their canonical locations.
 ### DecoupledDots
 | File | Description |
 |------|-------------|
-| `decoupled_dots_traj.pdf` | **Canonical trajectory figure** — 4×4 grid (rows=N/C/Z/CZ, cols=Dot✓✗×Near/Far); Stoner & Blanc line style; Dot/Depth/Color✓✗ title boxes |
+| `decoupled_traj_condensed_all.pdf` | **Canonical trajectory figure** — 4-page PDF (one page per swap condition N/C/Z/CZ); 16 panels per page (4×4: 8 rows × CUED/UNCUED); all permutations; Stoner & Blanc line style. ⚠️ No generating script saved — see note above. |
 | `decoupled_dots_depth_color_2x2.pdf` | **Main data figure** — 2×2 depth×color grid; CUED/UNCUED bars per cell; cueing Δ brackets; depth and color marginals |
 | `decoupled_dots_glm2.pdf` | **GLM2 figure** — 2-page PDF: (1) forest plot log-odds + AME pp, (2) predicted vs observed by condition |
 | `decoupled_dots_per_condition_2x2.pdf` | Per-condition 2×2 accuracy (all 4 swap × CUED/UNCUED × Near/Far) |
@@ -74,15 +76,17 @@ current versions from their canonical locations.
 | `decoupled_C_traces.pdf` | Dot cloud traces — C condition (color swap) |
 | `decoupled_Z_traces.pdf` | Dot cloud traces — Z condition (depth swap) |
 | `decoupled_CZ_traces.pdf` | Dot cloud traces — CZ condition (depth+color swap) |
-| `decoupled_dots_combined_s1s2s3s4.png` | Combined 4-session performance overview |
-| `decoupled_dots_session_comparison.png` | Per-session comparison (shows S4 anomaly) |
+| `decoupled_dots_session_comparison.png` | Per-session comparison (shows S4 anomaly — flat dot cueing) |
 
 ### DepthColorLinked
 | File | Description |
 |------|-------------|
-| `depth_color_linked_traj.pdf` | **Canonical trajectory figure** — 2×4 grid (rows=ZdNoi/ZdCoh, cols=Dot✓✗×Near/Far); 4 subfield symbols; T(c)/T(n) separated; Field B onset annotation |
+| `depthcolorlinked_combined_condensed.pdf` | **Canonical trajectory figure** — 2-page PDF (ZdA p.1 / ZdB p.2); all 16 permutations (8 rows × CUED/UNCUED); 4 subfield symbols (▲△=CCW field, ●○=CW field); full identity swap including motion; Lin/NCH labels; filename + date + page numbers |
 | `depthcolorlinked_cueing.pdf` | **Main data figure** — ZdNoi vs ZdCoh panels; 4 bars/panel (CUED/UNCUED × Near/Far); cueing Δ brackets; right strip cueing effect |
 | `depthcolorlinked_glm.pdf` | **GLM figure** — 2-page PDF: (1) forest plot log-odds + AME pp, (2) predicted vs observed |
+| `depthcolorlinked_per_condition_2x2.pdf` | **Per-condition bar graph** — 2-page PDF (ZdA p.1 / ZdB p.2); 2×2 outer grid × 2×2 inner grid; each cell = one bar (CUED/UNCUED × Far/Near); matches condensed traj layout exactly; Wilson 95% CI; filename + date + page numbers |
+| `depthcolorlinked_per_condition.pdf` | Per-condition bar graph (alternate format) — 2-page PDF; 4 bars per subplot (CUED row_a, CUED row_b, UNCUED row_a, UNCUED row_b); same data as 2×2 version |
+| ~~`depth_color_linked_traj.pdf`~~ | *Removed* — older 2×4 traj figure; mixed dot color error; replaced by `depthcolorlinked_combined_condensed.pdf` |
 
 ### Cross-experiment
 | File | Description |

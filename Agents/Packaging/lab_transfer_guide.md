@@ -13,7 +13,7 @@ The project lives at `https://github.com/GeneStoner/UnityQuestDotStimuli.git` on
 
 - **If sharing privately**: add the collaborator's GitHub username in Settings → Collaborators. They clone with `git clone -b wip/quest-pilot https://github.com/GeneStoner/UnityQuestDotStimuli.git`
 - **If sharing publicly**: make the repo public (currently assumed private). Consider stripping any personal notes from commit history first.
-- There are uncommitted changes as of 2026-03-30. **Commit everything clean before sharing** — a collaborator who clones a repo with diverged state is likely to spend an hour debugging phantom warnings.
+- **Commit everything clean before sharing** — a collaborator who clones a repo with diverged state is likely to spend an hour debugging phantom warnings.
 
 ### 1.2 Ensure the build can be reproduced from scratch
 
@@ -49,6 +49,7 @@ All experiment parameters are stored as ScriptableObject assets in `Assets/Exper
 | `Exp_DepthColorLinked` | 50% swap, linked depth+color |
 | `Exp_DepthSwapCtrl` | All-red, ZdA/ZdB only, 0.05m |
 | `Exp_DepthParam_003m/005m/010m/015m` | Parametric depth sweep |
+| `Exp_DepthCheck_005m` | Brief observer screening — verifies 0.05m depth perception before main experiment |
 | `Exp_Baseline` | No depth, no swap — 2D baseline |
 
 Collaborators can run any of these without touching code. If they want to design new conditions, they create a new ScriptableObject asset from the `ExperimentSpec` type (right-click in Project window → Create → Experiment Spec). Walk them through the key parameters:

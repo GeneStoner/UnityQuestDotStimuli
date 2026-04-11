@@ -30,15 +30,19 @@ Baseline references:
 Output: Agents/Figures/depth_disruption_comparison.pdf
 """
 
-import csv, math, os
+import csv, datetime, math, os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.backends.backend_pdf import PdfPages
 
-BASE    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
-OUT_PDF = os.path.join(BASE, 'depth_disruption_comparison.pdf')
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
+
+BASE       = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
+BASE_SP    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/SwapPilot/Figures'))
+OUT_PDF    = os.path.join(BASE,    'depth_disruption_comparison.pdf')
+OUT_PDF_SP = os.path.join(BASE_SP, 'depth_disruption_comparison.pdf')
 DATA    = os.path.expanduser('~/Library/Application Support/ThatsRandom/VRDotsDataFiles')
 PULL2   = '/tmp/quest_pull2/files'
 PULL3   = '/tmp/quest_pull3/files'
@@ -249,124 +253,258 @@ for swap in ['N','C','Z','CZ']:
 
 # ── Figure ─────────────────────────────────────────────────────────────────────
 os.makedirs(BASE, exist_ok=True)
-
-# Define the bars for the main comparison figure
-# Left panel: CUED accuracy by condition (showing disruption)
-# Right panel: Cueing effect (CUED - UNCUED) by condition
+os.makedirs(BASE_SP, exist_ok=True)
 
 BAR_SPECS = [
-    # (x_pos, label, k, n, is_cued, color, hatch, group_label)
+    # (x_pos, label, cued_k, cued_n, color, hatch)
     # Group 1: DepthSwapCtrl
-    (0.0,  'DSC\nN',    *dsc_counts.get(('CUED','N'),[0,0]),   '#aaaaaa', None, 'DepthSwapCtrl\n(50% depth, same-color)'),
-    (0.7,  'DSC\nZdA',  *dsc_counts.get(('CUED','ZdA'),[0,0]), '#4477bb', None, ''),
-    (1.4,  'DSC\nZdB',  *dsc_counts.get(('CUED','ZdB'),[0,0]), '#88bbdd', None, ''),
+    (0.0,  'DSC\nN',     *dsc_counts.get(('CUED','N'),  [0,0]), '#aaaaaa', None),
+    (0.9,  'DSC\nZdA',   *dsc_counts.get(('CUED','ZdA'),[0,0]), '#4477bb', None),
+    (1.8,  'DSC\nZdB',   *dsc_counts.get(('CUED','ZdB'),[0,0]), '#88bbdd', None),
     # Group 2: DepthColorLinked
-    (2.5,  'DCL\nZdNoi',*dcl_counts.get(('CUED','ZdB'),[0,0]), '#aaaaaa', '//', 'DepthColorLinked\n(50% depth + color)'),
-    (3.2,  'DCL\nZdCoh',*dcl_counts.get(('CUED','ZdA'),[0,0]), '#cc7700', '//', ''),
+    (3.2,  'DCL\nZdNoi', *dcl_counts.get(('CUED','ZdB'),[0,0]), '#aaaaaa', '//'),
+    (4.1,  'DCL\nZdCoh', *dcl_counts.get(('CUED','ZdA'),[0,0]), '#cc7700', '//'),
     # Group 3: DecoupledDots
-    (4.3,  'DD\nN',     *dd_counts.get(('CUED','N'),[0,0]),    '#aaaaaa', None, 'DecoupledDots\n(100% swaps, decoupled)'),
-    (5.0,  'DD\nC',     *dd_counts.get(('CUED','C'),[0,0]),    '#ee9922', None, ''),
-    (5.7,  'DD\nZ',     *dd_counts.get(('CUED','Z'),[0,0]),    '#c0392b', None, ''),
-    (6.4,  'DD\nCZ',    *dd_counts.get(('CUED','CZ'),[0,0]),   '#8e1a0e', None, ''),
+    (5.5,  'DD\nN',      *dd_counts.get(('CUED','N'), [0,0]), '#aaaaaa', None),
+    (6.4,  'DD\nC',      *dd_counts.get(('CUED','C'), [0,0]), '#ee9922', None),
+    (7.3,  'DD\nZ',      *dd_counts.get(('CUED','Z'), [0,0]), '#c0392b', None),
+    (8.2,  'DD\nCZ',     *dd_counts.get(('CUED','CZ'),[0,0]), '#8e1a0e', None),
 ]
 
 UNCUED_SPECS = [
-    (0.0,  *dsc_counts.get(('UNCUED','N'),[0,0])),
-    (0.7,  *dsc_counts.get(('UNCUED','ZdA'),[0,0])),
-    (1.4,  *dsc_counts.get(('UNCUED','ZdB'),[0,0])),
-    (2.5,  *dcl_counts.get(('UNCUED','ZdB'),[0,0])),   # ZdNoi for UNCUED=ZdB
-    (3.2,  *dcl_counts.get(('UNCUED','ZdA'),[0,0])),   # ZdCoh for UNCUED=ZdA
-    (4.3,  *dd_counts.get(('UNCUED','N'),[0,0])),
-    (5.0,  *dd_counts.get(('UNCUED','C'),[0,0])),
-    (5.7,  *dd_counts.get(('UNCUED','Z'),[0,0])),
-    (6.4,  *dd_counts.get(('UNCUED','CZ'),[0,0])),
+    *[dsc_counts.get(('UNCUED', s), [0,0]) for s in ['N','ZdA','ZdB']],
+    dcl_counts.get(('UNCUED','ZdB'),[0,0]),  # ZdNoi for UNCUED
+    dcl_counts.get(('UNCUED','ZdA'),[0,0]),  # ZdCoh for UNCUED
+    *[dd_counts.get(('UNCUED', s), [0,0]) for s in ['N','C','Z','CZ']],
 ]
 
-fig, (ax_acc, ax_cue) = plt.subplots(1, 2, figsize=(12, 6))
-fig.suptitle(
-    'Cross-experiment depth-swap disruption comparison\n'
-    'DepthSwapCtrl (50% depth)  ·  DepthColorLinked (50% depth + color)  ·  DecoupledDots (100% swaps)',
-    fontsize=10, fontweight='bold', y=1.01)
-
-BAR_W = 0.55
-
-# Group separator x positions
-GROUP_SEPS = [2.1, 4.0]
+GROUP_SEPS  = [2.6, 4.8]
 GROUP_LABELS = [
-    (0.7,  'DepthSwapCtrl\n(50% depth, same-color)'),
-    (2.85, 'DepthColorLinked\n(50% depth + color)'),
-    (5.35, 'DecoupledDots\n(100% swaps, decoupled)'),
+    (0.9,  'DepthSwapCtrl\nExp_DepthSwapCtrl_005m\n(50% depth swap, same-color red/red)'),
+    (3.65, 'DepthColorLinked\nExp_DepthColorLinked_005m\n(50% depth + color linked; Near=Red Far=Green)'),
+    (6.85, 'DecoupledDots\nExp_DecoupledDots_005m (+Inv)\n(100% swaps; depth & color decoupled)'),
 ]
 
-for ax, use_cueing in [(ax_acc, False), (ax_cue, True)]:
-    for i, spec in enumerate(BAR_SPECS):
-        x, lbl, ck, cn, col, hatch, _ = spec
-        uc_spec = UNCUED_SPECS[i]
-        ux = uc_spec[0]; uk, un = uc_spec[1], uc_spec[2]
+KEY = (
+    'Abbreviations — Experiments:  '
+    'DSC = DepthSwapCtrl  ·  DCL = DepthColorLinked  ·  DD = DecoupledDots\n'
+    'Conditions:  '
+    'N = no swap (baseline)  ·  '
+    'C = 100% color swap only  ·  '
+    'Z = 100% depth swap only  ·  '
+    'CZ = 100% depth + color  ·  '
+    'ZdA / ZdCoh = coherent subfields swap → translator changes depth plane  ·  '
+    'ZdB / ZdNoi = noise subfields swap → coherent translator unchanged'
+)
 
-        if use_cueing:
-            delta, z, p = z_test_2prop(ck, cn, uk, un)
-            val = delta
-            elo = ehi = 1.96 * math.sqrt(max(ck*(cn-ck)/cn**3 + uk*(un-uk)/un**3, 1e-9)) * 100
-            bar_color = '#1a6ab5' if val > 0 else '#c0392b'
-        else:
-            val, elo, ehi = pct_ci(ck, cn)
-            bar_color = col
-
-        ax.bar(x, val, width=BAR_W*0.85, color=bar_color,
-               hatch=hatch, edgecolor='white' if not hatch else '#555555',
-               linewidth=0.5, zorder=2, alpha=0.88)
-        ax.errorbar(x, val, yerr=[[elo],[ehi]], fmt='none',
-                    ecolor='#333333', elinewidth=1, capsize=3, zorder=3)
-        ax.text(x, -4 if not use_cueing else -3, lbl,
-                ha='center', va='top', fontsize=6, clip_on=False)
-
-    for sx in GROUP_SEPS:
-        ax.axvline(sx, color='#cccccc', lw=0.8, ls='--', zorder=0)
-
-    ax.axhline(CHANCE*100 if not use_cueing else 0,
-               color='#cc4444', lw=0.9, ls='--', zorder=1)
-    ax.set_xticks([])
-    ax.spines[['top','right','bottom']].set_visible(False)
-    ax.yaxis.grid(True, lw=0.4, color='#e0e0e0', zorder=0)
-    ax.set_axisbelow(True)
-
-    if not use_cueing:
-        ax.set_ylim(0, 85)
-        ax.set_yticks([0,12.5,25,50,75])
-        ax.set_yticklabels(['0','12.5','25','50','75'], fontsize=7)
-        ax.set_ylabel('CUED % correct', fontsize=9)
-        ax.set_title('CUED accuracy by condition', fontsize=9, fontweight='bold')
-    else:
-        ax.set_ylim(-5, 45)
-        ax.set_yticks([0,10,20,30,40])
-        ax.set_yticklabels(['0','10','20','30','40'], fontsize=7)
-        ax.set_ylabel('Cueing effect  CUED − UNCUED (pp)', fontsize=9)
-        ax.set_title('Cueing effect by condition', fontsize=9, fontweight='bold')
-
-    # Group labels
-    for gx, glbl in GROUP_LABELS:
-        ax.text(gx, ax.get_ylim()[1]*1.02, glbl,
-                ha='center', va='bottom', fontsize=7, color='#333333',
-                style='italic')
-
-# Legend
-handles = [
+LEGEND_HANDLES = [
     mpatches.Patch(facecolor='#aaaaaa', label='Baseline (N / ZdNoi)'),
     mpatches.Patch(facecolor='#4477bb', label='DSC ZdA: 50% depth, no color'),
     mpatches.Patch(facecolor='#cc7700', hatch='//', label='DCL ZdCoh: 50% depth + color'),
     mpatches.Patch(facecolor='#ee9922', label='DD C: 100% color only'),
     mpatches.Patch(facecolor='#c0392b', label='DD Z: 100% depth, no color'),
     mpatches.Patch(facecolor='#8e1a0e', label='DD CZ: 100% depth + color'),
+    mpatches.Patch(facecolor='#555555', alpha=0.88, label='CUED (solid)'),
+    mpatches.Patch(facecolor='#555555', alpha=0.30, label='UNCUED (faded)'),
     mpatches.Patch(facecolor='none', edgecolor='#cc4444', linestyle='--', linewidth=0.9,
                    label='Chance / zero line'),
 ]
-fig.legend(handles=handles, loc='lower center', fontsize=7, ncol=4,
-           bbox_to_anchor=(0.5, -0.08), framealpha=0.9)
 
-fig.subplots_adjust(left=0.08, right=0.97, bottom=0.22, top=0.90, wspace=0.35)
+BAR_W   = 0.32
+PAIR_OFF = 0.20  # CUED left, UNCUED right of centre x
 
-with PdfPages(OUT_PDF) as pdf:
-    pdf.savefig(fig, bbox_inches='tight')
-plt.close(fig)
+fname = os.path.basename(OUT_PDF)
+
+# ── Page 1: CUED + UNCUED accuracy ────────────────────────────────────────────
+fig1, ax1 = plt.subplots(1, 1, figsize=(12, 7))
+fig1.suptitle(
+    'Cross-experiment depth-swap disruption  ·  Dot-cued (solid) vs Uncued (faded) accuracy',
+    fontsize=11, fontweight='bold', y=0.98)
+
+for i, spec in enumerate(BAR_SPECS):
+    x, lbl, ck, cn, col, hatch = spec
+    uk, un = UNCUED_SPECS[i]
+
+    vc, eloc, ehic = pct_ci(ck, cn)
+    vu, elou, ehiu = pct_ci(uk, un)
+
+    ax1.bar(x - PAIR_OFF, vc, width=BAR_W, color=col, hatch=hatch,
+            edgecolor='white' if not hatch else '#555555',
+            linewidth=0.5, zorder=2, alpha=0.88)
+    ax1.errorbar(x - PAIR_OFF, vc, yerr=[[eloc],[ehic]], fmt='none',
+                 ecolor='#333333', elinewidth=1, capsize=2.5, zorder=3)
+    ax1.text(x - PAIR_OFF, 1.5, 'C', ha='center', va='bottom',
+             fontsize=5, color='#222222', fontweight='bold')
+
+    ax1.bar(x + PAIR_OFF, vu, width=BAR_W, color=col, hatch=hatch,
+            edgecolor='white' if not hatch else '#555555',
+            linewidth=0.5, zorder=2, alpha=0.30)
+    ax1.errorbar(x + PAIR_OFF, vu, yerr=[[elou],[ehiu]], fmt='none',
+                 ecolor='#888888', elinewidth=0.8, capsize=2, zorder=3)
+    ax1.text(x + PAIR_OFF, 1.5, 'U', ha='center', va='bottom',
+             fontsize=5, color='#777777')
+
+    ax1.text(x, -4, lbl, ha='center', va='top', fontsize=6.5, clip_on=False)
+
+for sx in GROUP_SEPS:
+    ax1.axvline(sx, color='#cccccc', lw=0.8, ls='--', zorder=0)
+ax1.axhline(CHANCE*100, color='#cc4444', lw=0.9, ls='--', zorder=1)
+
+ax1.set_xlim(-0.6, 8.8)
+ax1.set_ylim(0, 100)
+ax1.set_yticks([0, 12.5, 25, 50, 75])
+ax1.set_yticklabels(['0','12.5','25','50','75'], fontsize=8)
+ax1.set_ylabel('% correct', fontsize=10)
+ax1.set_xticks([])
+ax1.spines[['top','right','bottom']].set_visible(False)
+ax1.yaxis.grid(True, lw=0.4, color='#e0e0e0', zorder=0)
+ax1.set_axisbelow(True)
+
+y_glbl = ax1.get_ylim()[1] * 0.97
+for gx, glbl in GROUP_LABELS:
+    ax1.text(gx, y_glbl, glbl, ha='center', va='top', fontsize=7,
+             color='#333333', style='italic', clip_on=True)
+
+fig1.legend(handles=LEGEND_HANDLES, loc='lower center', fontsize=7, ncol=5,
+            bbox_to_anchor=(0.5, -0.01), framealpha=0.9)
+fig1.subplots_adjust(left=0.07, right=0.97, bottom=0.22, top=0.93)
+fig1.text(0.5, 0.13, KEY, ha='center', va='top', fontsize=5.8, color='#333333',
+          bbox=dict(boxstyle='round,pad=0.4', facecolor='#f8f8f8',
+                    edgecolor='#cccccc', lw=0.7))
+fig1.text(0.01, 0.005, f'{fname}  ·  {DATE_STR}', fontsize=5,
+          color='#888888', ha='left', va='bottom')
+fig1.text(0.99, 0.005, 'p. 1/3', fontsize=5, color='#888888', ha='right', va='bottom')
+
+# ── Page 2: Dot cueing effect ─────────────────────────────────────────────────
+fig2, ax2 = plt.subplots(1, 1, figsize=(12, 7))
+fig2.suptitle(
+    'Cross-experiment depth-swap disruption  ·  Dot cueing effect (Dot-cued − Uncued, pp)',
+    fontsize=11, fontweight='bold', y=0.98)
+
+for i, spec in enumerate(BAR_SPECS):
+    x, lbl, ck, cn, col, hatch = spec
+    uk, un = UNCUED_SPECS[i]
+
+    delta, z, p = z_test_2prop(ck, cn, uk, un)
+    elo = ehi = 1.96 * math.sqrt(max(ck*(cn-ck)/cn**3 + uk*(un-uk)/un**3, 1e-9)) * 100
+    bar_color = '#1a6ab5' if delta >= 0 else '#c0392b'
+
+    ax2.bar(x, delta, width=BAR_W*2+0.05, color=bar_color, hatch=hatch,
+            edgecolor='white' if not hatch else '#555555',
+            linewidth=0.5, zorder=2, alpha=0.88)
+    ax2.errorbar(x, delta, yerr=[[elo],[ehi]], fmt='none',
+                 ecolor='#333333', elinewidth=1, capsize=3, zorder=3)
+    ax2.text(x, -3, lbl, ha='center', va='top', fontsize=6.5, clip_on=False)
+
+for sx in GROUP_SEPS:
+    ax2.axvline(sx, color='#cccccc', lw=0.8, ls='--', zorder=0)
+ax2.axhline(0, color='#cc4444', lw=0.9, ls='--', zorder=1)
+
+ax2.set_xlim(-0.6, 8.8)
+ax2.set_ylim(-10, 55)
+ax2.set_yticks([0, 10, 20, 30, 40, 50])
+ax2.set_yticklabels(['0','10','20','30','40','50'], fontsize=8)
+ax2.set_ylabel('Dot cueing effect  Dot-cued − Uncued (pp)', fontsize=10)
+ax2.set_xticks([])
+ax2.spines[['top','right','bottom']].set_visible(False)
+ax2.yaxis.grid(True, lw=0.4, color='#e0e0e0', zorder=0)
+ax2.set_axisbelow(True)
+
+y_glbl2 = ax2.get_ylim()[1] * 0.97
+for gx, glbl in GROUP_LABELS:
+    ax2.text(gx, y_glbl2, glbl, ha='center', va='top', fontsize=7,
+             color='#333333', style='italic', clip_on=True)
+
+fig2.legend(handles=LEGEND_HANDLES[:6] + LEGEND_HANDLES[-1:],
+            loc='lower center', fontsize=7, ncol=4,
+            bbox_to_anchor=(0.5, -0.01), framealpha=0.9)
+fig2.subplots_adjust(left=0.07, right=0.97, bottom=0.22, top=0.93)
+fig2.text(0.5, 0.13, KEY, ha='center', va='top', fontsize=5.8, color='#333333',
+          bbox=dict(boxstyle='round,pad=0.4', facecolor='#f8f8f8',
+                    edgecolor='#cccccc', lw=0.7))
+fig2.text(0.01, 0.005, f'{fname}  ·  {DATE_STR}', fontsize=5,
+          color='#888888', ha='left', va='bottom')
+fig2.text(0.99, 0.005, 'p. 2/3', fontsize=5, color='#888888', ha='right', va='bottom')
+
+# ── Page 3: Text summary ───────────────────────────────────────────────────────
+fig3 = plt.figure(figsize=(8.5, 11))
+
+SUMMARY_TITLE = 'What disrupts dot cueing? — Summary of findings across three experiments'
+
+SUMMARY_BODY = """\
+Dot cueing refers to the advantage conferred by an onset dot cue that briefly marks one of two
+overlapping transparent motion fields. On a given trial the "dot-cued" field later translates;
+the observer reports its direction. Dot cueing = (dot-cued accuracy) − (uncued accuracy).
+
+─────────────────────────────────────────────────────────────────────────────
+WHAT REDUCES DOT CUEING
+─────────────────────────────────────────────────────────────────────────────
+
+1.  Coherent-object depth-plane change at translation onset  [CRITICAL FACTOR]
+    When the translating (dot-cued) field changes depth plane at the moment it starts to
+    move, dot cueing drops substantially:
+      • DSC ZdA  (50% depth, same-color):           cueing ≈ +12 pp  n.s.  (vs baseline +34 pp **)
+      • DCL ZdCoh (50% depth + color, linked):       cueing ≈  +7 pp  †
+      • DD  Z    (100% depth swap, color fixed):     cueing ≈  +9 pp  **   (vs baseline +28 pp ***)
+    The translator losing its depth identity — even in just 50% of dot-cloud subfields —
+    is sufficient to nearly abolish the cueing benefit.
+
+2.  Combined depth + color change (coherent) does not add further disruption beyond depth alone.
+    DD CZ ≈ DD Z in cueing magnitude, and DCL ZdCoh ≈ DSC ZdA.
+    Color change alone (DD C) has no effect (see below).
+
+─────────────────────────────────────────────────────────────────────────────
+WHAT DOES NOT REDUCE DOT CUEING
+─────────────────────────────────────────────────────────────────────────────
+
+3.  Color swap alone (100%):  DD C cueing ≈ +22 pp ***  — indistinguishable from no-swap baseline.
+    Color identity of the translating field is irrelevant to dot cueing.
+
+4.  Noise-only depth swap (non-coherent subfields change depth):
+      • DSC ZdB:   cueing ≈ +56 pp ***  (enhanced relative to baseline)
+      • DCL ZdNoi: cueing ≈ +26 pp ***
+    When the coherent translator is unchanged and only non-coherent subfields swap depth,
+    dot cueing is maintained or enhanced — the cue remains predictive.
+
+─────────────────────────────────────────────────────────────────────────────
+KEY INFERENCE: DOSE DOES NOT EXPLAIN THE EFFECT
+─────────────────────────────────────────────────────────────────────────────
+
+5.  50% coherent swap (DCL ZdCoh) ≈ 100% depth swap (DD Z) in disruption magnitude.
+    If disruption were proportional to the quantity of depth change in the scene, the
+    100% swap should be twice as disruptive as the 50% swap. It is not.
+    The effect tracks whether the coherent object changes depth identity, not the total
+    amount of depth change in the stimulus.
+
+─────────────────────────────────────────────────────────────────────────────
+TERMINOLOGY NOTE
+─────────────────────────────────────────────────────────────────────────────
+
+  Dot cueing       — advantage from the onset dot marking the translating field (F1)
+  Depth-field cueing — advantage from the translating field occupying its pre-cue depth plane (F2)
+  Color-field cueing — advantage from the translating field retaining its pre-cue color (F3; null)
+  These three factors were dissociated in Exp_DecoupledDots_005m (GLM2: F1×F2 interaction
+  dominates; F3 AME = +0.9 pp, p = .64).
+"""
+
+fig3.text(0.5, 0.96, SUMMARY_TITLE, ha='center', va='top',
+          fontsize=12, fontweight='bold', color='#111111')
+fig3.text(0.07, 0.90, SUMMARY_BODY, ha='left', va='top',
+          fontsize=8, color='#222222', family='monospace',
+          linespacing=1.55)
+fig3.text(0.01, 0.005, f'{fname}  ·  {DATE_STR}', fontsize=5,
+          color='#888888', ha='left', va='bottom')
+fig3.text(0.99, 0.005, 'p. 3/3', fontsize=5, color='#888888', ha='right', va='bottom')
+fig3.patch.set_facecolor('white')
+
+# ── Save ───────────────────────────────────────────────────────────────────────
+for out in [OUT_PDF, OUT_PDF_SP]:
+    with PdfPages(out) as pdf:
+        pdf.savefig(fig1, bbox_inches='tight')
+        pdf.savefig(fig2, bbox_inches='tight')
+        pdf.savefig(fig3, bbox_inches='tight')
+plt.close(fig1)
+plt.close(fig2)
+plt.close(fig3)
 print(f'\nSaved: {OUT_PDF}')
+print(f'Saved: {OUT_PDF_SP}')

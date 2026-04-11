@@ -22,7 +22,7 @@ Sessions: 260404_0940, 260404_1123, 260406_1001, 260406_1034  (n=1024)
 Output: Agents/Figures/depthcolorlinked_glm.pdf
 """
 
-import csv, math, os
+import csv, math, os, datetime
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -32,6 +32,8 @@ import matplotlib.patches as mpatches
 from matplotlib.backends.backend_pdf import PdfPages
 import statsmodels.formula.api as smf
 from statsmodels.stats.proportion import proportion_confint
+
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
 
 BASE    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
 OUT_PDF = os.path.join(BASE, 'depthcolorlinked_glm.pdf')
@@ -283,6 +285,11 @@ handles = [
 fig2.legend(handles=handles, loc='lower center', fontsize=7.5, ncol=4,
             bbox_to_anchor=(0.5, 0.01), framealpha=0.9)
 plt.tight_layout(rect=[0, 0.08, 1, 0.94])
+
+fig1.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}', fontsize=5, color='#888888', ha='left', va='bottom')
+fig1.text(0.99, 0.005, f'p. 1/2', fontsize=5, color='#888888', ha='right', va='bottom')
+fig2.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}', fontsize=5, color='#888888', ha='left', va='bottom')
+fig2.text(0.99, 0.005, f'p. 2/2', fontsize=5, color='#888888', ha='right', va='bottom')
 
 # ── Save PDF ───────────────────────────────────────────────────────────────────
 os.makedirs(BASE, exist_ok=True)

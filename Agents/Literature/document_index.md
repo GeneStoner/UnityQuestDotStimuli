@@ -201,6 +201,7 @@ Full 2×4 χ²(7)=148.28 p<10⁻¹⁷.
 | `pending_papers.md` | Papers to read/integrate |
 | `paper_notes/` | Directory of individual paper notes |
 | `depth_ordering_lit_review.md` | Literature review: perceptual depth-ordering in transparent motion displays. Topics: bistability, disparity resolution, Stoner & Albright, Mamassian & Wallace, attentional topology. (2026-04-09) |
+| `depth_attention_review.md` | Literature review: depth-based attentional selection in superimposed stimuli. Topics: preattentive depth (Nakayama & Silverman 1986), surface vs. plane selection (He & Nakayama 1992), IOR in depth, Andersen & Kramer (1993), Parks & Corballis (2006), Caziot et al. (2023), transparent motion selective attention (Snowden & Rossiter, Lankheet & Verstraten, Qian et al.), binocular rivalry (Mitchell 2004), feature binding and depth, attentional gradients in depth. VRDots implications throughout. (2026-04-04) |
 | `document_index.md` | This file |
 
 ---

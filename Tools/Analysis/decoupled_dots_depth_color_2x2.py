@@ -15,7 +15,7 @@ Right margin strip: row and column marginals (depth effect, color effect).
 Output: Agents/Figures/decoupled_dots_depth_color_2x2.pdf
 """
 
-import csv, math, os
+import csv, datetime, math, os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -23,8 +23,12 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from matplotlib.backends.backend_pdf import PdfPages
 
-BASE    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
-OUT_PDF = os.path.join(BASE, 'decoupled_dots_depth_color_2x2.pdf')
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
+
+BASE       = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
+BASE_SP    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/SwapPilot/Figures'))
+OUT_PDF    = os.path.join(BASE,    'decoupled_dots_depth_color_2x2.pdf')
+OUT_PDF_SP = os.path.join(BASE_SP, 'decoupled_dots_depth_color_2x2.pdf')
 PULL2   = '/tmp/quest_pull2/files'
 PULL3   = '/tmp/quest_pull3/files'
 CHANCE  = 1 / 8
@@ -262,8 +266,16 @@ handles = [
 fig.legend(handles=handles, loc='lower center', fontsize=8, ncol=3,
            bbox_to_anchor=(0.5, 0.01), framealpha=0.9)
 
+fig.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}',
+         fontsize=5, color='#888888', ha='left', va='bottom')
+fig.text(0.99, 0.005, 'p. 1/1', fontsize=5, color='#888888', ha='right', va='bottom')
+
 os.makedirs(BASE, exist_ok=True)
+os.makedirs(BASE_SP, exist_ok=True)
 with PdfPages(OUT_PDF) as pdf:
+    pdf.savefig(fig, bbox_inches='tight')
+with PdfPages(OUT_PDF_SP) as pdf:
     pdf.savefig(fig, bbox_inches='tight')
 plt.close(fig)
 print(f'Saved: {OUT_PDF}')
+print(f'Saved: {OUT_PDF_SP}')

@@ -17,11 +17,14 @@ Output: Agents/Figures/decoupled_C_traces.pdf / .png
 """
 
 import os
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
 from matplotlib.backends.backend_pdf import PdfPages
+
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
 
 ONSET   = 56
 T_START = 78
@@ -189,7 +192,7 @@ LEG_HANDLES = [
 ]
 
 
-def build_figure(row_subset, figsize):
+def build_figure(row_subset, figsize, page_num=1, total_pages=1):
     n = len(row_subset)
     fig = plt.figure(figsize=figsize)
     fig.suptitle(TITLE, fontsize=9, fontweight='bold', y=0.99)
@@ -209,20 +212,24 @@ def build_figure(row_subset, figsize):
 
     fig.legend(handles=LEG_HANDLES, loc='upper right', fontsize=8,
                bbox_to_anchor=(0.97, 0.94), framealpha=0.9)
+    fig.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}', fontsize=5, color='#888888', ha='left', va='bottom')
+    fig.text(0.99, 0.005, f'p. {page_num}/{total_pages}', fontsize=5, color='#888888', ha='right', va='bottom')
     return fig
 
 
 BASE = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
+OUT_PDF = os.path.join(BASE, 'decoupled_C_traces.pdf')
 os.makedirs(BASE, exist_ok=True)
 
-fig_all = build_figure(ROWS, figsize=(10, 20))
+total_pages = len(range(0, len(ROWS), 2))
+fig_all = build_figure(ROWS, figsize=(10, 20), page_num=1, total_pages=1)
 fig_all.savefig(os.path.join(BASE, 'decoupled_C_traces.png'), dpi=150, bbox_inches='tight')
 plt.close(fig_all)
 print('Saved PNG')
 
-with PdfPages(os.path.join(BASE, 'decoupled_C_traces.pdf')) as pdf:
-    for i in range(0, len(ROWS), 2):
-        fig_p = build_figure(ROWS[i:i+2], figsize=(8.5, 11))
+with PdfPages(OUT_PDF) as pdf:
+    for page_num, i in enumerate(range(0, len(ROWS), 2), start=1):
+        fig_p = build_figure(ROWS[i:i+2], figsize=(8.5, 11), page_num=page_num, total_pages=total_pages)
         pdf.savefig(fig_p, bbox_inches='tight')
         plt.close(fig_p)
-print(f'Saved PDF: {BASE}/decoupled_C_traces.pdf')
+print(f'Saved PDF: {OUT_PDF}')

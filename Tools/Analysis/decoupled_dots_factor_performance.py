@@ -26,12 +26,14 @@ Output:
   Agents/Figures/decoupled_dots_factor_performance.pdf
 """
 
-import csv, math, os
+import csv, datetime, math, os
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import chi2_contingency
+
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 SESSIONS = [
@@ -41,10 +43,11 @@ SESSIONS = [
     ("/tmp/quest_pull3/files/vr_dots_session_260407_0731.tsv", False),
 ]
 
-FIG_DIR = os.path.expanduser(
-    "~/Projects/ObjectBasedAttention/VRDots/Agents/Figures/")
-OUT_PNG = os.path.join(FIG_DIR, "decoupled_dots_factor_performance.png")
-OUT_PDF = os.path.join(FIG_DIR, "decoupled_dots_factor_performance.pdf")
+FIG_DIR    = os.path.expanduser("~/Projects/ObjectBasedAttention/VRDots/Agents/Figures/")
+FIG_DIR_SP = os.path.expanduser("~/Projects/ObjectBasedAttention/VRDots/Agents/SwapPilot/Figures/")
+OUT_PNG    = os.path.join(FIG_DIR,    "decoupled_dots_factor_performance.png")
+OUT_PDF    = os.path.join(FIG_DIR,    "decoupled_dots_factor_performance.pdf")
+OUT_PDF_SP = os.path.join(FIG_DIR_SP, "decoupled_dots_factor_performance.pdf")
 
 CHANCE = 1 / 8  # 8-AFC
 
@@ -275,8 +278,15 @@ fig.text(
 
 plt.tight_layout(rect=[0, 0.025, 1, 1.0])
 
+fig.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}',
+         fontsize=5, color='#888888', ha='left', va='bottom')
+fig.text(0.99, 0.005, 'p. 1/1', fontsize=5, color='#888888', ha='right', va='bottom')
+
 os.makedirs(FIG_DIR, exist_ok=True)
+os.makedirs(FIG_DIR_SP, exist_ok=True)
 fig.savefig(OUT_PNG, dpi=150, bbox_inches='tight', facecolor='white')
 fig.savefig(OUT_PDF, bbox_inches='tight', facecolor='white')
+fig.savefig(OUT_PDF_SP, bbox_inches='tight', facecolor='white')
 print(f"\nSaved PNG: {OUT_PNG}")
 print(f"Saved PDF: {OUT_PDF}")
+print(f"Saved PDF: {OUT_PDF_SP}")

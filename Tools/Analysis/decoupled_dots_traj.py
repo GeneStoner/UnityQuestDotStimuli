@@ -20,6 +20,7 @@ Per panel:
 Output: Agents/Figures/decoupled_dots_traj.png / .pdf
 """
 
+import datetime
 import os
 import numpy as np
 import matplotlib
@@ -29,10 +30,14 @@ import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
 import matplotlib.patches as mpatches
 
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
+
 OUT_PATH = os.path.expanduser(
     '~/Projects/ObjectBasedAttention/VRDots/Agents/Figures/decoupled_dots_traj.png')
 OUT_PDF  = os.path.expanduser(
     '~/Projects/ObjectBasedAttention/VRDots/Agents/Figures/decoupled_dots_traj.pdf')
+OUT_PDF_SP = os.path.expanduser(
+    '~/Projects/ObjectBasedAttention/VRDots/Agents/SwapPilot/Figures/decoupled_dots_traj.pdf')
 
 # ── Timing (frames at 75 Hz) ──────────────────────────────────────────────
 ONSET   = 56
@@ -344,8 +349,15 @@ fig.legend(handles=legend_handles, loc='lower center', ncol=3,
            fontsize=7, frameon=True, framealpha=0.95,
            edgecolor='#CCC', bbox_to_anchor=(0.5, -0.05))
 
+fig.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}',
+         fontsize=5, color='#888888', ha='left', va='bottom')
+fig.text(0.99, 0.005, 'p. 1/1', fontsize=5, color='#888888', ha='right', va='bottom')
+
 os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
 fig.savefig(OUT_PATH, dpi=150, bbox_inches='tight', facecolor='white')
 fig.savefig(OUT_PDF,  bbox_inches='tight', facecolor='white')
+os.makedirs(os.path.dirname(OUT_PDF_SP), exist_ok=True)
+fig.savefig(OUT_PDF_SP, bbox_inches='tight', facecolor='white')
 print('Saved: {}'.format(OUT_PATH))
 print('Saved: {}'.format(OUT_PDF))
+print('Saved: {}'.format(OUT_PDF_SP))

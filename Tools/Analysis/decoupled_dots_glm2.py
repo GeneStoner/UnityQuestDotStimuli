@@ -25,13 +25,15 @@ Output:
              Agents/Figures/decoupled_dots_glm2.pdf
 """
 
-import csv, math, os
+import csv, datetime, math, os
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+
+DATE_STR = datetime.date.today().strftime('%Y-%m-%d')
 
 try:
     import statsmodels.api as sm
@@ -45,8 +47,10 @@ SESSIONS = [
     ("/tmp/quest_pull3/files/vr_dots_session_260407_0643.tsv", True),
     ("/tmp/quest_pull3/files/vr_dots_session_260407_0731.tsv", False),
 ]
-BASE    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
-OUT_PDF = os.path.join(BASE, 'decoupled_dots_glm2.pdf')
+BASE       = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/Figures'))
+BASE_SP    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../Agents/SwapPilot/Figures'))
+OUT_PDF    = os.path.join(BASE,    'decoupled_dots_glm2.pdf')
+OUT_PDF_SP = os.path.join(BASE_SP, 'decoupled_dots_glm2.pdf')
 
 # ── Data loading ───────────────────────────────────────────────────────────────
 def is_correct(td, rd):
@@ -376,9 +380,24 @@ print(ame.summary())
 
 fig = build_figure(model, ame)
 fig2 = build_pred_obs_figure(df, model)
+
+_total_pages = 2
+fig.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}',
+         fontsize=5, color='#888888', ha='left', va='bottom')
+fig.text(0.99, 0.005, f'p. 1/{_total_pages}', fontsize=5, color='#888888', ha='right', va='bottom')
+fig2.text(0.01, 0.005, f'{os.path.basename(OUT_PDF)}  ·  {DATE_STR}',
+          fontsize=5, color='#888888', ha='left', va='bottom')
+fig2.text(0.99, 0.005, f'p. 2/{_total_pages}', fontsize=5, color='#888888', ha='right', va='bottom')
+
+os.makedirs(BASE, exist_ok=True)
+os.makedirs(BASE_SP, exist_ok=True)
 with PdfPages(OUT_PDF) as pdf:
+    pdf.savefig(fig,  bbox_inches='tight')
+    pdf.savefig(fig2, bbox_inches='tight')
+with PdfPages(OUT_PDF_SP) as pdf:
     pdf.savefig(fig,  bbox_inches='tight')
     pdf.savefig(fig2, bbox_inches='tight')
 plt.close(fig)
 plt.close(fig2)
 print(f'\nSaved: {OUT_PDF}')
+print(f'Saved: {OUT_PDF_SP}')
