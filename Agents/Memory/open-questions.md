@@ -20,6 +20,7 @@ type: project
    (b) **Bounded-window** (GS, introspective): attentional spotlight extends "beyond" attended plane; Near leaks into Far (nothing bounds it); Far is clean (nothing lies beyond). Predicts SOA-invariant asymmetry. KEY TENSION: DepthParam shows asymmetry GROWS with depth separation — but if leakage decreases as planes become more segregable at larger disparities, the account predicts it should SHRINK. Unresolved.
    (c) **MT disparity-population anisotropy** (Calabro & Vaina 2011, PMID 21068268 — verify citation): more MT neurons tuned to near-disparity → more cross-talk → worse near-plane selectivity. Predicts asymmetry scales with absolute disparity, SOA-invariant.
    **Critical dissociation**: SOA experiment (gradient migration vs. b/c); three-plane display (b vs. c); fixation-depth reversal (vergence-driven vs. disparity-driven).
+   **BothFar (2026-04-11)**: UNCUED reversal (Less-Far > More-Far when both planes uncrossed) rules out simple uncrossed-disparity advantage as the structural mechanism. See item 20.
 
 3. **ZdB-Near vs ZdB-Far dissociation (binocular)**
    ZdB-Near=+56pp**, ZdB-Far=+56pp** — both equally strong binocularly.
@@ -77,6 +78,9 @@ type: project
 
 19. **Observer GS esophoria as a confound for Far > Near asymmetry**
     GS has clinically documented esophoria (prism-corrected glasses, not worn in VR). Crossed disparity (Near plane) may be perceptually noisier for GS specifically due to vergence strain. The Far > Near asymmetry could be observer-specific rather than a general property of depth attention. Second observer with normal vergence at 0.05m and 0.10m is the critical test.
+
+20. **BothFar UNCUED reversal: vergence-comfort as the structural mechanism?**
+    BothFar_005m (session 260411_1225, n=512) shows the UNCUED arm preferring Less-Far (+0.05m uncrossed, +11.5pp***) over More-Far (+0.10m uncrossed, −0.8pp n.s.), Δ=+12.3pp*. This is REVERSED relative to the standard Near/Far paradigm, where UNCUED prefers Far (+0.05m uncrossed) over Near (−0.05m crossed). The reversal is consistent with a minimum-absolute-disparity rule: the automatic tracking system defaults to whichever plane imposes the smallest vergence demand from fixation, regardless of the sign of that disparity. Both the standard Far preference and the BothFar Less-Far preference fit this single rule. A simple "uncrossed-disparity advantage" or "extends beyond fixation toward more-uncrossed disparity" account cannot accommodate the reversal. The vergence-comfort/esophoria account (item 19) remains the most parsimonious explanation for the UNCUED structural baseline. The F1×F4 interaction is +17.8pp — CUED and UNCUED pull in opposite directions (CUED prefers More-Far; UNCUED prefers Less-Far), revealing two mechanisms previously confounded in the standard geometry. F2 (depth continuity, ~17pp disruption in CUED) survives in BothFar, confirming F2 is separable from the F4 depth-plane asymmetry. Priority: second observer at both standard and BothFar geometries to test observer-specificity of the reversal. See `Agents/Literature/bothfar_results.md` and updated `beyond_account_provisional.md`.
 
 ## Pending Design Decisions
 

@@ -611,6 +611,7 @@ public class TrialBlockRunner : MonoBehaviour
         builder.randomSeed = _currentTrial.seedA0;
         builder.exclusionRadiusMeters = spec.fixationExclusionRadius_deg * mPerDeg;
         builder.depthOffset_m = spec.depthSeparation_m;
+        builder.depthBias_m   = spec.depthBias_m;
 
         // ---------------- Fixation preview scaling ----------------
         if (fixation != null)

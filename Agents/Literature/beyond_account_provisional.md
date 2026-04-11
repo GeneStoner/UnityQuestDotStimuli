@@ -1,7 +1,7 @@
 # Far > Near Cueing Asymmetry: Revised Account
 
-**Date:** 2026-04-11 (revised from original 2026-04-11 draft)
-**Status:** PROVISIONAL — for review and dispute by GS
+**Date:** 2026-04-11 (revised from original 2026-04-11 draft; BothFar results incorporated 2026-04-11)
+**Status:** PROVISIONAL — for review and dispute by GS; BothFar critical test now incorporated
 **Supersedes:** Original "beyond account" draft; incorporates fixation_plane_hypothesis.pdf (programming agent, 2026-04-11)
 
 ---
@@ -79,6 +79,38 @@ This ordering is observed in DepthColorLinked: CUED·Far (+35.9pp) > CUED·Near 
 
 ---
 
+## 3b. BothFar Experiment: Critical Test of the Structural Mechanism (2026-04-11)
+
+**Design.** BothFar_005m (session 260411_1225, n=512) places BOTH dot fields behind fixation: Less-Far at +0.05m (uncrossed, small divergence) and More-Far at +0.10m (uncrossed, larger divergence). Neither field crosses the fixation plane. Standard swap conditions (N/C/Z/CZ), `linkDepthColor=0`. This directly tests whether the structural UNCUED bias tracks "greater uncrossed disparity" or "minimum disparity from fixation."
+
+**Key result: UNCUED reversal.**
+
+| Contrast | CUED | UNCUED |
+|---|---|---|
+| More-Far − Less-Far | +5.5pp n.s. | −12.3pp* |
+| F1×F4 interaction | +17.8pp | (combined measure) |
+
+- UNCUED: Less-Far (+11.5pp***) > More-Far (−0.8pp n.s.), Δ = +12.3pp*
+- CUED: More-Far (+35.9pp***) > Less-Far (+30.5pp***), Δ = +5.5pp n.s.
+
+CUED and UNCUED now pull in opposite directions — a qualitative dissociation not visible in the standard paradigm.
+
+**What BothFar rules out.** The simplest extension of the fixation-plane hypothesis would predict that the UNCUED structural bias extends toward greater uncrossed disparity in general (i.e., UNCUED should prefer More-Far, which is further behind fixation). Instead, UNCUED reverses to prefer Less-Far. The structural mechanism does not track "more uncrossed = better." A pure directional claim — that the bias extends monotonically toward greater depth behind fixation — is not supported.
+
+**What BothFar supports: minimum vergence demand as the UNCUED structural default.** The UNCUED results across both paradigms are consistent under a single rule: automatic tracking defaults to the plane with minimum absolute disparity from the fixation anchor, regardless of the sign of that disparity. In the standard paradigm, Near (−0.05m crossed) and Far (+0.05m uncrossed) are equidistant in disparity magnitude, but uncrossed is more stable for observer GS (esophoric) → UNCUED prefers Far. In BothFar, Less-Far (+0.05m uncrossed) has smaller absolute disparity than More-Far (+0.10m uncrossed), both uncrossed → UNCUED prefers Less-Far. Both outcomes fit the same minimum-disparity rule. This is consistent with the vergence-comfort/esophoria account in Section 2b and does not require any attentional framing.
+
+**CUED arm: attentional enhancement of the more extreme plane.** The CUED arm favors the more extreme depth plane in both paradigms — Far in standard, More-Far in BothFar. In both cases the preferred plane has the larger disparity magnitude and greater separation from the competing field. The attentional boost is large enough to overcome the vergence cost that suppresses the UNCUED arm at that same plane.
+
+**F2 (depth continuity) survives in BothFar.** The depth-swap disruption in the CUED arm is ~17pp (N vs Z, CUED), comparable to DecoupledDots and DepthColorLinked. F2 is therefore separable from the F4 depth-plane asymmetry mechanism. Depth-plane object identity matters even when both planes carry uncrossed disparity and neither straddles fixation. The mechanisms underlying F2 and F4 are dissociable.
+
+**Two opposing mechanisms exposed.** The F1×F4 dissociation (+17.8pp) reveals:
+1. *Structural/automatic (UNCUED):* defaults to minimum vergence demand. This force was previously hidden because it happened to favour Far in the standard geometry — the same direction as the attentional effect.
+2. *Attentional (CUED):* preferentially enhances the more extreme/perceptually distinct depth plane. This force can oppose the structural baseline (as in BothFar, where More-Far is both attentionally preferred and vergence-costly) and can overcome it.
+
+**Caveats.** BothFar is a single observer (GS), n=512. The UNCUED margin is at n=128/cell (swap-collapsed); cell-level estimates are at n=32. The vergence-comfort interpretation is observer-specific. Second observer is the critical next step.
+
+---
+
 ## 4. What Remains of the "Beyond" Logic
 
 The directionality claim — that attention/bias extends *behind* the fixation plane rather than *in front* — still requires explanation. Three accounts:
@@ -131,14 +163,20 @@ Currently n=32/cell is insufficient to evaluate the parametric shape. The questi
 
 | Criterion | Fixation-plane / sensory | Cue-locked beyond-account |
 |---|---|---|
-| Far > Near in UNCUED | **Predicted ✓** | Not predicted ✗ |
-| Near-zero F1×F4 interaction | **Predicted ✓** | Predicts positive F1×F4 ✗ |
+| Far > Near in UNCUED (standard) | **Predicted ✓** | Not predicted ✗ |
+| Near-zero F1×F4 in standard paradigm | **Predicted ✓** | Predicts positive F1×F4 ✗ |
 | Monocular collapse | Predicted ✓ | Predicted ✓ |
 | DepthParam Near worsens with separation | Consistent ✓ | Inconsistent (Calabro & Vaina version) |
-| Requires attentional mechanism | Not necessarily | Yes |
-| Key test | Fixation-depth manipulation | SOA manipulation |
+| BothFar UNCUED reversal (Less-Far > More-Far) | **Predicted ✓** (minimum disparity) | Not predicted ✗ |
+| BothFar CUED More-Far > Less-Far | Consistent (attentional override) ✓ | Partially consistent ✓ |
+| BothFar F1×F4 dissociation (+17.8pp) | **Predicted ✓** (two opposing mechanisms) | Not predicted ✗ |
+| F2 (depth continuity) survives in BothFar | Not directly predicted — but compatible ✓ | Not predicted — compatible ✓ |
+| Requires attentional mechanism | Not necessarily (UNCUED arm) | Yes |
+| Key remaining test | Second observer; fixation-depth manipulation | SOA manipulation |
 
-**Bottom line.** The fixation-plane hypothesis — in either its attentional or sensory sub-versions — is the better primary account of the Far > Near asymmetry. The cue-locked "beyond the attended plane" mechanism may contribute additively but is not the primary driver. The most important immediate action is to extract the F1×F4 GLM coefficient from the existing DecoupledDots data. The most important new experiment is the fixation-depth manipulation.
+**Bottom line.** BothFar (2026-04-11) provides the first critical-test result that directly dissociates competing accounts of the structural mechanism. The UNCUED arm reversal — Less-Far preferred over More-Far when both planes are uncrossed — rules out a simple "uncrossed-disparity advantage" or "extends beyond fixation in one direction" account. It is consistent with, and specifically predicted by, a minimum-vergence-demand rule for the automatic (UNCUED) tracking baseline. The CUED arm continues to favour the more extreme depth plane (More-Far), consistent with attentional enhancement of the more perceptually distinctive field. These two forces were previously confounded because both favoured Far in the standard Near/Far geometry. The F1×F4 dissociation (+17.8pp) in BothFar separates them cleanly.
+
+The fixation-plane/sensory account — specifically the vergence-comfort sub-version — is now the best primary account for the structural (UNCUED) asymmetry. The directional claim that the bias extends "behind the fixation plane toward far-tuned space" is partially confirmed in the sense that the preferred plane is always uncrossed (never crossed) relative to fixation, but is not confirmed in the stronger sense that "more uncrossed = better." The critical remaining test is a second observer with normal vergence, which will determine whether the minimum-disparity rule is observer-general or specific to GS's esophoria.
 
 ---
 

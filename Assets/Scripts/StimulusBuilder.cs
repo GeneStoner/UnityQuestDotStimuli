@@ -63,6 +63,7 @@ public class StimulusBuilder : MonoBehaviour
 
     [HideInInspector] public float exclusionRadiusMeters = 0f;
     [HideInInspector] public float depthOffset_m = 0f;
+    [HideInInspector] public float depthBias_m = 0f;
 
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
@@ -184,7 +185,7 @@ public class StimulusBuilder : MonoBehaviour
     /// </summary>
     public void ApplyDepthOffsets(CondLib.StimulusCondition cond, int frame)
     {
-        if (cond == null || Subfields == null || depthOffset_m == 0f) return;
+        if (cond == null || Subfields == null || (depthOffset_m == 0f && depthBias_m == 0f)) return;
         if (frame < 0 || frame >= cond.timeline.totalFrames) return;
 
         int count = Mathf.Min(Subfields.Length, cond.subfields.Length);
@@ -195,9 +196,10 @@ public class StimulusBuilder : MonoBehaviour
             if (tracks.depthByFrame == null || frame >= tracks.depthByFrame.Length) continue;
 
             var dp = tracks.depthByFrame[frame];
-            float z = 0f;
-            if (dp == CondLib.DepthPlane.Near) z = -depthOffset_m;
-            else if (dp == CondLib.DepthPlane.Far) z = depthOffset_m;
+            float z = depthBias_m;
+            if (dp == CondLib.DepthPlane.Near) z += -depthOffset_m;
+            else if (dp == CondLib.DepthPlane.Far) z += depthOffset_m;
+            else z = 0f; // Fixation plane: no offset
             if (z == 0f) continue;
 
             // Project each dot to local XY (zeroing any prior Z offset),

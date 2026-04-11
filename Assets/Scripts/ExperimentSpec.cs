@@ -70,6 +70,11 @@ public abstract class ExperimentSpec : ScriptableObject
     [Tooltip("Depth offset in meters from fixation plane. Each field is offset ±this amount along the viewing axis. 0 = no depth separation (all dots at fixation plane). Near = toward viewer, Far = away from viewer.")]
     public float depthSeparation_m = 0f;
 
+    [Tooltip("Bias added to both depth planes along the viewing axis (positive = away from viewer). " +
+             "Use to place both fields on the same side of fixation. " +
+             "E.g. depthSeparation_m=0.025, depthBias_m=0.075 → planes at +0.05m and +0.10m (both behind fixation).")]
+    public float depthBias_m = 0f;
+
     [Header("Dot Layout")]
     [Tooltip("Dots per perceptual FIELD (so ~dotsPerField/2 per subfield).")]
     public int dotsPerField = 200;

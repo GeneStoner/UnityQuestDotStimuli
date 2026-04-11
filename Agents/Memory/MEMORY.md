@@ -34,6 +34,17 @@ See linked files for full details:
 - **Unity Input**: Must use "Both" (Active Input Handling) — code uses legacy Input + new Input System
 - **ADB pull**: `adb pull /sdcard/Android/data/com.genestoner.vrdptsrebuildX.test/files/ /tmp/quest_pull/`
 
+## Current Status (2026-04-11 — BothFar experiment)
+- **NEW**: BothFar_005m session 260411_1225 run — both dot fields behind fixation (Less-Far=+0.05m, More-Far=+0.10m uncrossed). n=512.
+- **KEY FINDING**: F1×F4 dissociation (+17.8pp): CUED prefers More-Far (+35.9pp vs +30.5pp), UNCUED REVERSES to prefer Less-Far (+11.5pp*** vs −0.8pp n.s., Δ=+12.3pp*).
+- **INTERPRETATION**: UNCUED structural mechanism defaults to MINIMUM DISPARITY from fixation, not "extends beyond fixation toward more uncrossed". Both BothFar Less-Far preference and standard Far preference fit minimum-vergence-demand rule. CUED enhances the more extreme/salient plane in both experiments.
+- **F2 SURVIVES**: Depth continuity disruption ~17pp (N vs Z in CUED) — independent of whether planes straddle fixation.
+- **RULES OUT**: Simple "attentional gradient extends monotonically toward more uncrossed disparity" as the UNCUED structural mechanism.
+- **NEW**: `Agents/Literature/bothfar_results.md` — full BothFar write-up.
+- **UPDATED**: `beyond_account_provisional.md` (Section 3b added, Section 7 table extended, bottom line revised).
+- **UPDATED**: `open-questions.md` (item 20 added; item 2 cross-referenced).
+- **Data**: `/tmp/quest_pull4/files/vr_dots_session_260411_1225.tsv`
+
 ## Current Status (2026-04-09 — late session: theory, packaging, lab transfer)
 - **NEW**: Bounded-depth-window hypothesis (GS, introspective) documented — attentional spotlight extends "beyond" attended plane; Near leaks into Far; Far is bounded. Documented in `depth_ior_hypothesis.md` (new section) and `theory_doc.md` §9.8. Key tension: DepthParam shows asymmetry GROWS with depth separation, but leakage account predicts it should SHRINK (planes more segregable). SOA experiment is the critical dissociation vs. gradient migration.
 - **NEW**: `Agents/Literature/next_steps.md` — prioritized experiment roadmap: (1) second observer on DepthSwapCtrl, (2) DepthParam second sessions at 0.05m+0.10m, (3) SOA manipulation, (4) fixation-depth reversal. Use 50% swaps (ZdA/ZdB) going forward — 100% swaps served their purpose.
@@ -129,6 +140,7 @@ See linked files for full details:
 | 260406_1001 | DepthColorLinked_005m | 0.05m | — | — | — | S3 |
 | 260406_1034 | DepthColorLinked_005m | 0.05m | — | — | — | S4 |
 | **DCL combined** | DepthColorLinked_005m | 0.05m | ZdNoi=+25.8pp*** | — | — | **n=1024; ZdCoh=+7.0pp†; GLM F1×F2=+16.5pp** |
+| 260411_1225 | BothFar_005m | 0.05m+0.10m | +27.8pp*** | Less-Far=+30.5pp*** | More-Far=+35.9pp*** | **UNCUED REVERSAL**: UNCUED Less-Far=+11.5pp***, More-Far=−0.8pp; F1×F4=+17.8pp; F2 survives ~17pp |
 
 ## Key Findings (DepthColorLinked, n=1024, 2026-04-09)
 - **ZdNoi=+25.8pp*** vs ZdCoh=+7.0pp†** — disruption when coherent translator changes depth+color
