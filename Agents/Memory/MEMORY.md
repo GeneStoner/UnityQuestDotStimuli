@@ -35,7 +35,7 @@ See linked files for full details:
 - **ADB pull**: `adb pull /sdcard/Android/data/com.genestoner.vrdptsrebuildX.test/files/ /tmp/quest_pull/`
 
 ## ⚠️ DATA INTEGRITY FLAG (2026-04-11)
-Unity asset bug produced jerky motion artifact during depth swaps (Z/CZ conditions). Bug now fixed by programmer. F2 magnitude and F1×F2 interaction are suspect across DecoupledDots, DepthColorLinked, BothFar. F1 (cueing) and F4 (Near/Far) from N-condition data are NOT affected. All Z/CZ-dependent sessions need rerunning. See open-questions.md for full list.
+Unity asset bug produced jerky motion artifact during depth swaps (Z/CZ conditions). Bug now fixed by programmer. F2 magnitude and F1×F2 interaction are suspect across DecoupledDots, DepthColorLinked, BothFar. DepthSwapCtrl also partially afflicted via a different asset (ZdA/ZdB comparisons suspect). F1 (cueing) and F4 (Near/Far) from N-condition data are NOT affected. Every experiment with a depth swap condition needs at least one clean replication. See open-questions.md for full list.
 
 ## Current Status (2026-04-11 — BothFar experiment)
 - **NEW**: BothFar_005m session 260411_1225 run — both dot fields behind fixation (Less-Far=+0.05m, More-Far=+0.10m uncrossed). n=512.

@@ -12,7 +12,7 @@ Unity asset bug produced jerky motion artifact during depth swaps (Z and CZ cond
 
 **Not affected**: F1 (dot cueing, from N condition), F4 (Near/Far asymmetry, from N condition), UNCUED flatness.
 
-**Sessions to rerun**: All DecoupledDots (4 sessions), all DepthColorLinked (4 sessions), BothFar (1 session). Confirm whether DepthSwapCtrl (ZdA/ZdB) used same asset — if yes, add to rerun list.
+**Sessions to rerun**: All DecoupledDots (4 sessions), all DepthColorLinked (4 sessions), BothFar (1 session), DepthSwapCtrl (different asset but partially afflicted — ZdA/ZdB comparisons suspect). Essentially every experiment with a depth swap condition needs at least one clean replication.
 
 ## Open Empirical Questions
 
