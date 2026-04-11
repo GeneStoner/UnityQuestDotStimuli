@@ -124,6 +124,11 @@ Located in `Assets/ExperimentSpecs/`:
 | Exp_DepthBothPlanes | DepthBothPlanes | 0.10m | true | none | 128 (same plane control) |
 | Exp_DepthSwap | DepthSwap | 0.10m | true | Depth(Z) | 256 |
 | Exp_DepthSwap50 | DepthSwap50_005m | 0.05m | true | Depth50(Zd) | 256 |
+| Exp_DepthSwapCtrl | DepthSwapCtrl_005m | 0.05m | true | N/ZdA/ZdB (both-red) | 192 |
+| Exp_DepthParam_003m | DepthParam | 0.03m | true | N only, R/G balanced | 128 |
+| Exp_DepthParam_005m | DepthParam | 0.05m | true | N only, R/G balanced | 128 |
+| Exp_DepthParam_010m | DepthParam | 0.10m | true | N only, R/G balanced | 128 |
+| Exp_DepthParam_015m | DepthParam | 0.15m | true | N only, R/G balanced | 128 |
 
 To switch: drag desired asset into TrialBlockRunner's `spec` slot in Inspector.
 User preference: do NOT mix different swap levels in same experiment.
@@ -206,6 +211,25 @@ python3 verify_trajectories.py <sidecar.json> [--plots]
 ```
 - Method A (hash verification) + Method C (visual plots)
 - Supports all swap types: N, M, C, D, MC, MD, CD, MCD
+
+### depthparam_trajectories.py *(new 2026-04-02)*
+```
+python3 depthparam_trajectories.py [output.png]
+```
+- 4-panel (2×2) trajectory diagram for DepthParam (N condition, R/G)
+- Rows = delayed field Near/Far; Cols = CUED/UNCUED
+- Annotates performance from pooled single sessions
+- Output: `Agents/Figures/depthparam_trajectories.png`
+
+### factor_traj_labeled.py *(new 2026-04-02)*
+```
+python3 factor_traj_labeled.py [output.png]
+```
+- 12-panel (3×4) trajectory diagram: all N/ZdA/ZdB × CUED/UNCUED × Near/Far conditions
+- Each panel annotated with F1/F2/F3 factor labels (yellow box)
+- Gold band in depth row = plane where translation actually occurs
+- Output: `Agents/Figures/factor_labeled_trajectories.png`
+- Authoritative for verifying factor assignments
 
 ### generate_reference_trajectories.py
 ```

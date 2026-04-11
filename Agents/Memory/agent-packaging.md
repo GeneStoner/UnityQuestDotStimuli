@@ -11,8 +11,7 @@ result collection from external users, and (eventually) advertising/posting.
 Completely separate from the core experimental development loop.
 
 ## Status
-**NOT YET ACTIVE** — activate when core experimental design is stable enough to package.
-Premature packaging adds maintenance overhead to a moving target.
+**ACTIVE as of 2026-04-09** — core swap pilot findings are stable; lab transfer to Dr. Hulusi K. (Turkey) is the immediate use case.
 
 ## Activation criteria
 Spin up this agent when:
@@ -37,9 +36,10 @@ Spin up this agent when:
 - Build settings, PlayerSettings, AndroidManifest
 
 ## Outputs (written to Agents/Packaging/)
-- `packaging_plan.md` — what to package, for whom, timeline
-- `user_guide.md` — end-user setup and run instructions
-- `distribution_checklist.md` — steps before each release
+- `lab_transfer_guide.md` — **DONE 2026-04-09**: two-part guide (what GS must do + what receiving lab needs). Covers repo access, Inspector wiring, Unity 6000.2.7f2 + Android Build Support, ADB, Python, experiment config assets, observer screening.
+- `collaborator_brief_HK.md` — **DONE 2026-04-09**: shareable document for Dr. Hulusi Kafaligonul. Paradigm overview anchored to Catak et al. 2022, DecoupledDots + DepthColorLinked findings with figure references (7 figures from `Agents/SwapPilot/Figures/`), lab setup instructions. Editable markdown → Word via pandoc.
+- `packaging_plan.md` — what to package, for whom, timeline (future)
+- `distribution_checklist.md` — steps before each release (future)
 - `external_results/` — tracking/aggregation from outside users (future)
 
 ## What this agent does NOT do

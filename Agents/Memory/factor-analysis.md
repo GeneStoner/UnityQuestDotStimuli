@@ -1,6 +1,6 @@
 ---
-name: DepthSwapCtrl Factor Analysis Framework
-description: Three-factor marginal chi-square and logistic regression framework for DepthSwapCtrl data, with condition coding
+name: Three-Factor Analysis Framework — DepthSwapCtrl and DepthParam
+description: Three-factor framework (dot cueing / depth-field match / translation depth) with condition coding, factor assignments for all 12 conditions, and DepthParam parametric results
 type: project
 ---
 
@@ -74,3 +74,74 @@ Sessions:
 ## Logistic regression (binocular)
 Dominant terms: `far` (OR=0.15, ***) and `cued:far` (OR=10.4, ***) in swap-type model.
 Mechanistic model (`cued × far × ctf`): only `far` (**) and `cued:far` (**) significant — `ctf` adds nothing independent because it's collinear with (swap, far).
+
+---
+
+## CRITICAL LABELING TRAP (all depth conditions)
+
+"Near/Far" in condition labels refers to the depth of the **delayed (Field B) field**, NOT the translating field.
+
+| VRDots label | What actually translates | F3 |
+|---|---|---|
+| CUED Near | Near (Field B stays put) | Near |
+| **UNCUED Near** | **Far** (Field A = opposite depth) | **Far** |
+| CUED Far | Far (Field B stays put) | Far |
+| **UNCUED Far** | **Near** (Field A = opposite depth) | **Near** |
+
+The "Near reversal" seen in old analyses (CUED Near < UNCUED Near) was an artifact of comparing across different F3 levels. When F3 is held constant, CUED > UNCUED at all depths and all swaps.
+
+---
+
+## Factor assignments — all 12 N/ZdA/ZdB conditions
+
+Full reference: `Agents/Literature/factor_labeled_trajectories.md`
+Visual reference: `Agents/Figures/factor_labeled_trajectories.png`
+
+| Swap | Condition | F1 | F2 | F3 |
+|------|-----------|----|----|-----|
+| N | CUED Near | CUED | SAME | Near |
+| N | UNCUED Near | UNCUED | DIFF | **Far** |
+| N | CUED Far | CUED | SAME | Far |
+| N | UNCUED Far | UNCUED | DIFF | **Near** |
+| ZdA | CUED Near | CUED | **DIFF** | **Far** |
+| ZdA | UNCUED Near | UNCUED | **SAME** | **Near** |
+| ZdA | CUED Far | CUED | **DIFF** | **Near** |
+| ZdA | UNCUED Far | UNCUED | **SAME** | **Far** |
+| ZdB | CUED Near | CUED | SAME | Near |
+| ZdB | UNCUED Near | UNCUED | DIFF | **Far** |
+| ZdB | CUED Far | CUED | SAME | Far |
+| ZdB | UNCUED Far | UNCUED | DIFF | **Near** |
+
+**Key**: ZdB has IDENTICAL factor assignments to N (swapping non-coherent companions S1↔S3 doesn't change which coherent dot translates at which depth). ZdA flips both F2 and F3 for every condition (coherent translator S0↔S2 moves to opposite plane).
+
+---
+
+## DepthParam — Parametric depth results (2026-04-02, n=32/cell, single sessions)
+
+Experiment: N condition only, R/G balanced, 4 depth separations. Data file: `Agents/Literature/depthparam_results.md`. Theory: `Agents/Literature/depth_ior_hypothesis.md`.
+
+### Raw 4-cell table (Near/Far = depth of delayed field)
+| Cell | 0.03m | 0.05m | 0.10m | 0.15m |
+|------|-------|-------|-------|-------|
+| CUED Far | 90.6% *** | 84.4% *** | 84.4% *** | 84.4% *** |
+| UNCUED Near | 50.0% n.s. | 68.8% * | 75.0% ** | 75.0% ** |
+| CUED Near | 62.5% n.s. | 59.4% n.s. | 53.1% n.s. | 50.0% n.s. |
+| UNCUED Far | 43.8% n.s. | 37.5% n.s. | 37.5% n.s. | 28.1% * |
+
+### Reframed by translating field depth (F3) — correct comparison
+| Translation depth | Cued | Uncued | Cueing Δ |
+|---|---|---|---|
+| Far (CUED Far vs UNCUED Near) | 84–91% | 50–75% | +9 to +41pp ✓ |
+| Near (CUED Near vs UNCUED Far) | 50–62% | 28–44% | +6 to +22pp ✓ |
+
+Both cueing effects are positive at all depths once F3 is held constant.
+
+### Parametric trends
+- **Far translation (cued)**: depth-invariant at ~84–91% (ceiling)
+- **Far translation (uncued)**: rises with depth 50%→75% (gradient migration progressively complete)
+- **Near translation (cued)**: falls with depth 62%→50% (gradient increasingly overrides Near cue)
+- **Near translation (uncued)**: falls with depth 44%→28% (Far gradient strengthens, Near depleted)
+- **Near cueing crossover**: positive at 0.03m (+12.5pp n.s.) → negative at 0.05m (−9.4pp). Crossover ~0.035–0.045m, maps to stereoacuity threshold at 2m.
+
+### Gradient migration account
+Far-biased attention gradient (Parks & Corballis 2006; Caziot et al. 2023) sets Far as default attended depth. Near cue captured but gradient pulls attention back to Far during 293ms delay. At 0.03m gradient is weak → migration incomplete. At 0.05m+ → migration complete by tStart. IOR ruled out: same SOA produces max positive cueing in 2D paradigm (ongoing motion maintains engagement, no blank ISI, so IOR doesn't develop).
