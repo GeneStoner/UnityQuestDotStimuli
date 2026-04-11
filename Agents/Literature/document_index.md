@@ -1,5 +1,5 @@
 # VRDots Document Index
-*Last updated: 2026-04-07*
+*Last updated: 2026-04-11*
 
 ---
 
@@ -202,6 +202,7 @@ Full 2×4 χ²(7)=148.28 p<10⁻¹⁷.
 | `paper_notes/` | Directory of individual paper notes |
 | `depth_ordering_lit_review.md` | Literature review: perceptual depth-ordering in transparent motion displays. Topics: bistability, disparity resolution, Stoner & Albright, Mamassian & Wallace, attentional topology. (2026-04-09) |
 | `depth_attention_review.md` | Literature review: depth-based attentional selection in superimposed stimuli. Topics: preattentive depth (Nakayama & Silverman 1986), surface vs. plane selection (He & Nakayama 1992), IOR in depth, Andersen & Kramer (1993), Parks & Corballis (2006), Caziot et al. (2023), transparent motion selective attention (Snowden & Rossiter, Lankheet & Verstraten, Qian et al.), binocular rivalry (Mitchell 2004), feature binding and depth, attentional gradients in depth. VRDots implications throughout. (2026-04-04) |
+| `beyond_account_provisional.md` | **PROVISIONAL THEORY DOC** — Structured argument for the "beyond" attentional gradient account of the Far > Near cueing asymmetry. Sections: core claim, VRDots evidence (Far > Near data, monocular collapse, DepthParam tension, UNCUED flatness), supporting literature (Parks & Corballis 2006, Caziot 2023, Nakayama et al. 1989 amodal completion), counterevidence (peripersonal space, Andersen & Kramer 1993 Near > Far IOR), transparency-specific reconciliation, Calabro & Vaina (2011) MT anisotropy alternative account, critical tests (3-plane display, non-overlapping surfaces, DepthParam power). DRAFT for GS review and dispute. (2026-04-11) |
 | `document_index.md` | This file |
 
 ---
