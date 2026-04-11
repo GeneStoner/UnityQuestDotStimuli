@@ -1,5 +1,5 @@
 # SwapPilot — Current Results Package
-*Assembled 2026-04-09 · Updated 2026-04-10 · Single observer (GS)*
+*Assembled 2026-04-09 · Updated 2026-04-11 · Single observer (GS)*
 
 > **Note on generating scripts**: `decoupled_traj_condensed_all.pdf` was generated in an interactive session; the script was not saved to `Tools/Analysis/`. The per-condition scripts (`decoupled_N_traj.py`, `decoupled_C_traj.py`, `decoupled_Z_traj.py`, `decoupled_CZ_traj.py`) produce the individual-condition versions.
 
@@ -77,6 +77,7 @@ current versions from their canonical locations.
 | `decoupled_Z_traces.pdf` | Dot cloud traces — Z condition (depth swap) |
 | `decoupled_CZ_traces.pdf` | Dot cloud traces — CZ condition (depth+color swap) |
 | `decoupled_dots_session_comparison.png` | Per-session comparison (shows S4 anomaly — flat dot cueing) |
+| `glm_combined_analysis.pdf` | **Combined GLM write-up (13 pp)** — Exp 1 (DecoupledDots) + Exp 2 (DepthColorLinked) full GLM side by side; cross-experiment synthesis; UNCUED Near/Far fixation-plane test; updated interpretation (onset cue weakly sufficient alone; depth continuity requires onset cue) |
 
 ### DepthColorLinked
 | File | Description |
@@ -92,6 +93,7 @@ current versions from their canonical locations.
 | File | Description |
 |------|-------------|
 | `depth_disruption_comparison.pdf` | Cueing disruption by swap type across DSC/DCL/DD experiments |
+| `fixation_plane_hypothesis.pdf` | **Fixation-plane attentional hypothesis (4 pp)** — evaluation of fixation plane as standing attentional depth anchor; predictions vs. existing data; critical experiments; compatible with cued-plane account |
 
 ---
 
@@ -105,6 +107,7 @@ current versions from their canonical locations.
 | `glm2_explainer.md` | Markdown source for above |
 | `depthcolorlinked_results.pdf` | **DepthColorLinked write-up** — design, raw results, GLM, comparison to DecoupledDots, mechanism |
 | `depthcolorlinked_results.md` | Markdown source for above |
+| `fixation_plane_hypothesis.pdf` | **Fixation-plane attentional hypothesis** — evaluation, predictions, critical experiments, compatibility with cued-plane account |
 
 ---
 
@@ -127,6 +130,8 @@ Data loaded from `/tmp/quest_pull2/` (DCL) and `/tmp/quest_pull3/` (DD).
 | `decoupled_CZ_traces.py` | Dot cloud traces for CZ condition |
 | `depth_disruption_comparison.py` | Cross-experiment cueing disruption comparison |
 | `decoupled_dots_results_pdf.py` | Markdown→PDF renderer (supports --in-md / --out-pdf args) |
+| `decoupled_dots_glm_intro.py` | **Combined GLM analysis** — 13-page PDF covering both experiments + synthesis; outputs `glm_combined_analysis.pdf` |
+| `fixation_plane_hypothesis.py` | **Fixation-plane hypothesis write-up** — 4-page PDF; outputs `fixation_plane_hypothesis.pdf` (also in `Agents/WriteUps/`) |
 
 ### DepthColorLinked
 | Script | Purpose |
