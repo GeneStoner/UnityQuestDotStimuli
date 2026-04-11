@@ -34,6 +34,9 @@ See linked files for full details:
 - **Unity Input**: Must use "Both" (Active Input Handling) — code uses legacy Input + new Input System
 - **ADB pull**: `adb pull /sdcard/Android/data/com.genestoner.vrdptsrebuildX.test/files/ /tmp/quest_pull/`
 
+## ⚠️ DATA INTEGRITY FLAG (2026-04-11)
+Unity asset bug produced jerky motion artifact during depth swaps (Z/CZ conditions). Bug now fixed by programmer. F2 magnitude and F1×F2 interaction are suspect across DecoupledDots, DepthColorLinked, BothFar. F1 (cueing) and F4 (Near/Far) from N-condition data are NOT affected. All Z/CZ-dependent sessions need rerunning. See open-questions.md for full list.
+
 ## Current Status (2026-04-11 — BothFar experiment)
 - **NEW**: BothFar_005m session 260411_1225 run — both dot fields behind fixation (Less-Far=+0.05m, More-Far=+0.10m uncrossed). n=512.
 - **KEY FINDING**: F1×F4 dissociation (+17.8pp): CUED prefers More-Far (+35.9pp vs +30.5pp), UNCUED REVERSES to prefer Less-Far (+11.5pp*** vs −0.8pp n.s., Δ=+12.3pp*).

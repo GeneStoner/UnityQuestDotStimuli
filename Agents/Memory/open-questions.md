@@ -4,6 +4,16 @@ description: Open empirical questions and pending design decisions for future se
 type: project
 ---
 
+## ⚠️ DATA INTEGRITY FLAG (2026-04-11)
+Unity asset bug produced jerky motion artifact during depth swaps (Z and CZ conditions) across DecoupledDots, DepthColorLinked, and BothFar sessions. Bug is now fixed. **The following results should be treated as provisional pending reruns:**
+- F2 effect magnitude (Z/CZ vs. N gap) — may be inflated by artifact
+- F1×F2 interaction magnitude — same caveat
+- BothFar Z×depth reversal — may be artifact-driven
+
+**Not affected**: F1 (dot cueing, from N condition), F4 (Near/Far asymmetry, from N condition), UNCUED flatness.
+
+**Sessions to rerun**: All DecoupledDots (4 sessions), all DepthColorLinked (4 sessions), BothFar (1 session). Confirm whether DepthSwapCtrl (ZdA/ZdB) used same asset — if yes, add to rerun list.
+
 ## Open Empirical Questions
 
 1. **ZdA/ZdB: monocular confound vs depth-plane grouping**
