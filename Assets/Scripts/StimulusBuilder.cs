@@ -203,8 +203,15 @@ public class StimulusBuilder : MonoBehaviour
             if (z == 0f) continue;
 
             // Project each dot to local XY (zeroing any prior Z offset),
-            // then reconstruct at fixation plane + depth offset along forward axis.
-            Vector3 zVec = transform.forward * z;
+            // then reconstruct at fixation plane + depth offset along the camera's
+            // optical axis. Using Camera.main.transform.forward rather than
+            // transform.forward avoids a screen-space displacement artifact that
+            // occurs when the StimulusBuilder's world-space orientation is not
+            // perfectly aligned with the observer's gaze direction.
+            Vector3 depthAxis = (Camera.main != null)
+                ? Camera.main.transform.forward
+                : transform.forward;
+            Vector3 zVec = depthAxis * z;
             foreach (var dot in Subfields[s].dots)
             {
                 if (dot == null) continue;

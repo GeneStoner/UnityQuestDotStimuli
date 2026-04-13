@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6b2bce2bb36a4c26bd3ffebf54318e4, type: 3}
   m_Name: Exp_BothFar_005m
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
-  experimentName: BothFar_005m
+  experimentName: BothFar_005m_v2
   simHz: 75
   viewDistance_m: 2
   apertureRadius_deg: 3.5

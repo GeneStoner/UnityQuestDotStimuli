@@ -21,6 +21,7 @@ See linked files for full details:
 - `Agents/Packaging/lab_transfer_guide.md` — lab transfer guide for new collaborators (two-part: GS prep + receiving lab requirements)
 - `Agents/Packaging/collaborator_brief_HK.md` — shareable summary + setup guide for Dr. Hulusi K.
 - [endogenous_color_design.md](endogenous_color_design.md) — **NEXT EXPERIMENT (lower priority)**: Design B protocol (block instruction + 50/50 validity + simultaneous onset); analysis bridge; Step 0 prerequisite
+- [depth_swap_artifact.md](depth_swap_artifact.md) — **ARTIFACT**: transform.forward bug in Z/CZ conditions; fix; _v2 exclusion rule; key numbers; figure locations
 
 ## Quick Reference
 - **Project**: `/Users/genestoner1/Projects/ObjectBasedAttention/VRDots/`
@@ -35,7 +36,16 @@ See linked files for full details:
 - **ADB pull**: `adb pull /sdcard/Android/data/com.genestoner.vrdptsrebuildX.test/files/ /tmp/quest_pull/`
 
 ## ⚠️ DATA INTEGRITY FLAG (2026-04-11)
-Unity asset bug produced jerky motion artifact during depth swaps (Z/CZ conditions). Bug now fixed by programmer. F2 magnitude and F1×F2 interaction are suspect across DecoupledDots, DepthColorLinked, BothFar. DepthSwapCtrl also partially afflicted via a different asset (ZdA/ZdB comparisons suspect). F1 (cueing) and F4 (Near/Far) from N-condition data are NOT affected. Every experiment with a depth swap condition needs at least one clean replication. See open-questions.md for full list.
+Unity asset bug produced jerky motion artifact during depth swaps (Z/CZ conditions). Root cause: `StimulusBuilder.ApplyDepthOffsets()` used `transform.forward` instead of `Camera.main.transform.forward` — ~5° pitch misalignment created ~19°/sec upward impulse per depth-swap frame (8.2× the 2.26°/sec translation signal). Fixed 2026-04-11. **Exclusion rule**: TSV files whose `experimentName` does NOT contain `_v2` are pre-fix; exclude Z/CZ rows. N and C conditions in pre-fix files are clean. F1 (cueing, from N) and F4 (Near/Far, from N) are NOT affected. Every experiment with a depth swap condition needs at least one clean _v2 replication. See [depth_swap_artifact.md](depth_swap_artifact.md) for full details.
+
+## Current Status (2026-04-11 — artifact investigation + fix)
+- **ROOT CAUSE FOUND**: `StimulusBuilder.ApplyDepthOffsets()` used `transform.forward` not `Camera.main.transform.forward`. ~5° pitch → ~19°/sec upward impulse at depth-swap frame.
+- **FIX**: One line in `ApplyDepthOffsets()` — now uses `Camera.main.transform.forward` with fallback.
+- **ANALYSIS**: `depth_swap_artifact_analysis.py` → `Agents/SwapPilot/Figures/depth_swap_artifact.pdf` (3-page; UP=50% in Z wrong responses vs 4% in N)
+- **STEREO TRACES**: `stereo_trace_artifact_demo.py` (demo, 3-panel) + `decoupled_stereo_traces.py` (full, 3-page) → `Agents/SwapPilot/Figures/decoupled_stereo_traces.pdf`. Pre-fix shows ~0.25° upward jump at tStart in Z/CZ; post-fix is flat.
+- **WRITE-UP**: `Agents/SwapPilot/WriteUps/depth_swap_artifact_writeup.md` + `.pdf`
+- **ASSETS RENAMED**: 5 assets appended with `_v2` in `experimentName` field (see depth_swap_artifact.md)
+- **NEW CODE**: `depthBias_m` parameter added to `ExperimentSpec.cs` + `StimulusBuilder.cs` + `TrialBlockRunner.cs`
 
 ## Current Status (2026-04-11 — BothFar experiment)
 - **NEW**: BothFar_005m session 260411_1225 run — both dot fields behind fixation (Less-Far=+0.05m, More-Far=+0.10m uncrossed). n=512.
