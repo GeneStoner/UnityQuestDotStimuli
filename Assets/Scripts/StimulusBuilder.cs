@@ -44,6 +44,12 @@ public class StimulusBuilder : MonoBehaviour
 
         // NEW: deterministic seed base for respawns
         public int seedBase;
+
+        // Authoritative 2D local position per dot (meters on the stimulus plane,
+        // no depth offset, no perspective scale). Updated only by motion steps.
+        // ApplyDepthOffsets reads this instead of ToLocalPlane(dot.position) so
+        // that perspective scaling never accumulates across frames.
+        public Vector2[] trajectoryPos;
     }
 
     public SubfieldRuntime[] Subfields { get; private set; } = new SubfieldRuntime[4];
@@ -69,21 +75,28 @@ public class StimulusBuilder : MonoBehaviour
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
     // ========================================================================
-    // Build geometry from condition (dot positions & default materials)
+    // One-time orientation init
     // ========================================================================
-    public void BuildFromCondition(CondLib.StimulusCondition cond)
+    void Start()
     {
-        // Orient the stimulus plane to face the camera so that transform.forward
-        // is the true optical axis. This ensures ApplyDepthOffsets' depth vector
-        // is perpendicular to the stimulus plane (transform.right × transform.up),
-        // which is required to avoid lateral drift accumulation when StepTranslation
-        // calls ToLocalPlane on dots that carry a depth offset.
+        // Orient the StimulusBuilder to face the camera once at scene load so
+        // that transform.forward equals the true optical axis for the session.
+        // Done here (not per-trial) so the axis is stable under head movement:
+        // transform.forward is fixed for the session, perpendicular to
+        // transform.right/up, and ApplyDepthOffsets can use it without drift.
         if (Camera.main != null)
         {
             Vector3 dir = (transform.position - Camera.main.transform.position).normalized;
             if (dir.sqrMagnitude > 0.5f)
                 transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
         }
+    }
+
+    // ========================================================================
+    // Build geometry from condition (dot positions & default materials)
+    // ========================================================================
+    public void BuildFromCondition(CondLib.StimulusCondition cond)
+    {
         ClearChildren();
 
         if (cond.subfields == null || cond.subfields.Length < 4)
@@ -118,6 +131,8 @@ public class StimulusBuilder : MonoBehaviour
             int count = Mathf.Max(1, dotsPerField / 2);
             System.Random rng = (i < 2) ? rngA : rngB;
 
+            sf.trajectoryPos = new Vector2[count];
+
             for (int d = 0; d < count; d++)
             {
                 var dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -137,6 +152,7 @@ public class StimulusBuilder : MonoBehaviour
                     transform.position + transform.right * p.x + transform.up * p.y;
 
                 sf.dots.Add(dot.transform);
+                sf.trajectoryPos[d] = p;
             }
 
             Subfields[i] = sf;
@@ -214,32 +230,29 @@ public class StimulusBuilder : MonoBehaviour
             else z = 0f; // Fixation plane: no offset
             if (z == 0f) continue;
 
-            // Depth axis is transform.forward, which is perpendicular to the
-            // stimulus plane (transform.right × transform.up) by definition.
-            // The StimulusBuilder is oriented to face the camera in
-            // BuildFromCondition, so transform.forward == optical axis at trial
-            // start. Using any other vector here causes lateral drift because
-            // ToLocalPlane (called by StepTranslation) projects onto right/up
-            // and leaks non-forward depth components into the XY coordinates
-            // each frame.
-            Vector3 depthAxis = transform.forward;
-            Vector3 zVec = depthAxis * z;
+            // Depth axis is transform.forward — perpendicular to the stimulus
+            // plane by definition, so depth offsets never leak into the lateral
+            // (right/up) coordinates read by StepTranslation.
+            Vector3 zVec = transform.forward * z;
 
-            // Scale local (x,y) by (D+z)/D so that each dot's cyclopean angular
-            // position is unchanged by the depth shift. Without this, dots at
-            // constant world-space x,y appear to expand (Near) or contract (Far)
-            // when depth is applied because perspective projects them to x/(D+z).
-            // Disparity is unaffected — each eye still receives a slightly
-            // different angle to the dot.
+            // Perspective scale: keeps each dot's cyclopean angular position
+            // constant when depth changes. Reads from trajectoryPos (the
+            // authoritative unscaled 2D position) so scaling never accumulates
+            // across frames regardless of how many times ApplyDepthOffsets runs.
             float perspScale = (viewDistanceMeters + z) / viewDistanceMeters;
 
-            foreach (var dot in Subfields[s].dots)
+            var tpos = Subfields[s].trajectoryPos;
+            if (tpos == null) continue;
+
+            var dotList = Subfields[s].dots;
+            for (int k = 0; k < dotList.Count; k++)
             {
+                var dot = dotList[k];
                 if (dot == null) continue;
-                Vector3 local = ToLocalPlane(dot.position);
-                local.x *= perspScale;
-                local.y *= perspScale;
-                dot.position = FromLocalPlane(local) + zVec;
+                dot.position = FromLocalPlane(new Vector3(
+                    tpos[k].x * perspScale,
+                    tpos[k].y * perspScale,
+                    0f)) + zVec;
             }
         }
     }
@@ -255,14 +268,14 @@ public class StimulusBuilder : MonoBehaviour
         Quaternion q = Quaternion.AngleAxis(ang, transform.forward);
 
         var dots = Subfields[subfieldIndex].dots;
+        var tpos = Subfields[subfieldIndex].trajectoryPos;
         for (int k = 0; k < dots.Count; k++)
         {
             var t = dots[k];
-            Vector3 local = ToLocalPlane(t.position);
-            local = q * local;
-            t.position = FromLocalPlane(local);
-
+            Vector2 tp = tpos[k];
+            Vector3 local = q * new Vector3(tp.x, tp.y, 0f);
             HandleOutOfBounds(subfieldIndex, k, ref local, frame: -1);
+            tpos[k] = new Vector2(local.x, local.y);
             t.position = FromLocalPlane(local);
         }
     }
@@ -272,16 +285,17 @@ public class StimulusBuilder : MonoBehaviour
         if (!IsValid(subfieldIndex)) return;
 
         var dots = Subfields[subfieldIndex].dots;
+        var tpos = Subfields[subfieldIndex].trajectoryPos;
         for (int k = 0; k < dots.Count; k++)
         {
             var t = dots[k];
 
-            Vector3 lp = ToLocalPlane(t.position);
-            lp.x += deltaLocalMeters.x;
-            lp.y += deltaLocalMeters.y;
+            Vector2 tp = tpos[k];
+            Vector3 lp = new Vector3(tp.x + deltaLocalMeters.x, tp.y + deltaLocalMeters.y, 0f);
 
             HandleOutOfBounds(subfieldIndex, k, ref lp, frame);
 
+            tpos[k] = new Vector2(lp.x, lp.y);
             t.position = FromLocalPlane(lp);
 
             if (frame >= 0)
@@ -315,17 +329,18 @@ public class StimulusBuilder : MonoBehaviour
             new Vector2( 1,-1).normalized
         };
 
+        var tpos = Subfields[subfieldIndex].trajectoryPos;
         for (int k = 0; k < dots.Count; k++)
         {
             var t = dots[k];
             Vector2 delta = dirs[k % dirs.Length] * stepMeters;
 
-            Vector3 lp = ToLocalPlane(t.position);
-            lp.x += delta.x;
-            lp.y += delta.y;
+            Vector2 tp = tpos[k];
+            Vector3 lp = new Vector3(tp.x + delta.x, tp.y + delta.y, 0f);
 
             HandleOutOfBounds(subfieldIndex, k, ref lp, frame);
 
+            tpos[k] = new Vector2(lp.x, lp.y);
             t.position = FromLocalPlane(lp);
 
             if (frame >= 0)
