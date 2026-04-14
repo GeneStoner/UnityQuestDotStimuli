@@ -50,20 +50,35 @@ The label describes where the cued field was *when you saw the onset cue*, not w
 
 ## Does the Data Make Sense?
 
-Yes. The data are interpretable once you track where the translator *actually translates*:
+Yes — but the Z condition tells a different story from N.
 
-| Condition | Translator translates in | CUED accuracy |
-|-----------|--------------------------|---------------|
-| N "Near"  | Near                     | 43.8%         |
-| N "Far"   | Far                      | 75.0%         |
-| Z "Near"  | **Far** (post-swap)      | **97%**       |
-| Z "Far"   | **Near** (post-swap)     | 50.0%         |
+### N condition: Far translation is easier
 
-The pattern is fully consistent: **Far translation → better CUED performance**, Near translation → worse, regardless of condition or which depth plane the cue appeared in. The Z condition just re-indexes which label maps to which translation plane.
+| N condition | Translator in | CUED accuracy | UNCUED accuracy |
+|-------------|---------------|---------------|-----------------|
+| Label "Near" | Near         | 43.8%         | 15.6% (label inverted → translator actually Near) |
+| Label "Far"  | Far          | 75.0%         | 56.2% (label inverted → translator actually Far)  |
 
-The Z "Near" ceiling (97%) likely reflects the combination of:
-1. Far translation (intrinsically easier)
-2. A salient depth-change transient at tStart that further highlights the cued field
+Both arms: Far translation > Near translation. General Far advantage.
+
+### Z condition: the jump direction dominates
+
+In Z, both arms prefer **Near translation** — but the Near condition comes with an approach (Far→Near jump at tStart):
+
+| Z condition | Jump direction | Translator in (after swap) | CUED accuracy | UNCUED accuracy |
+|-------------|---------------|---------------------------|---------------|-----------------|
+| Label "Far"  (CUED) / "Near" (UNCUED) | **Far → Near (approaching)** | Near | **97%** | **40.6%** |
+| Label "Near" (CUED) / "Far"  (UNCUED) | **Near → Far (receding)**    | Far  | 50.0%  | 12.5%   |
+
+What looks like a reversal ("CUED: Far label wins; UNCUED: Near label wins") is entirely the label inversion. Both arms see the same physical reality: **approaching wins, receding loses**.
+
+The **direction of the depth jump at tStart** appears to be the dominant variable in Z condition:
+- Far→Near (approaching/looming): extremely salient — 97% CUED, 40% UNCUED
+- Near→Far (receding): much less salient — 50% CUED, 12% UNCUED (near floor)
+
+This overrides the general Far > Near translation advantage seen in N. The N-condition Far advantage may be a steady-state discriminability effect (dots subtend slightly more visual angle at greater depth under perspective projection). The Z-condition approach/recede asymmetry is a transient salience effect at tStart.
+
+Both effects are real but operate at different timescales and through different mechanisms.
 
 ---
 
