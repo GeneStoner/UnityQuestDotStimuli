@@ -75,28 +75,23 @@ public class StimulusBuilder : MonoBehaviour
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
     // ========================================================================
-    // One-time orientation init
+    // Build geometry from condition (dot positions & default materials)
     // ========================================================================
-    void Start()
+    public void BuildFromCondition(CondLib.StimulusCondition cond)
     {
-        // Orient the StimulusBuilder to face the camera once at scene load so
-        // that transform.forward equals the true optical axis for the session.
-        // Done here (not per-trial) so the axis is stable under head movement:
-        // transform.forward is fixed for the session, perpendicular to
-        // transform.right/up, and ApplyDepthOffsets can use it without drift.
+        // Re-orient to face the camera at trial onset (not in Start) so that
+        // XR tracking is guaranteed initialized. This corrects for headset
+        // repositioning between trials and re-donning mid-session. Within a
+        // trial the rotation is locked — no per-frame drift. transform.forward
+        // is then perpendicular to right/up, so depth offsets never leak
+        // into lateral coordinates.
         if (Camera.main != null)
         {
             Vector3 dir = (transform.position - Camera.main.transform.position).normalized;
             if (dir.sqrMagnitude > 0.5f)
                 transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
         }
-    }
 
-    // ========================================================================
-    // Build geometry from condition (dot positions & default materials)
-    // ========================================================================
-    public void BuildFromCondition(CondLib.StimulusCondition cond)
-    {
         ClearChildren();
 
         if (cond.subfields == null || cond.subfields.Length < 4)
