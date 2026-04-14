@@ -22,6 +22,9 @@ See linked files for full details:
 - `Agents/Packaging/collaborator_brief_HK.md` — shareable summary + setup guide for Dr. Hulusi K.
 - [endogenous_color_design.md](endogenous_color_design.md) — **NEXT EXPERIMENT (lower priority)**: Design B protocol (block instruction + 50/50 validity + simultaneous onset); analysis bridge; Step 0 prerequisite
 - [depth_swap_artifact.md](depth_swap_artifact.md) — **ARTIFACT**: transform.forward bug in Z/CZ conditions; fix; _v2 exclusion rule; key numbers; figure locations
+- `Agents/SwapPilot/WriteUps/stimulus_artifact_brief.md` — **ACTIVE INVESTIGATION**: full brief for artifact audit; Near/Far as artifact? depth loss? general code audit; see open-questions items 21–23
+
+- [stimulus_artifact_fix_2026_04_13.md](stimulus_artifact_fix_2026_04_13.md) — **CRITICAL**: jerk+expansion fixes (2026-04-13); F1×F2 synergy collapses post-fix; provisional story = XY-based cueing
 
 ## Quick Reference
 - **Project**: `/Users/genestoner1/Projects/ObjectBasedAttention/VRDots/`
@@ -37,6 +40,20 @@ See linked files for full details:
 
 ## ⚠️ DATA INTEGRITY FLAG (2026-04-11)
 Unity asset bug produced jerky motion artifact during depth swaps (Z/CZ conditions). Root cause: `StimulusBuilder.ApplyDepthOffsets()` used `transform.forward` instead of `Camera.main.transform.forward` — ~5° pitch misalignment created ~19°/sec upward impulse per depth-swap frame (8.2× the 2.26°/sec translation signal). Fixed 2026-04-11. **Exclusion rule**: TSV files whose `experimentName` does NOT contain `_v2` are pre-fix; exclude Z/CZ rows. N and C conditions in pre-fix files are clean. F1 (cueing, from N) and F4 (Near/Far, from N) are NOT affected. Every experiment with a depth swap condition needs at least one clean _v2 replication. See [depth_swap_artifact.md](depth_swap_artifact.md) for full details.
+
+## Current Status (2026-04-13 — stimulus fixes + first clean session)
+- **FIXED**: Two motion artifacts eliminated in `StimulusBuilder.cs` (commit 5c4c95a). Rollback: `git checkout ca933f2 -- Assets/Scripts/StimulusBuilder.cs`
+  - Jerk: `Start()` sets `transform.rotation` once from camera→stimulus geometry; stable for session
+  - Expansion/contraction: `SubfieldRuntime.trajectoryPos[]` stores authoritative 2D dot positions; `ApplyDepthOffsets` reads from `trajectoryPos` + applies `perspScale=(D+z)/D`; no accumulation
+- **SESSION 260413_1846**: n=512, DecoupledDots_005m_v2, first clean post-fix session
+  - F1 dot cueing: +27.3pp*** (robust)
+  - F2 depth cueing: +6.2pp n.s. (was +12.5pp*** — weaker post-fix)
+  - F1×F2 synergy: +7.8pp n.s. (was +32.7pp*** — collapsed post-fix)
+  - Near/Far: CUED Far > Near +21.9pp, UNCUED Near > Far −18.8pp (direction intact, n.s. at n=32/cell)
+  - Residual UP bias in Z: 37.6% (vs N=21.0%) — ~16pp above baseline, source unclear
+- **PROVISIONAL STORY**: Previous F1×F2 synergy was largely artifactual (jerk punished CUED+Z trials). Depth swap is attentionally disruptive but cueing is mostly XY-based. Near/Far asymmetry is a real structural effect.
+- **NEXT**: One more DecoupledDots session, then move to 50% swaps (ZdA/ZdB). Consider shader-based architecture for full artifact elimination.
+- **Figure**: `Agents/SwapPilot/Figures/decoupled_dots_260413_1846.png`
 
 ## Current Status (2026-04-11 — artifact investigation + fix)
 - **ROOT CAUSE FOUND**: `StimulusBuilder.ApplyDepthOffsets()` used `transform.forward` not `Camera.main.transform.forward`. ~5° pitch → ~19°/sec upward impulse at depth-swap frame.
