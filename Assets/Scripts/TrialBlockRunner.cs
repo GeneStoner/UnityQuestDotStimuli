@@ -679,21 +679,22 @@ public class TrialBlockRunner : MonoBehaviour
             bool startTrialInput = Input.GetKeyDown(startKey) || _xrTriggerPressedThisFrame;
             _xrTriggerPressedThisFrame = false; // Consume the input
 
+            // Continuously refresh rotation every frame during WaitingForStart.
+            // This ensures the rotation is always current regardless of how
+            // quickly the user presses the trigger after re-donning: even if
+            // tracking took 500 ms to stabilize, by the time the user sees
+            // the preview and presses the button the rotation has already
+            // converged to the correct value.
+            builder.RefreshRotation();
+
             if (startTrialInput)
             {
-                // Refresh rotation at trigger press — XR tracking is guaranteed
-                // stable by now (user had to physically press the button).
-                // Corrects any residual mis-alignment from BuildFromCondition()
-                // firing during ITI right after headset re-donning.
-                builder.RefreshRotation();
-
                 _phase = TrialPhase.Stimulus;
                 _accum = 0f; // don't carry preview accumulation into first stimulus step
                 builder.SetDotsActive(true);
                 Debug.Log("[TrialBlockRunner] Trial started!");
             }
             // Field A is shown static at frame-0 positions (set in NextTrial).
-            // No per-frame update needed during WaitingForStart.
 
             if (hud != null) hud.Tick();
             return;
