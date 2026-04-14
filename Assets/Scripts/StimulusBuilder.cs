@@ -75,16 +75,52 @@ public class StimulusBuilder : MonoBehaviour
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
     // ========================================================================
+    // Refresh rotation at trigger press (guaranteed-stable tracking)
+    // ========================================================================
+    /// <summary>
+    /// Recomputes transform.rotation from the current camera position and
+    /// rebuilds all dot world positions from their stored trajectoryPos.
+    ///
+    /// Call this when the user presses the trigger to start a trial
+    /// (WaitingForStart → Stimulus transition in TrialBlockRunner). By
+    /// that moment the user has been wearing the headset long enough for
+    /// XR tracking to fully stabilize — even after mid-session re-donning.
+    ///
+    /// BuildFromCondition() also sets the rotation, but it fires during
+    /// the ITI when tracking may still be recovering after re-donning.
+    /// This second call, at trigger press, corrects any residual error.
+    /// Depth offsets are reapplied automatically on the first SimStep.
+    /// </summary>
+    public void RefreshRotation()
+    {
+        if (Camera.main != null)
+        {
+            Vector3 dir = (transform.position - Camera.main.transform.position).normalized;
+            if (dir.sqrMagnitude > 0.5f)
+                transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        }
+
+        // Rebuild flat dot positions from trajectoryPos with updated transform.
+        if (Subfields == null) return;
+        foreach (var sf in Subfields)
+        {
+            if (sf == null || sf.dots == null || sf.trajectoryPos == null) continue;
+            for (int k = 0; k < sf.dots.Count && k < sf.trajectoryPos.Length; k++)
+            {
+                if (sf.dots[k] == null) continue;
+                sf.dots[k].position = FromLocalPlane(
+                    new Vector3(sf.trajectoryPos[k].x, sf.trajectoryPos[k].y, 0f));
+            }
+        }
+    }
+
+    // ========================================================================
     // Build geometry from condition (dot positions & default materials)
     // ========================================================================
     public void BuildFromCondition(CondLib.StimulusCondition cond)
     {
-        // Re-orient to face the camera at trial onset (not in Start) so that
-        // XR tracking is guaranteed initialized. This corrects for headset
-        // repositioning between trials and re-donning mid-session. Within a
-        // trial the rotation is locked — no per-frame drift. transform.forward
-        // is then perpendicular to right/up, so depth offsets never leak
-        // into lateral coordinates.
+        // Set rotation at trial setup as a first-pass estimate. A second,
+        // more reliable call happens at trigger press via RefreshRotation().
         if (Camera.main != null)
         {
             Vector3 dir = (transform.position - Camera.main.transform.position).normalized;

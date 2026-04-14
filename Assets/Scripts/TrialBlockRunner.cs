@@ -681,6 +681,12 @@ public class TrialBlockRunner : MonoBehaviour
 
             if (startTrialInput)
             {
+                // Refresh rotation at trigger press — XR tracking is guaranteed
+                // stable by now (user had to physically press the button).
+                // Corrects any residual mis-alignment from BuildFromCondition()
+                // firing during ITI right after headset re-donning.
+                builder.RefreshRotation();
+
                 _phase = TrialPhase.Stimulus;
                 _accum = 0f; // don't carry preview accumulation into first stimulus step
                 builder.SetDotsActive(true);
