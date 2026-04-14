@@ -135,7 +135,57 @@ disparity = x_left - x_right = IPD / z_world
 
 ---
 
-## 7. General lesson: verification pipeline
+## 7. Additional fixes proposed 2026-04-13 — NOT YET IMPLEMENTED OR VERIFIED *
+
+The following changes were drafted, implemented, and then **reverted** on 2026-04-13 pending verification. Session 260413_1406 was collected with these changes active and therefore cannot serve as a clean test of the Saturday fix. Each item is marked * to indicate it needs further analysis before being committed.
+
+### 7a. Perspective correction in `ApplyDepthOffsets` *
+
+**Motivation.** When a dot changes depth plane at tStart, its physical (x,y) position in the StimulusBuilder's local plane stays fixed, but its *angular* screen position changes slightly because the viewing distance changes. For a dot at 2° eccentricity with a 0.10m depth change at 2m viewing distance, this radial shift is ≈ 0.10° — perceived as a small symmetric radial "pop."
+
+**Proposed fix.** At the frame where a subfield changes depth plane (`prevDp != dp`), scale the local XY coordinates before applying the new depth offset:
+
+```csharp
+float angularScale = (viewDistanceMeters + z_new) / (viewDistanceMeters + z_old);
+local.x *= angularScale;
+local.y *= angularScale;
+```
+
+**Why not yet verified.** The correction is geometrically correct in theory. But (a) the effect is small (~4% of translation signal), (b) it is radially symmetric so it produces no directional bias, and (c) it modifies stored dot positions persistently — any error in the scaling formula would accumulate. Needs simulation-level verification before deployment. Also interacts with item 7b below.
+
+### 7b. `AlignStimulusBuilderAxis()` in `TrialBlockRunner.Start()` *
+
+**Motivation.** The Saturday fix (Section 3) replaces `transform.forward` with `Camera.main.transform.forward` at runtime, which couples depth offset direction to head orientation during the session. An alternative approach: at `Start()`, forcibly align `builder.transform.rotation` to the horizontal viewing direction, so `transform.forward` is reliably horizontal and camera-independent.
+
+**Proposed implementation:**
+```csharp
+Vector3 pos = builder.transform.position;
+Vector3 horizontal = new Vector3(pos.x, 0f, pos.z);
+builder.transform.rotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
+```
+
+**Why not yet verified.** This approach and the Saturday fix (`Camera.main.transform.forward`) are **mutually exclusive alternatives** — if both are active simultaneously the behavior depends on which axis is used where. The Saturday fix is already committed and tested (in principle); this approach reverts `ApplyDepthOffsets` back to `transform.forward` and relies on the alignment being set correctly at startup. Needs a clean comparison and confirmed behavioral verification (UP bias ≤ N baseline) before replacing the current fix.
+
+### 7c. Depth-corrected translation speed *
+
+**Motivation.** The translation step is computed as `speed_degPerSec × metersPerDeg × dt`. The `metersPerDeg` conversion uses the nominal viewing distance (2.0m). But dots in Near (1.95m) and Far (2.05m) planes have slightly different actual viewing distances, so the same local XY step produces slightly different angular velocities. The proposed fix computes `metersPerDeg` using the actual depth-plane viewing distance:
+
+```csharp
+float zWorld = spec.viewDistance_m + zOffset;  // actual distance to dot's plane
+float mpdCorrected = zWorld * Mathf.Tan(Mathf.Deg2Rad * 1f);
+```
+
+**Why not yet verified.** The effect size is small: for 0.05m depth at 2.0m, the correction is ±2.5% of translation speed. Whether this is perceptually meaningful is unknown. More importantly, applying different translation speeds to Near vs Far fields in N-condition trials (where no swap occurs) could introduce a systematic Near/Far angular-speed difference that didn't previously exist. Needs careful thought about whether this is a fix or a confound.
+
+### 7d. `balanceDelayedFieldColor` vs `linkDepthColor` in `ExpSpecTestPhase.cs` *
+
+**Motivation.** In the post-swap color assignment block, the original code conditionally executes on `if (linkDepthColor)`. Today's change replaced this with `if (balanceDelayedFieldColor)`.
+
+**Why not yet verified.** These two flags have different semantics. `linkDepthColor` = colors are explicitly linked to depth planes. `balanceDelayedFieldColor` = two distinct colors are in use (Red/Green experiment). The original condition may have been intentional. Changing this gate could affect color assignment in experiments that use two colors but don't intend to link them to depth. Needs careful logic review before committing.
+
+---
+
+## 8. General lesson: verification pipeline
 
 **How this bug was found.** Observer GS reported "jerky upward motion" on a subset of trials. This prompted analysis of the wrong-response direction distribution, which revealed the UP spike. Without the subjective report, the bug would have remained undetected. The data revealed it only because the effect was strong enough to dominate the response in ~40% of trials.
 
