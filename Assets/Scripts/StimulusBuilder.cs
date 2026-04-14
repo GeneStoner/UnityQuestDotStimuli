@@ -48,6 +48,7 @@ public class StimulusBuilder : MonoBehaviour
 
     public SubfieldRuntime[] Subfields { get; private set; } = new SubfieldRuntime[4];
 
+
     [Tooltip("Base random seed; used to seed subfield RNGs.")]
     public int randomSeed = 12345;
 
@@ -72,6 +73,17 @@ public class StimulusBuilder : MonoBehaviour
     // ========================================================================
     public void BuildFromCondition(CondLib.StimulusCondition cond)
     {
+        // Orient the stimulus plane to face the camera so that transform.forward
+        // is the true optical axis. This ensures ApplyDepthOffsets' depth vector
+        // is perpendicular to the stimulus plane (transform.right × transform.up),
+        // which is required to avoid lateral drift accumulation when StepTranslation
+        // calls ToLocalPlane on dots that carry a depth offset.
+        if (Camera.main != null)
+        {
+            Vector3 dir = (transform.position - Camera.main.transform.position).normalized;
+            if (dir.sqrMagnitude > 0.5f)
+                transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        }
         ClearChildren();
 
         if (cond.subfields == null || cond.subfields.Length < 4)
@@ -202,20 +214,31 @@ public class StimulusBuilder : MonoBehaviour
             else z = 0f; // Fixation plane: no offset
             if (z == 0f) continue;
 
-            // Project each dot to local XY (zeroing any prior Z offset),
-            // then reconstruct at fixation plane + depth offset along the camera's
-            // optical axis. Using Camera.main.transform.forward rather than
-            // transform.forward avoids a screen-space displacement artifact that
-            // occurs when the StimulusBuilder's world-space orientation is not
-            // perfectly aligned with the observer's gaze direction.
-            Vector3 depthAxis = (Camera.main != null)
-                ? Camera.main.transform.forward
-                : transform.forward;
+            // Depth axis is transform.forward, which is perpendicular to the
+            // stimulus plane (transform.right × transform.up) by definition.
+            // The StimulusBuilder is oriented to face the camera in
+            // BuildFromCondition, so transform.forward == optical axis at trial
+            // start. Using any other vector here causes lateral drift because
+            // ToLocalPlane (called by StepTranslation) projects onto right/up
+            // and leaks non-forward depth components into the XY coordinates
+            // each frame.
+            Vector3 depthAxis = transform.forward;
             Vector3 zVec = depthAxis * z;
+
+            // Scale local (x,y) by (D+z)/D so that each dot's cyclopean angular
+            // position is unchanged by the depth shift. Without this, dots at
+            // constant world-space x,y appear to expand (Near) or contract (Far)
+            // when depth is applied because perspective projects them to x/(D+z).
+            // Disparity is unaffected — each eye still receives a slightly
+            // different angle to the dot.
+            float perspScale = (viewDistanceMeters + z) / viewDistanceMeters;
+
             foreach (var dot in Subfields[s].dots)
             {
                 if (dot == null) continue;
                 Vector3 local = ToLocalPlane(dot.position);
+                local.x *= perspScale;
+                local.y *= perspScale;
                 dot.position = FromLocalPlane(local) + zVec;
             }
         }
