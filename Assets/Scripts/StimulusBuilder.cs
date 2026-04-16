@@ -50,6 +50,10 @@ public class StimulusBuilder : MonoBehaviour
         // ApplyDepthOffsets reads this instead of ToLocalPlane(dot.position) so
         // that perspective scaling never accumulates across frames.
         public Vector2[] trajectoryPos;
+
+        // Cached renderer references — populated in BuildFromCondition so that
+        // ApplyScreenSpaceDots never calls GetComponent() per frame.
+        public List<Renderer> renderers;
     }
 
     public SubfieldRuntime[] Subfields { get; private set; } = new SubfieldRuntime[4];
@@ -71,6 +75,24 @@ public class StimulusBuilder : MonoBehaviour
     [HideInInspector] public float exclusionRadiusMeters = 0f;
     [HideInInspector] public float depthOffset_m = 0f;
     [HideInInspector] public float depthBias_m = 0f;
+
+    [Header("Screen-space rendering (Solution A)")]
+    [Tooltip("When true, renders dots directly in screen space using DotScreenSpace shader. " +
+             "Eliminates world-space axis-alignment and perspective-accumulation artifacts. " +
+             "Toggle off to revert to the classic world-space sphere path instantly.")]
+    public bool useScreenSpaceShader = false;
+
+    [Tooltip("Inter-pupillary distance in meters used to compute binocular disparity. " +
+             "Default 0.063 m (average adult). Only used when useScreenSpaceShader = true.")]
+    public float ipdMeters = 0.063f;
+
+    // Reusable MaterialPropertyBlock — allocated once, reused for every per-dot write.
+    private MaterialPropertyBlock _mpb;
+
+    // Last condition/frame passed to ApplyScreenSpaceDots so that RefreshRotation
+    // can re-apply NDC positions during the WaitingForStart preview loop.
+    private CondLib.StimulusCondition _lastSSCond;
+    private int _lastSSFrame = 0;
 
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
@@ -112,6 +134,11 @@ public class StimulusBuilder : MonoBehaviour
                     new Vector3(sf.trajectoryPos[k].x, sf.trajectoryPos[k].y, 0f));
             }
         }
+
+        // In screen-space mode the NDC positions also need refreshing so the
+        // WaitingForStart preview stays correct after every RefreshRotation call.
+        if (useScreenSpaceShader && _lastSSCond != null)
+            ApplyScreenSpaceDots(_lastSSCond, _lastSSFrame);
     }
 
     // ========================================================================
@@ -163,10 +190,15 @@ public class StimulusBuilder : MonoBehaviour
             System.Random rng = (i < 2) ? rngA : rngB;
 
             sf.trajectoryPos = new Vector2[count];
+            sf.renderers     = new List<Renderer>(count);
 
             for (int d = 0; d < count; d++)
             {
-                var dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                // Screen-space path uses Quads (UV 0-1 needed for circle shader).
+                // Classic path uses Spheres. Both are invisible until enabled by ApplyAppearance.
+                var dot = useScreenSpaceShader
+                    ? GameObject.CreatePrimitive(PrimitiveType.Quad)
+                    : GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 dot.name = $"dot_{d}";
                 dot.transform.SetParent(sf.root, false);
                 dot.transform.localScale = Vector3.one * dotSizeMeters;
@@ -174,8 +206,10 @@ public class StimulusBuilder : MonoBehaviour
                 var r = dot.GetComponent<Renderer>();
                 if (r != null)
                 {
-                    r.material = sf.material;
-                    r.enabled = false; // Start hidden; ApplyConditionFrame will enable as needed
+                    r.material = useScreenSpaceShader
+                        ? MakeScreenSpaceMaterial(sf.color)
+                        : MakeAdditiveMaterial(sf.color);
+                    r.enabled = false; // Start hidden; ApplyAppearance will enable as needed
                 }
 
                 Vector2 p = UniformAnnulus(rng, ApertureRadiusMeters, exclusionRadiusMeters);
@@ -183,6 +217,7 @@ public class StimulusBuilder : MonoBehaviour
                     transform.position + transform.right * p.x + transform.up * p.y;
 
                 sf.dots.Add(dot.transform);
+                sf.renderers.Add(r);   // cache — may be null if Renderer missing
                 sf.trajectoryPos[d] = p;
             }
 
@@ -244,6 +279,14 @@ public class StimulusBuilder : MonoBehaviour
     /// </summary>
     public void ApplyDepthOffsets(CondLib.StimulusCondition cond, int frame)
     {
+        // Screen-space path: disparity is applied in the shader via MaterialPropertyBlock.
+        // The classic world-space z-offset is not used.
+        if (useScreenSpaceShader)
+        {
+            ApplyScreenSpaceDots(cond, frame);
+            return;
+        }
+
         if (cond == null || Subfields == null || (depthOffset_m == 0f && depthBias_m == 0f)) return;
         if (frame < 0 || frame >= cond.timeline.totalFrames) return;
 
@@ -286,6 +329,121 @@ public class StimulusBuilder : MonoBehaviour
                     0f)) + zVec;
             }
         }
+    }
+
+    // ========================================================================
+    // Screen-space rendering (Solution A)
+    // ========================================================================
+    /// <summary>
+    /// Computes the cyclopean NDC position and binocular disparity for each dot
+    /// and pushes the values to each dot's renderer via MaterialPropertyBlock.
+    /// Called every frame instead of (and from) ApplyDepthOffsets when
+    /// useScreenSpaceShader = true.  TrialBlockRunner requires no changes.
+    ///
+    /// Coordinate derivation:
+    ///   World centre   = FromLocalPlane(trajectoryPos[k])   (fixation plane)
+    ///   Billboard axes = transform.right / transform.up     (passed to shader)
+    ///   Half size      = dotSizeMeters / 2                  (world metres)
+    ///   Half disparity = IPD × Δz / (2 × viewDist)         (world metres)
+    ///                    positive = uncrossed/Far, left eye +, right eye −
+    ///   Projection     = TransformWorldToHClip in shader     (per-eye correct)
+    /// </summary>
+    private void ApplyScreenSpaceDots(CondLib.StimulusCondition cond, int frame)
+    {
+        if (cond == null || Subfields == null) return;
+        if (Camera.main == null) return;
+
+        // Store so RefreshRotation can re-apply during WaitingForStart.
+        _lastSSCond  = cond;
+        _lastSSFrame = frame;
+
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();
+
+        // Stimulus plane axes — passed to shader so it can build billboard corners
+        // in world space without any axis-alignment constraint on the camera.
+        Vector4 rightDir = transform.right;
+        Vector4 upDir    = transform.up;
+        float   halfSize = dotSizeMeters * 0.5f;
+
+        int sfCount = Mathf.Min(Subfields.Length,
+                                cond.subfields == null ? 0 : cond.subfields.Length);
+
+        for (int s = 0; s < sfCount; s++)
+        {
+            var sf = Subfields[s];
+            if (sf == null || sf.dots == null || sf.trajectoryPos == null
+                           || sf.renderers == null) continue;
+
+            // Depth plane → Δz (metres from fixation, same sign logic as ApplyDepthOffsets).
+            float Δz = 0f;
+            var tracks = cond.subfields[s];
+            if (tracks.depthByFrame != null && frame >= 0
+                                            && frame < tracks.depthByFrame.Length)
+            {
+                var dp = tracks.depthByFrame[frame];
+                if      (dp == CondLib.DepthPlane.Near) Δz = depthBias_m - depthOffset_m;
+                else if (dp == CondLib.DepthPlane.Far)  Δz = depthBias_m + depthOffset_m;
+            }
+
+            // Per-eye world-space shift that creates the correct binocular disparity.
+            //
+            //   For depth D + Δz vs. fixation at D, relative disparity ≈ IPD × Δz / D²
+            //   This maps to a world-space shift per eye of: IPD × Δz / (2 × D)
+            //
+            // Near (Δz < 0) → halfDisp < 0 before negation → after negation positive
+            //   Left eye (eyeSign=+1) shifts RIGHT  = crossed / Near disparity ✓
+            //   Right eye (eyeSign=−1) shifts LEFT
+            // Far (Δz > 0) → halfDisp negative after negation
+            //   Left eye shifts LEFT = uncrossed / Far disparity ✓
+            float halfDispWorld = -(ipdMeters * Δz / (2f * viewDistanceMeters));
+
+            int dotCount = Mathf.Min(sf.dots.Count, sf.trajectoryPos.Length);
+            for (int k = 0; k < dotCount; k++)
+            {
+                var dot = sf.dots[k];
+                var ren = (sf.renderers != null && k < sf.renderers.Count)
+                         ? sf.renderers[k] : null;
+                if (dot == null || ren == null) continue;
+
+                // Dot centre in world space at the fixation plane.
+                Vector3 worldCenter = FromLocalPlane(
+                    new Vector3(sf.trajectoryPos[k].x, sf.trajectoryPos[k].y, 0f));
+
+                // Update GameObject position so Unity's frustum culler places the
+                // dot in view when it should be (world ≈ render position).
+                dot.position = worldCenter;
+
+                ren.GetPropertyBlock(_mpb);
+                _mpb.SetVector("_WorldCenter",        new Vector4(worldCenter.x,
+                                                                   worldCenter.y,
+                                                                   worldCenter.z, 0f));
+                _mpb.SetVector("_RightDir",           rightDir);
+                _mpb.SetVector("_UpDir",              upDir);
+                _mpb.SetFloat ("_HalfSizeMeters",     halfSize);
+                _mpb.SetFloat ("_HalfDisparityWorld", halfDispWorld);
+                ren.SetPropertyBlock(_mpb);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a material using the DotScreenSpace shader for screen-space rendering.
+    /// Falls back to MakeAdditiveMaterial if the shader is not found.
+    /// </summary>
+    Material MakeScreenSpaceMaterial(Color c)
+    {
+        Shader sh = Shader.Find("Custom/DotScreenSpace");
+        if (sh == null)
+        {
+            Debug.LogWarning("[StimulusBuilder] DotScreenSpace shader not found — " +
+                             "falling back to additive material. " +
+                             "Ensure 'Assets/Shaders/DotScreenSpace.shader' is in the project.");
+            return MakeAdditiveMaterial(c);
+        }
+
+        var m = new Material(sh);
+        m.SetColor("_Color", c);
+        return m;
     }
 
     // ========================================================================

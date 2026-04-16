@@ -1,5 +1,60 @@
 # DecoupledDots Experiment — Design & Results
-*Written 2026-04-06*
+*Written 2026-04-06 · **Major update 2026-04-14 — artifact correction***
+
+---
+
+## ⚠️ DATA INTEGRITY UPDATE (2026-04-14) — READ FIRST
+
+**The F1×F2 synergy (+32.7pp***) reported in §3.6 was substantially artifact-inflated and should not be cited as a clean result.**
+
+### What happened
+
+Sessions S1–S4 (all pre-fix data in §3) were collected with a Unity rendering bug: `StimulusBuilder.ApplyDepthOffsets()` used `transform.forward` (StimulusBuilder's world axis, ~5° tilted from true optical axis) instead of `Camera.main.transform.forward`. At every depth-swap frame (tStart in Z/CZ conditions), this misalignment injected an ~19°/sec upward impulse — 8.2× the 2.26°/sec translation signal. The artifact was confirmed by UP-response bias: 44–50% of wrong responses in Z conditions went to 90° (upward) vs ~4% in N conditions. This selectively destroyed CUED+Z and CUED+CZ accuracy, which are exactly the F1=1, F2=0 cells. Artificially suppressing those cells inflated the apparent F1×F2 interaction.
+
+### Clean post-fix results (2026-04-14)
+
+Two clean sessions collected post-fix (DecoupledDots_005m_**v2** assets only; UP bias Z ≈ chance):
+- **260413_2051**: n=512, full session
+- **260414_0922 Q3+Q4**: n≈250 (trials ≥263; Q1 excluded — re-don artifact)
+- **Combined clean: n=762**
+
+#### Raw accuracy (combined clean n=762)
+
+| Swap | CUED | UNCUED | Dot Δ |
+|------|------|--------|-------|
+| N  | 54.1% (53/98)  | 31.5% (28/89)  | +22.6pp† |
+| C  | 57.4% (54/94)  | 29.2% (28/96)  | +28.3pp*** |
+| Z  | 62.5% (60/96)  | 24.5% (23/94)  | +38.0pp*** |
+| CZ | 55.0% (55/100) | 31.6% (30/95)  | +23.4pp** |
+
+#### Three-cueing framework (new framing, 2026-04-14)
+
+For each cue type, the "cued arm" is whichever of CUED/UNCUED has the translation in the cue plane:
+
+| Cue type | Cued arm | Overall effect (n=762) |
+|----------|----------|------------------------|
+| **Dot (temporal onset)** | CUED always | **+28.1pp, p<.001 ***  ← robust** |
+| Depth field | CUED for N,C; UNCUED for Z,CZ | **−2.9pp, n.s.** |
+| Color field | CUED for N,Z; UNCUED for C,CZ | **+2.0pp, n.s.** |
+
+Depth and color field cueing pool to exactly zero because their sign flips depending on which arm has the translation in the cue plane. In N and C, the depth-cued arm is CUED (strong); in Z and CZ, the depth-cued arm is UNCUED (weak, because temporal cueing dominates). The two halves cancel. **There is no independent depth or color field-cueing signal detectable above and beyond the temporal dot cue.**
+
+#### Revised interpretation
+
+- **F1 dot cueing (+28pp***): robust and unchanged.** The temporal onset cue is a powerful and sufficient signal.
+- **F1×F2 synergy: collapsed.** The previous +32.7pp*** was largely artifact. Post-fix, depth swap modestly affects performance but there is no synergistic conjunction. Equivalent framing: depth swaps do not specifically and selectively disrupt dot cueing — the CUED+Z cells are not suppressed relative to N.
+- **Surprising post-fix finding**: CUED Z (62.5%) > CUED N (54.1%). The depth swap may generate a salient onset transient that draws attention to the translator, benefiting CUED accuracy. This requires replication.
+- **Color null confirmed** in clean data.
+- **Near/Far asymmetry**: intact direction, underpowered at n~50/cell; requires more data.
+
+### What to do with the old findings
+
+The **design, rationale, and factor-orthogonality logic (§1–§2) remain valid.** The per-session raw tables and GLM sections (§3.1–§3.6) are pre-fix and should be treated as **historical record only** — not cited as evidence for depth-field cueing or F1×F2 synergy. All forward-looking analysis should use the v2 clean sessions.
+
+**Analysis scripts for clean data:**
+- `Tools/Analysis/decoupled_combined_clean.py` → `Agents/SwapPilot/Figures/decoupled_combined_clean.png`
+- `Tools/Analysis/decoupled_overall_cueing.py` → `Agents/SwapPilot/Figures/decoupled_overall_cueing.png`
+- `Tools/Analysis/decoupled_three_cueing_260414_0922_q3q4.py` (per-swap breakdown)
 
 ---
 
