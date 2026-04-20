@@ -25,9 +25,12 @@ public class Fixation_Controller : MonoBehaviour
     public GameObject hArm;        // Cube
     public GameObject vArm;        // Cube
 
-    // Shader-created objects (when useShaderCircles=true)
-    private GameObject _shaderRingQuad;
-    private GameObject _shaderCenterQuad;
+    // Geometry-created objects (when useShaderCircles=true)
+    // Ring and center use procedural circle meshes — correct by construction,
+    // no UV-space distance computation that could appear oval at small sizes in VR.
+    // Cross arms stay as flat quads (rectangles are fine as-is).
+    private GameObject _ringObj;       // annulus mesh
+    private GameObject _centerObj;     // filled circle mesh (covers cross intersection)
     private GameObject _shaderHCross;
     private GameObject _shaderVCross;
     private Material _ringMaterial;
@@ -170,8 +173,7 @@ public class Fixation_Controller : MonoBehaviour
 
         if (useShaderCircles)
         {
-            // Shader-based path: use quads with SmoothCircle shader
-            if (_shaderRingQuad == null)
+            if (_ringObj == null)
                 CreateShaderObjects();
 
             ApplyShaderCircles();
@@ -334,37 +336,32 @@ public class Fixation_Controller : MonoBehaviour
                $"innerDiam_deg={innerDiam_deg:F3} outerDiam_deg={outerDiam_deg:F3} crossThk_deg={crossThickness_deg:F3} crossLenScale={crossHalfLenScale:F3}";
     }
 
-    // ==================== SHADER-BASED CIRCLE METHODS ====================
+    // ==================== CIRCLE / CROSSHAIR GEOMETRY METHODS ====================
 
     void CreateShaderObjects()
     {
-        Shader circleShader = Shader.Find("Custom/SmoothCircle");
         Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
         if (unlitShader == null)
             unlitShader = Shader.Find("Unlit/Color");
-
-        if (circleShader == null)
+        if (unlitShader == null)
         {
-            Debug.LogError("[Fixation_Controller] Custom/SmoothCircle shader not found! Falling back to cylinder mode.");
+            Debug.LogError("[Fixation_Controller] No Unlit shader found! Falling back to cylinder mode.");
             useShaderCircles = false;
             return;
         }
 
-        // Ring material (white ring with transparent hole)
-        _ringMaterial = new Material(circleShader) { name = "FixRingMat" };
-
-        // Center material (filled circle for inner/hole)
-        _centerMaterial = new Material(circleShader) { name = "FixCenterMat" };
-
-        // Crosshair materials (unlit rectangles)
+        // Ring and center use Unlit — shape is correct by geometry, no shader math needed.
+        _ringMaterial   = new Material(unlitShader) { name = "FixRingMat" };
+        _centerMaterial = new Material(unlitShader) { name = "FixCenterMat" };
         _crossMaterialH = new Material(unlitShader) { name = "FixCrossH" };
         _crossMaterialV = new Material(unlitShader) { name = "FixCrossV" };
 
-        // Create quads
-        _shaderRingQuad = CreateShaderQuad("ShaderRing", _ringMaterial);
-        _shaderCenterQuad = CreateShaderQuad("ShaderCenter", _centerMaterial);
-        _shaderHCross = CreateShaderQuad("ShaderHCross", _crossMaterialH);
-        _shaderVCross = CreateShaderQuad("ShaderVCross", _crossMaterialV);
+        // Procedural circle meshes for ring and center.
+        _ringObj   = CreateMeshObject("Ring",   _ringMaterial);
+        _centerObj = CreateMeshObject("Center", _centerMaterial);
+        // Cross arms stay as flat quads (rectangles are correct by construction).
+        _shaderHCross = CreateShaderQuad("HCross", _crossMaterialH);
+        _shaderVCross = CreateShaderQuad("VCross", _crossMaterialV);
 
         // Nonius line quads — dichoptic: top segment to left eye only, bottom to right eye only.
         // Requires Multiview stereo mode (m_StereoRenderingModeAndroid: 2) for unity_StereoEyeIndex
@@ -394,8 +391,8 @@ public class Fixation_Controller : MonoBehaviour
 
     void DestroyShaderObjects()
     {
-        SafeDestroyObj(_shaderRingQuad);
-        SafeDestroyObj(_shaderCenterQuad);
+        SafeDestroyObj(_ringObj);
+        SafeDestroyObj(_centerObj);
         SafeDestroyObj(_shaderHCross);
         SafeDestroyObj(_shaderVCross);
         SafeDestroyObj(_ringMaterial);
@@ -403,8 +400,8 @@ public class Fixation_Controller : MonoBehaviour
         SafeDestroyObj(_crossMaterialH);
         SafeDestroyObj(_crossMaterialV);
 
-        _shaderRingQuad = null;
-        _shaderCenterQuad = null;
+        _ringObj = null;
+        _centerObj = null;
         _shaderHCross = null;
         _shaderVCross = null;
         _ringMaterial = null;
@@ -435,6 +432,7 @@ public class Fixation_Controller : MonoBehaviour
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
         go.name = name;
+        go.hideFlags = HideFlags.HideAndDontSave;
         go.transform.SetParent(transform, false);
 
         // Remove collider
@@ -451,44 +449,38 @@ public class Fixation_Controller : MonoBehaviour
 
     void ApplyShaderCircles()
     {
-        if (_shaderRingQuad == null || _ringMaterial == null) return;
+        if (_ringObj == null || _ringMaterial == null) return;
         if (spec == null) return;
 
         float mPerDeg = spec.GetMetersPerDegree();
         float s = Mathf.Max(0.1f, previewScale);
 
-        // Get sizes in meters
-        float innerDiam_m = Mathf.Max(1e-6f, innerDiam_deg * mPerDeg) * s;
         float outerDiam_m = Mathf.Max(1e-6f, outerDiam_deg * mPerDeg) * s;
-        float crossThk_m = Mathf.Max(1e-6f, crossThickness_deg * mPerDeg) * s;
-        float outerRadius_m = 0.5f * outerDiam_m;
+        float innerDiam_m = Mathf.Max(1e-6f, innerDiam_deg * mPerDeg) * s;
+        float crossThk_m  = Mathf.Max(1e-6f, crossThickness_deg * mPerDeg) * s;
+        float outerRadius_m  = 0.5f * outerDiam_m;
         float crossHalfLen_m = outerRadius_m * Mathf.Max(0.1f, crossHalfLenScale);
 
-        // Colors
         Color fixC = driveColorFromSpec ? spec.fixationColor : overrideFixColor;
 
-        // --- Ring (outer white with transparent hole) ---
-        _shaderRingQuad.SetActive(showRings);
-        _shaderRingQuad.transform.localPosition = new Vector3(0, 0, zOuterRing);
-        _shaderRingQuad.transform.localScale = new Vector3(outerDiam_m, outerDiam_m, 1f);
-        _shaderRingQuad.transform.localRotation = Quaternion.identity;
+        // --- Ring (procedural annulus mesh, scaled to physical size) ---
+        // Mesh vertices are at unit radius (0.5 outer). Scale object → physical size.
+        // innerFrac is the inner/outer ratio for the mesh.
+        _ringObj.SetActive(showRings);
+        float innerFrac = Mathf.Clamp01(innerDiam_m / outerDiam_m);
+        RebuildRingMesh(_ringObj.GetComponent<MeshFilter>(), innerFrac * 0.5f, 0.5f);
+        _ringObj.transform.localPosition = new Vector3(0, 0, zOuterRing);
+        _ringObj.transform.localScale    = new Vector3(outerDiam_m, outerDiam_m, 1f);
+        _ringObj.transform.localRotation = Quaternion.identity;
+        SetUnlitColor(_ringMaterial, fixC);
 
-        float innerFraction = (innerDiam_m / outerDiam_m) * 0.5f;
-        _ringMaterial.SetColor(ShaderColorId, fixC);
-        _ringMaterial.SetFloat(InnerRadiusId, innerFraction);
-        _ringMaterial.SetFloat(OuterRadiusId, 0.5f);
-        _ringMaterial.SetFloat(SmoothnessId, edgeSmoothness);
-
-        // --- Center dot (filled circle, covers crosshair intersection) ---
-        _shaderCenterQuad.SetActive(showRings);
-        _shaderCenterQuad.transform.localPosition = new Vector3(0, 0, zInnerRing);
-        _shaderCenterQuad.transform.localScale = new Vector3(innerDiam_m, innerDiam_m, 1f);
-        _shaderCenterQuad.transform.localRotation = Quaternion.identity;
-
-        _centerMaterial.SetColor(ShaderColorId, holeColor);
-        _centerMaterial.SetFloat(InnerRadiusId, 0f);
-        _centerMaterial.SetFloat(OuterRadiusId, 0.5f);
-        _centerMaterial.SetFloat(SmoothnessId, edgeSmoothness);
+        // --- Center filled circle (covers cross intersection, black hole) ---
+        _centerObj.SetActive(showRings);
+        RebuildFilledCircleMesh(_centerObj.GetComponent<MeshFilter>(), 0.5f);
+        _centerObj.transform.localPosition = new Vector3(0, 0, zInnerRing);
+        _centerObj.transform.localScale    = new Vector3(innerDiam_m, innerDiam_m, 1f);
+        _centerObj.transform.localRotation = Quaternion.identity;
+        SetUnlitColor(_centerMaterial, holeColor);
 
         // --- Crosshairs ---
         _shaderHCross.SetActive(showCross);
@@ -528,20 +520,118 @@ public class Fixation_Controller : MonoBehaviour
             float nWidth_m = Mathf.Max(1e-5f, noniusWidth_deg  * mPerDeg) * s;
             float nGap_m   = Mathf.Max(0f,    noniusGap_deg    * mPerDeg) * s;
 
-            // Center of each line: gap + half-length above/below fixation center
             float centerY = nGap_m + nLen_m * 0.5f;
 
-            // Left eye: line ABOVE center (positive Y)
             _noniusLeft.transform.localPosition  = new Vector3(0f,  centerY, zCross);
             _noniusLeft.transform.localScale      = new Vector3(nWidth_m, nLen_m, 1f);
             _noniusLeft.transform.localRotation   = Quaternion.identity;
             _noniusMaterialL.SetColor(ShaderColorId, noniusColor);
 
-            // Right eye: line BELOW center (negative Y)
             _noniusRight.transform.localPosition = new Vector3(0f, -centerY, zCross);
             _noniusRight.transform.localScale     = new Vector3(nWidth_m, nLen_m, 1f);
             _noniusRight.transform.localRotation  = Quaternion.identity;
             _noniusMaterialR.SetColor(ShaderColorId, noniusColor);
         }
+    }
+
+    // ==================== PROCEDURAL CIRCLE MESH HELPERS ====================
+
+    // Creates a GameObject with MeshFilter + MeshRenderer, parented here, hidden from hierarchy.
+    GameObject CreateMeshObject(string name, Material mat)
+    {
+        var go = new GameObject(name);
+        go.hideFlags = HideFlags.HideAndDontSave;
+        go.transform.SetParent(transform, false);
+        go.AddComponent<MeshFilter>();
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = mat;
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+        return go;
+    }
+
+    // Rebuilds the MeshFilter with an annulus (ring) mesh.
+    // innerR and outerR are in local units; the object is then scaled to physical size.
+    // 128 segments gives a smooth circle at any size used in this experiment.
+    static void RebuildRingMesh(MeshFilter mf, float innerR, float outerR, int segments = 128)
+    {
+        Mesh mesh = mf.sharedMesh;
+        if (mesh == null)
+        {
+            mesh = new Mesh { name = "FixRing" };
+            mf.sharedMesh = mesh;
+        }
+
+        int verts = segments * 2;
+        var positions = new Vector3[verts];
+        var uvs       = new Vector2[verts];
+        var tris      = new int[segments * 6];
+
+        for (int i = 0; i < segments; i++)
+        {
+            float a = (float)i / segments * Mathf.PI * 2f;
+            float c = Mathf.Cos(a), s = Mathf.Sin(a);
+            positions[i * 2]     = new Vector3(c * innerR, s * innerR, 0f);
+            positions[i * 2 + 1] = new Vector3(c * outerR, s * outerR, 0f);
+            uvs[i * 2]     = new Vector2(c * 0.5f + 0.5f, s * 0.5f + 0.5f);
+            uvs[i * 2 + 1] = new Vector2(c * 0.5f + 0.5f, s * 0.5f + 0.5f);
+
+            int j = i * 6;
+            int a0 =  i * 2,        b0 =  i * 2 + 1;
+            int a1 = ((i + 1) % segments) * 2,
+                b1 = ((i + 1) % segments) * 2 + 1;
+            tris[j]     = a0; tris[j + 1] = b0; tris[j + 2] = b1;
+            tris[j + 3] = a0; tris[j + 4] = b1; tris[j + 5] = a1;
+        }
+
+        mesh.Clear();
+        mesh.vertices  = positions;
+        mesh.uv        = uvs;
+        mesh.triangles = tris;
+        mesh.RecalculateNormals();
+    }
+
+    // Rebuilds the MeshFilter with a filled circle (fan of triangles).
+    static void RebuildFilledCircleMesh(MeshFilter mf, float radius, int segments = 128)
+    {
+        Mesh mesh = mf.sharedMesh;
+        if (mesh == null)
+        {
+            mesh = new Mesh { name = "FixCenter" };
+            mf.sharedMesh = mesh;
+        }
+
+        var positions = new Vector3[segments + 1];
+        var uvs       = new Vector2[segments + 1];
+        var tris      = new int[segments * 3];
+
+        positions[0] = Vector3.zero;
+        uvs[0]       = new Vector2(0.5f, 0.5f);
+
+        for (int i = 0; i < segments; i++)
+        {
+            float a = (float)i / segments * Mathf.PI * 2f;
+            float c = Mathf.Cos(a), s = Mathf.Sin(a);
+            positions[i + 1] = new Vector3(c * radius, s * radius, 0f);
+            uvs[i + 1]       = new Vector2(c * 0.5f + 0.5f, s * 0.5f + 0.5f);
+
+            tris[i * 3]     = 0;
+            tris[i * 3 + 1] = i + 1;
+            tris[i * 3 + 2] = (i + 1) % segments + 1;
+        }
+
+        mesh.Clear();
+        mesh.vertices  = positions;
+        mesh.uv        = uvs;
+        mesh.triangles = tris;
+        mesh.RecalculateNormals();
+    }
+
+    // Sets the main color on an Unlit material, handling both URP and legacy property names.
+    static void SetUnlitColor(Material mat, Color color)
+    {
+        if (mat == null) return;
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
+        if (mat.HasProperty("_Color"))     mat.SetColor("_Color",     color);
     }
 }

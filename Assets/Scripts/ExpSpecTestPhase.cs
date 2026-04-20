@@ -185,7 +185,9 @@ public class ExpSpecTestPhase : ExperimentSpec
         };
 
         // Timing in frames
-        t.onsetFrame = MsToFrames(delayedOnset_ms);
+        // Use 0 directly when delayedOnset_ms==0 — MsToFrames has a Max(1,...) floor
+        // that would otherwise produce onsetFrame=1, hiding Field B at the preview frame.
+        t.onsetFrame = (delayedOnset_ms <= 0f) ? 0 : MsToFrames(delayedOnset_ms);
 
         int preTransFrames  = MsToFrames(preTranslation_ms);
         int transFrames     = MsToFrames(translationDuration_ms);

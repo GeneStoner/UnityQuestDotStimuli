@@ -17,7 +17,7 @@ public class FlickerStimulus : MonoBehaviour
     public float outerRadiusDeg = 2.0f;
 
     [Tooltip("Viewing distance in meters (for visual angle calculation).")]
-    public float viewDistanceMeters = 2.0f;
+    public float viewDistanceMeters = 1.5f;
 
     [Header("Flicker Settings")]
     [Tooltip("Flicker rate in Hz (cycles per second). 15-25 Hz typical for HFP.")]

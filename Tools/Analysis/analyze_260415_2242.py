@@ -103,7 +103,12 @@ def load(path, min_trial=None):
             ))
     return rows
 
-rows      = load(SESSION)
+# Disparity sign was inverted in this session (shader bug fixed 2026-04-16).
+# DelayedFieldDepth='N' was rendered with uncrossed (Far) disparity and vice versa.
+# Correct by flipping the near label for the main session only.
+rows = load(SESSION)
+for r in rows:
+    r['near'] = not r['near']
 n_total   = len(rows)
 
 # Prior combined clean

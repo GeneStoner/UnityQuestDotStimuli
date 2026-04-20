@@ -5,6 +5,8 @@
 // Edit ExperimentSpec asset (e.g., ExpSpecTestPhase.asset) instead.
 //
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEngine;
 using CondLib = StimulusConditionsLibrary;
 
@@ -115,6 +117,11 @@ public class StimulusBuilder : MonoBehaviour
     /// </summary>
     public void RefreshRotation()
     {
+        // Enforce viewing distance: builder must be exactly viewDistanceMeters in front of
+        // the camera (local Z). This corrects any scene-default or stale override each frame.
+        if (viewDistanceMeters > 0f)
+            transform.localPosition = new Vector3(0f, 0f, viewDistanceMeters);
+
         if (Camera.main != null)
         {
             Vector3 dir = (transform.position - Camera.main.transform.position).normalized;
@@ -146,6 +153,10 @@ public class StimulusBuilder : MonoBehaviour
     // ========================================================================
     public void BuildFromCondition(CondLib.StimulusCondition cond)
     {
+        // Enforce viewing distance before computing rotation direction.
+        if (viewDistanceMeters > 0f)
+            transform.localPosition = new Vector3(0f, 0f, viewDistanceMeters);
+
         // Set rotation at trial setup as a first-pass estimate. A second,
         // more reliable call happens at trigger press via RefreshRotation().
         if (Camera.main != null)
@@ -328,6 +339,104 @@ public class StimulusBuilder : MonoBehaviour
                     tpos[k].y * perspScale,
                     0f)) + zVec;
             }
+        }
+    }
+
+    // ========================================================================
+    // Frame-0 diagnostic dump
+    // ========================================================================
+    /// <summary>
+    /// Writes a CSV snapshot of every dot's state at frame 0 (the WaitingForStart
+    /// preview). Call once per trial start, AFTER ApplyDepthOffsets(_currentCond, 0).
+    /// Saved to Application.persistentDataPath/frame0_diag_&lt;trialIndex&gt;.csv so it
+    /// can be retrieved with adb pull.
+    ///
+    /// Columns: subfield, dot, depth_plane, traj_x_m, traj_y_m,
+    ///          world_x, world_y, world_z, z_offset_m, persp_scale,
+    ///          renderer_enabled
+    /// </summary>
+    public void DumpFrame0Diagnostics(CondLib.StimulusCondition cond, int trialIndex)
+    {
+        if (cond == null || Subfields == null) return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine(
+            "subfield,dot,depth_plane,traj_x_m,traj_y_m," +
+            "world_x,world_y,world_z,z_offset_m,persp_scale," +
+            "half_disp_world,renderer_enabled,renderer_null");
+
+        // Header comment line with global params
+        sb.AppendLine(
+            $"# depthOffset_m={depthOffset_m:F6} depthBias_m={depthBias_m:F6}" +
+            $" viewDist={viewDistanceMeters:F3} ipd={ipdMeters:F4}" +
+            $" useSSShader={useScreenSpaceShader} condName={cond.name}");
+
+        int sfCount = Mathf.Min(Subfields.Length, cond.subfields != null ? cond.subfields.Length : 0);
+
+        for (int s = 0; s < sfCount; s++)
+        {
+            var sf = Subfields[s];
+            if (sf == null || sf.dots == null || sf.trajectoryPos == null) continue;
+
+            var tracks = cond.subfields[s];
+
+            // Depth plane and derived values at frame 0
+            string dpLabel = "?";
+            float zOffset = 0f;
+            float perspScale = 1f;
+            float halfDispWorld = 0f;
+            if (tracks.depthByFrame != null && tracks.depthByFrame.Length > 0)
+            {
+                var dp = tracks.depthByFrame[0];
+                dpLabel = dp.ToString();
+                float dz = depthBias_m;
+                if      (dp == CondLib.DepthPlane.Near) dz += -depthOffset_m;
+                else if (dp == CondLib.DepthPlane.Far)  dz += depthOffset_m;
+                else    dz = 0f;
+                zOffset    = dz;
+                perspScale = (viewDistanceMeters + dz) / viewDistanceMeters;
+                // Matches ApplyScreenSpaceDots formula exactly.
+                halfDispWorld = -(ipdMeters * dz / (2f * viewDistanceMeters));
+            }
+
+            int dotCount = Mathf.Min(sf.dots.Count, sf.trajectoryPos.Length);
+            for (int k = 0; k < dotCount; k++)
+            {
+                var dotT = sf.dots[k];
+                if (dotT == null) continue;
+
+                Vector2 tp = sf.trajectoryPos[k];
+                Vector3 wp = dotT.position;
+
+                bool rEnabled = false;
+                bool rNull = true;
+                if (sf.renderers != null && k < sf.renderers.Count)
+                {
+                    rNull    = sf.renderers[k] == null;
+                    rEnabled = !rNull && sf.renderers[k].enabled;
+                }
+
+                sb.AppendLine(
+                    $"{s},{k},{dpLabel}," +
+                    $"{tp.x:F6},{tp.y:F6}," +
+                    $"{wp.x:F6},{wp.y:F6},{wp.z:F6}," +
+                    $"{zOffset:F6},{perspScale:F6}," +
+                    $"{halfDispWorld:F6},{(rEnabled ? 1 : 0)},{(rNull ? 1 : 0)}");
+            }
+        }
+
+        string path = Path.Combine(
+            Application.persistentDataPath,
+            $"frame0_diag_{trialIndex:D4}.csv");
+
+        try
+        {
+            File.WriteAllText(path, sb.ToString());
+            Debug.Log($"[StimulusBuilder] Frame-0 diagnostic saved: {path}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[StimulusBuilder] Failed to save frame-0 diagnostic: {e.Message}");
         }
     }
 

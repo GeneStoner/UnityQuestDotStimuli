@@ -1,9 +1,10 @@
 using UnityEngine;
+using Unity.XR.Oculus;
 
 public class FrameRateController : MonoBehaviour
 {
-    [Tooltip("Target frame rate (fps). Use 0 or -1 to remove cap.")]
-    public int targetFPS = 60;
+    [Tooltip("Target display refresh rate (Hz). Quest 3 supports 72, 90, 120.")]
+    public int targetFPS = 90;
 
     // For monitoring
     private float _frameCount = 0f;
@@ -11,11 +12,20 @@ public class FrameRateController : MonoBehaviour
 
     void Awake()
     {
-        // Disable VSync so targetFrameRate takes effect
-        QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = targetFPS > 0 ? targetFPS : -1;
+        // Lock CPU and GPU to sustained high to prevent thermal throttling mid-session.
+        Performance.TrySetCPULevel(4);
+        Performance.TrySetGPULevel(4);
 
-        Debug.Log($"[FrameRateController] targetFrameRate = {Application.targetFrameRate}");
+        // Set display refresh rate via Oculus API (authoritative for Quest hardware).
+        // Application.targetFrameRate is set as a fallback for non-Quest platforms.
+        bool rateSet = Performance.TrySetDisplayRefreshRate(targetFPS);
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = targetFPS;
+
+        if (Performance.TryGetDisplayRefreshRate(out float actualRate))
+            Debug.Log($"[FrameRateController] Display refresh rate = {actualRate} Hz (requested {targetFPS}, set={rateSet})");
+        else
+            Debug.Log($"[FrameRateController] targetFrameRate = {Application.targetFrameRate} (OVR rate query unavailable)");
     }
 
     void Update()

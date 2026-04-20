@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Exp_DecoupledDots_005m
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
   experimentName: DecoupledDots_005m_v2
-  simHz: 75
-  viewDistance_m: 2
+  simHz: 90
+  viewDistance_m: 1.5
   apertureRadius_deg: 3.5
   dotSize_deg: 0.08
   rotationSpeed_degPerSec: 81

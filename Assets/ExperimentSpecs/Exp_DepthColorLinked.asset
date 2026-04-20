@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Exp_DepthColorLinked
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
   experimentName: DepthColorLinked_005m_v2
-  simHz: 75
+  simHz: 90
   viewDistance_m: 2
   apertureRadius_deg: 3.5
   dotSize_deg: 0.08

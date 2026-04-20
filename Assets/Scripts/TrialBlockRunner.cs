@@ -69,6 +69,7 @@ public class TrialBlockRunner : MonoBehaviour
              "so vergence is established before trial onset. Field B remains hidden until its normal delayed onset.")]
     public bool showFieldAPreview = true;
 
+
     [Header("Trial start / response")]
     public KeyCode startKey = KeyCode.Space;
 
@@ -605,6 +606,13 @@ public class TrialBlockRunner : MonoBehaviour
 
         // ---------------- Builder setup (REALIZED render geometry) ----------------
         builder.viewDistanceMeters = spec.viewDistance_m;
+
+        // Place stimulus plane at the spec's viewing distance along the camera's forward axis.
+        // StimulusBuilder is a child of Main Camera, so setting localPosition is always correct
+        // and avoids any Camera.main lookup that might return the wrong camera on Quest.
+        builder.transform.localPosition = new Vector3(0f, 0f, spec.viewDistance_m);
+        Debug.Log($"[TBR] Builder localPos={builder.transform.localPosition} worldPos={builder.transform.position} viewDist={spec.viewDistance_m}", this);
+
         builder.apertureDeg = apDeg_truth * apScale;
         builder.dotSizeMeters = dotDiam_m_truth * dotScale;
         builder.dotsPerField = spec.dotsPerField;
@@ -628,14 +636,22 @@ public class TrialBlockRunner : MonoBehaviour
         builder.BuildFromCondition(_currentCond);
         builder.SetDotsActive(false);
 
-        // Show Field A (sub0/sub1) at frame-0 positions during WaitingForStart
-        // so vergence is established before the trial starts.
+        // Activate all 4 subfield roots during WaitingForStart, then let ApplyAppearance
+        // control actual renderer visibility via visibleByFrame[0].
+        // For delayed-onset conditions visibleByFrame[0]=false for sub2/sub3 so Field B
+        // stays invisible. For simultaneous-onset (onset=0) all four are visible at frame 0.
         if (showFieldAPreview)
         {
             builder.SetSubfieldActive(0, true);
             builder.SetSubfieldActive(1, true);
+            builder.SetSubfieldActive(2, true);
+            builder.SetSubfieldActive(3, true);
             builder.ApplyAppearance(_currentCond, 0);
             builder.ApplyDepthOffsets(_currentCond, 0);
+            // Dump frame-0 diagnostic on first 8 trials to capture WaitingForStart
+            // dot state across conditions for analysis.
+            if (_startedTrialCount <= 8)
+                builder.DumpFrame0Diagnostics(_currentCond, _startedTrialCount);
         }
 
         // ---------------- One-line realized geometry log ----------------
@@ -673,18 +689,35 @@ public class TrialBlockRunner : MonoBehaviour
             return;
         }
 
+        // Enforce builder position every frame regardless of phase.
+        // Belt-and-suspenders: something appears to reset localPosition.z
+        // back to the scene default (2m) mid-trial. This keeps it locked.
+        if (builder != null && spec != null && spec.viewDistance_m > 0f)
+        {
+            float wantZ = spec.viewDistance_m;
+            float haveZ = builder.transform.localPosition.z;
+            if (!Mathf.Approximately(haveZ, wantZ))
+                Debug.LogWarning($"[TBR] Builder z drifted: was {haveZ:F4}, correcting to {wantZ:F4}  phase={_phase}", this);
+            builder.transform.localPosition = new Vector3(0f, 0f, wantZ);
+        }
+
         if (_phase == TrialPhase.WaitingForStart)
         {
             // Check for keyboard OR XR trigger to start trial
             bool startTrialInput = Input.GetKeyDown(startKey) || _xrTriggerPressedThisFrame;
             _xrTriggerPressedThisFrame = false; // Consume the input
 
+            // Prime _lastSSCond BEFORE RefreshRotation so the screen-space shader
+            // path inside RefreshRotation always has the correct condition/frame.
+            // (RefreshRotation re-applies _lastSSCond internally for SS mode;
+            // without this prime it would use a stale or null value.)
+            if (showFieldAPreview)
+                builder.ApplyDepthOffsets(_currentCond, 0);
+
             // Continuously refresh rotation every frame during WaitingForStart.
             // This ensures the rotation is always current regardless of how
-            // quickly the user presses the trigger after re-donning: even if
-            // tracking took 500 ms to stabilize, by the time the user sees
-            // the preview and presses the button the rotation has already
-            // converged to the correct value.
+            // quickly the user presses the trigger after re-donning.
+            // In SS mode, RefreshRotation re-applies the now-primed _lastSSCond.
             builder.RefreshRotation();
 
             if (startTrialInput)
