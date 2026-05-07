@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6b2bce2bb36a4c26bd3ffebf54318e4, type: 3}
   m_Name: Exp_DecoupledDots_005m
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
-  experimentName: DecoupledDots_005m_v2
+  experimentName: DecoupledDots_010m_v2
   simHz: 90
-  viewDistance_m: 1.5
+  viewDistance_m: 2
   apertureRadius_deg: 3.5
   dotSize_deg: 0.08
   rotationSpeed_degPerSec: 81
@@ -26,11 +26,11 @@ MonoBehaviour:
   balanceDelayedFieldColor: 1
   balanceDelayedFieldDepth: 1
   bothFieldsSamePlane: 0
-  depthSeparation_m: 0.05
+  depthSeparation_m: 0.1
   dotsPerField: 63
   fixationStyle: 2
   fixationColor: {r: 1, g: 1, b: 1, a: 1}
-  fixationDotRadius_deg: 0.2
+  fixationDotRadius_deg: 0.15
   fixationRingInnerRadius_deg: 0.2
   fixationRingThickness_deg: 0.3
   fixationCrosshairArmLength_deg: 1

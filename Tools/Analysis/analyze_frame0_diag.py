@@ -86,7 +86,10 @@ def analyze(path):
 
         # Flags
         if z_vals.std() > 1e-4:
-            print(f"         *** WARNING: high world_z std ({z_vals.std():.6f} m) — classic-mode coplanar issue!")
+            if params.get("useSSShader", "False") == "True":
+                print(f"         (world_z std={z_vals.std():.6f} m — expected head tilt in SS mode, not a bug)")
+            else:
+                print(f"         *** WARNING: high world_z std ({z_vals.std():.6f} m) — classic-mode coplanar issue!")
         if len(dp_set) > 1:
             print(f"         *** WARNING: mixed depth planes in one subfield: {dp_set}")
         if n_null > 0:

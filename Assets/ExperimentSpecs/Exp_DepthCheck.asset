@@ -29,7 +29,7 @@ MonoBehaviour:
   dotsPerField: 63
   fixationStyle: 2
   fixationColor: {r: 1, g: 1, b: 1, a: 1}
-  fixationDotRadius_deg: 0.2
+  fixationDotRadius_deg: 0.15
   fixationRingInnerRadius_deg: 0.2
   fixationRingThickness_deg: 0.3
   fixationCrosshairArmLength_deg: 1

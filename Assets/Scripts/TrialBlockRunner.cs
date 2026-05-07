@@ -98,6 +98,8 @@ public class TrialBlockRunner : MonoBehaviour
     private InputAction _activateLeft;
     private InputAction _activateRight;
     private bool _xrTriggerPressedThisFrame;
+    private bool _zDriftLoggedThisTrial; // throttle: only log z-drift once per trial
+    private float _builderLateralOffsetX_m = 0f; // lateral shift applied at tStart; reset each trial
 
     private int _startedTrialCount = 0;
     private float _accum;
@@ -109,6 +111,10 @@ public class TrialBlockRunner : MonoBehaviour
     private int _frameInStimulus;
     private System.Random _rng;
     private int _sessionSeed;
+
+    // QUEST adaptive staircases — one per (swapFlags, conditionID) cell
+    private Dictionary<(int swapFlags, string condID), QuestStaircase> _questStaircases;
+    private float _questLastLevelLog; // level used on the current trial (for update after response)
 
     private StringBuilder _mkPayloadBuilder;
     private StringBuilder _colorPayloadBuilder;
@@ -337,7 +343,42 @@ public class TrialBlockRunner : MonoBehaviour
         if (hud != null)
             hud.Bind(this);
 
+        // QUEST: create one staircase per unique (swapFlags, conditionID) cell
+        _questStaircases = null;
+        if (spec is ExpSpecTestPhase qSpec && qSpec.useQuestAdaptive)
+        {
+            _questStaircases = new Dictionary<(int, string), QuestStaircase>();
+            float tGuessLog = Mathf.Log10(Mathf.Max(qSpec.questTGuessMs, 1f));
+            float xMinLog   = Mathf.Log10(Mathf.Max(qSpec.questXMinMs,   1f));
+            float xMaxLog   = Mathf.Log10(Mathf.Max(qSpec.questXMaxMs,   1f));
+
+            foreach (var trial in _allPlannedTrials)
+            {
+                var key = (trial.swapFlags, trial.conditionID);
+                if (!_questStaircases.ContainsKey(key))
+                {
+                    _questStaircases[key] = new QuestStaircase(
+                        tGuessLog:  tGuessLog,
+                        tGuessSd:   qSpec.questTGuessSd,
+                        beta:       qSpec.questBeta,
+                        delta:      qSpec.questDelta,
+                        gamma:      1f / 8f,          // 8AFC
+                        xMinLog:    xMinLog,
+                        xMaxLog:    xMaxLog);
+                    Debug.Log($"[QUEST] Created staircase for swapFlags={trial.swapFlags} cond={trial.conditionID}");
+                }
+            }
+            Debug.Log($"[QUEST] {_questStaircases.Count} staircases initialised. " +
+                      $"Prior: T={qSpec.questTGuessMs:F0}ms ±{qSpec.questTGuessSd:F2}log10, " +
+                      $"range [{qSpec.questXMinMs:F0},{qSpec.questXMaxMs:F0}]ms");
+        }
+
         NextTrial();
+
+        // Clear any pending trigger that may have been set by the same button press
+        // that launched this block (e.g. ExperimentSelector trigger-to-confirm).
+        // Without this, WaitingForStart sees the flag and advances the trial instantly.
+        _xrTriggerPressedThisFrame = false;
     }
 
     /// <summary>
@@ -563,6 +604,43 @@ public class TrialBlockRunner : MonoBehaviour
 
         _currentTrial = _trialQueue[0];
         _trialQueue.RemoveAt(0);
+
+        // Variable-duration support (MoCS or QUEST): patch trial timing before building condition.
+        if (spec is ExpSpecTestPhase epSpec &&
+            (epSpec.useQuestAdaptive ||
+             (epSpec.translationDurations_ms != null && epSpec.translationDurations_ms.Length > 0)))
+        {
+            int newTransFrames;
+            if (epSpec.useQuestAdaptive && _questStaircases != null)
+            {
+                // QUEST: ask the appropriate staircase for the next duration
+                var key = (_currentTrial.swapFlags, _currentTrial.conditionID);
+                if (_questStaircases.TryGetValue(key, out var staircase))
+                {
+                    float suggestedMs = staircase.NextLinear();
+                    newTransFrames    = epSpec.MsToFrames(suggestedMs);
+                    _questLastLevelLog = Mathf.Log10(Mathf.Max(suggestedMs, 1f));
+                }
+                else
+                {
+                    // Fallback: use prior mean if staircase missing (shouldn't happen)
+                    newTransFrames     = epSpec.MsToFrames(epSpec.questTGuessMs);
+                    _questLastLevelLog = Mathf.Log10(Mathf.Max(epSpec.questTGuessMs, 1f));
+                    Debug.LogWarning($"[QUEST] No staircase for key ({_currentTrial.swapFlags},{_currentTrial.conditionID}), using prior mean.");
+                }
+            }
+            else
+            {
+                newTransFrames = epSpec.SampleTranslationDurationFrames(_rng);
+            }
+
+            int postTransFrames = _currentTrial.totalFrames - _currentTrial.translationEndFrame;
+            int maxTransFrames  = epSpec.MaxTranslationFrames();
+
+            _currentTrial.translationEndFrame = _currentTrial.translationStartFrame + newTransFrames;
+            _currentTrial.totalFrames         = _currentTrial.translationStartFrame + maxTransFrames + postTransFrames;
+        }
+
         _currentCond = spec.BuildEffectiveCondition(_currentTrial);
 
 
@@ -570,6 +648,8 @@ public class TrialBlockRunner : MonoBehaviour
         _accum = 0f;
         _responseFrameIndex = 0;
         _phase = TrialPhase.WaitingForStart;
+        _zDriftLoggedThisTrial = false;   // reset per-trial drift log throttle
+        _builderLateralOffsetX_m = 0f;    // no shift until tStart
         _startedTrialCount++;
 
         _mkPayloadBuilder = new StringBuilder();
@@ -646,8 +726,12 @@ public class TrialBlockRunner : MonoBehaviour
             builder.SetSubfieldActive(1, true);
             builder.SetSubfieldActive(2, true);
             builder.SetSubfieldActive(3, true);
-            builder.ApplyAppearance(_currentCond, 0);
+            // ApplyDepthOffsets BEFORE ApplyAppearance: shader material values must be
+            // correct before any renderer is enabled, otherwise the very first render
+            // of the trial sees default property values (_WorldCenter=(0,0,2),
+            // _HalfDisparityWorld=0) — causing one frame of wrong depth/position.
             builder.ApplyDepthOffsets(_currentCond, 0);
+            builder.ApplyAppearance(_currentCond, 0);
             // Dump frame-0 diagnostic on first 8 trials to capture WaitingForStart
             // dot state across conditions for analysis.
             if (_startedTrialCount <= 8)
@@ -697,8 +781,15 @@ public class TrialBlockRunner : MonoBehaviour
             float wantZ = spec.viewDistance_m;
             float haveZ = builder.transform.localPosition.z;
             if (!Mathf.Approximately(haveZ, wantZ))
-                Debug.LogWarning($"[TBR] Builder z drifted: was {haveZ:F4}, correcting to {wantZ:F4}  phase={_phase}", this);
-            builder.transform.localPosition = new Vector3(0f, 0f, wantZ);
+            {
+                // Log only once per trial to avoid spamming logcat (was 72×/sec).
+                if (!_zDriftLoggedThisTrial)
+                {
+                    Debug.LogWarning($"[TBR] Builder z drifted: was {haveZ:F4}, correcting to {wantZ:F4}  phase={_phase} (further drifts this trial suppressed)", this);
+                    _zDriftLoggedThisTrial = true;
+                }
+            }
+            builder.transform.localPosition = new Vector3(_builderLateralOffsetX_m, 0f, wantZ);
         }
 
         if (_phase == TrialPhase.WaitingForStart)
@@ -784,6 +875,21 @@ public class TrialBlockRunner : MonoBehaviour
 
         float dt = _simDt;
         float metersPerDeg = spec.GetMetersPerDegree();
+
+        // Apply whole-stimulus lateral shift at tStart (once only)
+        if (_frameInStimulus == _currentTrial.translationStartFrame && spec.lateralShiftDeg > 0f)
+            _builderLateralOffsetX_m = spec.lateralShiftDeg * metersPerDeg * _currentTrial.lateralShiftDir;
+
+        // Replot coherently-translating dots at tStart to remove dot-identity continuity.
+        if (_frameInStimulus == _currentTrial.translationStartFrame &&
+            spec is ExpSpecTestPhase epSpecReplot && epSpecReplot.replotTranslatingAtTStart)
+        {
+            for (int i = 0; i < builder.Subfields.Length; i++)
+            {
+                if (_currentCond.subfields[i].motionKindByFrame[_frameInStimulus] == CondLib.MotionKind.Linear)
+                    builder.ReplotSubfield(i, _frameInStimulus);
+            }
+        }
 
         for (int i = 0; i < builder.Subfields.Length; i++)
         {
@@ -986,6 +1092,19 @@ public class TrialBlockRunner : MonoBehaviour
 
             MapChoiceToDigitAndDir(responseIndex, out int responseDigit, out string responseDir);
 
+            // QUEST update: determine correctness and update the appropriate staircase
+            if (_questStaircases != null && responseIndex >= 0)
+            {
+                // Response wheel mapping: index 0=90°, 1=45°, 2=0°, 3=315°... (clockwise from top)
+                // correctIdx = (2 - headingDeg/45 + 8) % 8
+                int  rawStep    = Mathf.RoundToInt(_currentTrial.headingDeg / 45f);
+                int  correctIdx = ((2 - rawStep) % 8 + 8) % 8;
+                bool correct    = (responseIndex == correctIdx);
+                var  key        = (_currentTrial.swapFlags, _currentTrial.conditionID);
+                if (_questStaircases.TryGetValue(key, out var staircase))
+                    staircase.Update(_questLastLevelLog, correct);
+            }
+
             csvLogger.LogResponse(responseIndex, responseDigit, responseDir, rtFrames, endKey, device);
             csvLogger.EndTrial();
         }
@@ -1033,4 +1152,8 @@ public class TrialBlockRunner : MonoBehaviour
     public int FrameInTrial => _frameInStimulus;
     public float SimHz => (spec != null) ? spec.simHz : 0f;
     public ExperimentSpec.PlannedTrial CurrentTrial => _currentTrial;
+    public string ExperimentName => (spec != null && !string.IsNullOrWhiteSpace(spec.experimentName))
+                                    ? spec.experimentName : "(no experiment loaded)";
+    /// <summary>True when the HUD should be visible: idle or waiting for trigger press.</summary>
+    public bool HudVisible => _phase == TrialPhase.WaitingForStart || _phase == TrialPhase.Done;
 }

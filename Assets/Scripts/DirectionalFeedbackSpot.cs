@@ -264,11 +264,17 @@ public class DirectionalFeedbackSpot : MonoBehaviour
         // Use current direction but at least the max distance reached
         // (so distance only grows, but direction always follows thumbstick)
         float displayDistance = Mathf.Max(distance_deg, _maxDistanceReached);
+
+        // When direction is locked (two-stage confirm: first press), snap spot to full
+        // travel distance so it sits exactly at the target ring radius.
+        if (responseController != null && responseController.IsDirectionLocked)
+            displayDistance = travelDistance_deg;
+
         UpdateSpotPositionDirect(direction, displayDistance);
         ApplyLockColor();
 
-        // Play click when crossing threshold (only once per window)
-        if (!_clickPlayedThisWindow && _maxDistanceReached >= clickThreshold_deg)
+        // Play click as soon as direction is first registered this window (always reliable)
+        if (!_clickPlayedThisWindow)
         {
             PlayClick();
             _clickPlayedThisWindow = true;
@@ -319,12 +325,12 @@ public class DirectionalFeedbackSpot : MonoBehaviour
         float spotSize_m = spotDiameter_deg * mPerDeg * scale;
         _spotQuad.transform.localScale = new Vector3(spotSize_m, spotSize_m, 1f);
 
-        // Position
+        // Position at fixation plane depth (spotQuad is child of this GO, which is at z=viewDist from camera)
         float distance_m = distance_deg * mPerDeg * scale;
         Vector3 pos = new Vector3(
             direction.x * distance_m,
             direction.y * distance_m,
-            -0.001f
+            0f
         );
         _spotQuad.transform.localPosition = pos;
 
@@ -418,12 +424,12 @@ public class DirectionalFeedbackSpot : MonoBehaviour
         float spotSize_m = spotDiameter_deg * mPerDeg * scale;
         _spotQuad.transform.localScale = new Vector3(spotSize_m, spotSize_m, 1f);
 
-        // Position based on direction and current distance
+        // Position at fixation plane depth (spotQuad is child of this GO, which is at z=viewDist from camera)
         float distance_m = distance_deg * mPerDeg * scale;
         Vector3 pos = new Vector3(
             _direction.x * distance_m,
             _direction.y * distance_m,
-            -0.001f // Slightly in front
+            0f
         );
         _spotQuad.transform.localPosition = pos;
 

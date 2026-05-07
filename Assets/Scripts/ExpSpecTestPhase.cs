@@ -21,8 +21,19 @@ public class ExpSpecTestPhase : ExperimentSpec
     [Tooltip("Include color-swap trials (field colors swap at translation onset).")]
     public bool includeColorSwaps = false;
 
-    [Tooltip("Include 50%% dot-swap trials (sub1↔sub3 exchange field membership at translation onset).")]
+    [Tooltip("Include combined color+motion swap trials (CM) without generating C or M alone. " +
+             "Use when you only want the full conjunctive swap. Ignored if both includeMotionSwaps " +
+             "and includeColorSwaps are true (CM is already in the power set).")]
+    public bool includeCMSwaps = false;
+
+    [Tooltip("Include 50%% dot-swap trials (sub1↔sub3 noise-half exchange at translation onset — preserves coherent translator identity).")]
     public bool includeDots50Swaps = false;
+
+    [Tooltip("Include 50%% coherent-half swap trials (sub0↔sub2 exchange field membership at tStart — inverts which field is the coherent translator).")]
+    public bool includeDots50ASwaps = false;
+
+    [Tooltip("Include full dot-swap trials (sub0↔sub2 AND sub1↔sub3 simultaneously — all dots exchange field membership, analogous to Stoner & Blanc color+motion swap).")]
+    public bool includeDots50BothSwaps = false;
 
     [Tooltip("Include depth-swap trials (depth planes swap at translation onset).")]
     public bool includeDepthSwaps = false;
@@ -51,6 +62,70 @@ public class ExpSpecTestPhase : ExperimentSpec
              "the temporal cue points to the rotator, not the translator (Dots✗, converse conditions).")]
     public bool delayTranslator = true;
 
+    [Header("Dot continuity removal")]
+    [Tooltip("When true, coherently translating dots (MotionKind.Linear subfields) are randomly " +
+             "repositioned at the first frame of translation. Removes dot-identity continuity " +
+             "between the rotation and translation phases. One frame of coherent translation " +
+             "motion is lost (dots appear at new random positions on that frame, then move " +
+             "coherently from frame+1 onward). Non-translating and noise subfields are unaffected.")]
+    public bool replotTranslatingAtTStart = false;
+
+    [Header("Variable translation duration (MoCS)")]
+    [Tooltip("If non-empty, each trial randomly samples one of these durations (ms) instead of " +
+             "the fixed translationDuration_ms. Values are quantized to the frame grid at runtime. " +
+             "Leave empty to use the fixed duration as before. Ignored when useQuestAdaptive=true.")]
+    public float[] translationDurations_ms = new float[0];
+
+    [Header("QUEST adaptive duration")]
+    [Tooltip("If true, duration is chosen adaptively by a per-(condition,cue) QUEST staircase " +
+             "instead of sampling from translationDurations_ms or the fixed duration.")]
+    public bool useQuestAdaptive = false;
+
+    [Tooltip("QUEST prior: initial threshold guess in ms (log-centre of prior).")]
+    public float questTGuessMs = 80f;
+
+    [Tooltip("QUEST prior: SD in log10 units (0.4 ≈ factor-of-2.5 uncertainty; 0.6 ≈ factor-of-4).")]
+    public float questTGuessSd = 0.4f;
+
+    [Tooltip("Weibull slope beta (1.5–3.0 typical for duration tasks).")]
+    public float questBeta = 2.0f;
+
+    [Tooltip("Lapse rate delta (probability of random response regardless of stimulus; ~0.02).")]
+    public float questDelta = 0.02f;
+
+    [Tooltip("Minimum testable duration in ms (should be ≤ shortest perceptible translation).")]
+    public float questXMinMs = 15f;
+
+    [Tooltip("Maximum testable duration in ms (should be ≥ longest needed to reach ceiling).")]
+    public float questXMaxMs = 400f;
+
+    /// <summary>
+    /// Sample a translation duration in frames for one trial (MoCS / fixed mode only).
+    /// For QUEST mode, TrialBlockRunner queries the staircase directly.
+    /// </summary>
+    public int SampleTranslationDurationFrames(System.Random rng)
+    {
+        if (translationDurations_ms != null && translationDurations_ms.Length > 0)
+        {
+            float ms = translationDurations_ms[rng.Next(translationDurations_ms.Length)];
+            return MsToFrames(ms);
+        }
+        return MsToFrames(translationDuration_ms);
+    }
+
+    /// <summary>Maximum translation frames across the testable range (used to set totalFrames).</summary>
+    public int MaxTranslationFrames()
+    {
+        if (useQuestAdaptive)
+            return MsToFrames(questXMaxMs);
+
+        int maxF = MsToFrames(translationDuration_ms);
+        if (translationDurations_ms != null)
+            foreach (float d in translationDurations_ms)
+                maxF = Mathf.Max(maxF, MsToFrames(d));
+        return maxF;
+    }
+
     // Distinct stimuli = (CUED/UNCUED) × (8 headings) × (rotationConfigFactor) × (delayedColorFactor) × swapFactor
     public override int GetUniqueStimulusCount()
     {
@@ -64,12 +139,18 @@ public class ExpSpecTestPhase : ExperimentSpec
         int swapFactor = 1;
         if (includeMotionSwaps)        swapFactor *= 2;
         if (includeColorSwaps)         swapFactor *= 2;
-        if (includeDots50Swaps)        swapFactor *= 2;
+        // Dots50 (noise-half) and Dots50A (coherent-half) are mutually exclusive per trial,
+        // unless includeDots50BothSwaps is also set (which adds the combined DDa condition).
+        int dotConditions = (includeDots50Swaps ? 1 : 0) + (includeDots50ASwaps ? 1 : 0)
+                          + (includeDots50BothSwaps ? 1 : 0);
+        if (dotConditions > 0) swapFactor *= (1 + dotConditions);
         if (includeDepthSwaps)         swapFactor *= 2;
         if (includeDepthPartialSwaps)  swapFactor *= 2;
         // ZdA and ZdB are mutually exclusive per trial; enabling both adds 2 conditions (not 3)
         if (includeDepth50ASwaps && includeDepth50BSwaps) swapFactor *= 3;
         else if (includeDepth50ASwaps || includeDepth50BSwaps) swapFactor *= 2;
+        // CM swap adds one condition if CM is not already in the power set
+        if (includeCMSwaps && !(includeMotionSwaps && includeColorSwaps)) swapFactor += 1;
         // Remove the no-swap baseline if excluded
         if (!includeNoSwapBaseline && swapFactor > 1) swapFactor -= 1;
 
@@ -89,7 +170,8 @@ public class ExpSpecTestPhase : ExperimentSpec
         var activeFlags = new List<int>();
         if (includeMotionSwaps)        activeFlags.Add((int)SwapFlags.Motion);
         if (includeColorSwaps)         activeFlags.Add((int)SwapFlags.Color);
-        if (includeDots50Swaps)        activeFlags.Add((int)SwapFlags.Dots50);
+        if (includeDots50Swaps || includeDots50BothSwaps)  activeFlags.Add((int)SwapFlags.Dots50);
+        if (includeDots50ASwaps || includeDots50BothSwaps) activeFlags.Add((int)SwapFlags.Dots50A);
         if (includeDepthSwaps)         activeFlags.Add((int)SwapFlags.Depth);
         if (includeDepthPartialSwaps)  activeFlags.Add((int)SwapFlags.Depth50);
         if (includeDepth50ASwaps)      activeFlags.Add((int)SwapFlags.Depth50A);
@@ -106,6 +188,23 @@ public class ExpSpecTestPhase : ExperimentSpec
         // ZdA and ZdB are mutually exclusive: remove any trial that has both set
         int bothAB = (int)SwapFlags.Depth50A | (int)SwapFlags.Depth50B;
         swapValues.RemoveAll(v => (v & bothAB) == bothAB);
+        // D and Da combined: keep only if includeDots50BothSwaps; remove individual conditions
+        // that were added solely as scaffolding for the combined case.
+        int bothDots = (int)SwapFlags.Dots50 | (int)SwapFlags.Dots50A;
+        if (!includeDots50BothSwaps)
+            swapValues.RemoveAll(v => (v & bothDots) == bothDots);
+        if (!includeDots50Swaps)
+            swapValues.RemoveAll(v => (v & bothDots) == (int)SwapFlags.Dots50
+                                   && (v & (int)SwapFlags.Dots50A) == 0);
+        if (!includeDots50ASwaps)
+            swapValues.RemoveAll(v => (v & bothDots) == (int)SwapFlags.Dots50A
+                                   && (v & (int)SwapFlags.Dots50) == 0);
+        // Add CM directly if not already present (e.g. when individual C/M are not enabled)
+        if (includeCMSwaps) {
+            int cmValue = (int)SwapFlags.Motion | (int)SwapFlags.Color;
+            if (!swapValues.Contains(cmValue))
+                swapValues.Add(cmValue);
+        }
         // Optionally exclude the no-swap baseline
         if (!includeNoSwapBaseline)
             swapValues.Remove(0);
@@ -155,6 +254,23 @@ public class ExpSpecTestPhase : ExperimentSpec
         {
             int j = rng.Next(i + 1);
             (trials[i], trials[j]) = (trials[j], trials[i]);
+        }
+
+        // Assign lateral shift directions (balanced ±1, randomised order)
+        if (lateralShiftDeg > 0f)
+        {
+            int half = trials.Count / 2;
+            var dirs = new int[trials.Count];
+            for (int i = 0; i < half; i++)      dirs[i] = +1;
+            for (int i = half; i < trials.Count; i++) dirs[i] = -1;
+            // Fisher-Yates shuffle
+            for (int i = dirs.Length - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                int tmp = dirs[i]; dirs[i] = dirs[j]; dirs[j] = tmp;
+            }
+            for (int i = 0; i < trials.Count; i++)
+                trials[i].lateralShiftDir = dirs[i];
         }
 
         // Reindex after shuffle so Trial column is contiguous
@@ -248,6 +364,7 @@ public class ExpSpecTestPhase : ExperimentSpec
         bool motionSwap   = (t.swapFlags & (int)SwapFlags.Motion)   != 0;
         bool colorSwap    = (t.swapFlags & (int)SwapFlags.Color)    != 0;
         bool dots50Swap   = (t.swapFlags & (int)SwapFlags.Dots50)   != 0;
+        bool dots50ASwap  = (t.swapFlags & (int)SwapFlags.Dots50A)  != 0;
         bool depthSwap    = (t.swapFlags & (int)SwapFlags.Depth)    != 0;
         bool depth50Swap  = (t.swapFlags & (int)SwapFlags.Depth50)  != 0;
         bool depth50ASwap = (t.swapFlags & (int)SwapFlags.Depth50A) != 0;
@@ -280,9 +397,13 @@ public class ExpSpecTestPhase : ExperimentSpec
             Color fieldBColor = (colorSwap && afterSwap) ? nonDelayedColor : delayedColor;
 
             // Field membership per subfield.
-            // Default: [A, A, B, B]. With dots50 swap at tStart: [A, B, B, A].
-            bool sub1isA = !(dots50Swap && afterSwap);
-            bool sub3isA =  (dots50Swap && afterSwap);
+            // Default: [A, A, B, B].
+            // Dots50  (noise-half swap)    at tStart: sub1↔sub3 → [A, B, B, A]
+            // Dots50A (coherent-half swap) at tStart: sub0↔sub2 → [B, A, A, B]
+            bool sub0isA = !(dots50ASwap && afterSwap);   // Sub0 in Field A unless Dots50A swapped
+            bool sub1isA = !(dots50Swap  && afterSwap);   // Sub1 in Field A unless Dots50  swapped
+            bool sub2isB = !(dots50ASwap && afterSwap);   // Sub2 in Field B unless Dots50A swapped
+            bool sub3isA =  (dots50Swap  && afterSwap);   // Sub3 in Field A only when Dots50 swapped
 
             // Which field carries the delayed onset?
             // delayTranslator=true  (default): Field B (Sub2+Sub3) hidden before onset — Dots✓
@@ -292,10 +413,19 @@ public class ExpSpecTestPhase : ExperimentSpec
             Color aHiddenColor = delayTranslator ? fieldAColor : (afterOnset ? fieldAColor : rgbaBlack);
             Color bHiddenColor = delayTranslator ? (afterOnset ? fieldBColor : rgbaBlack) : fieldBColor;
 
-            // Sub0: always Field A
-            cond.subfields[0].motionKindByFrame[f] = curARot;
-            cond.subfields[0].colorByFrame[f]   = aHiddenColor;
-            cond.subfields[0].visibleByFrame[f] = aVisible;
+            // Sub0: Field A by default, Field B if Dots50A swapped
+            if (sub0isA)
+            {
+                cond.subfields[0].motionKindByFrame[f] = curARot;
+                cond.subfields[0].colorByFrame[f]   = aHiddenColor;
+                cond.subfields[0].visibleByFrame[f] = aVisible;
+            }
+            else
+            {
+                cond.subfields[0].motionKindByFrame[f] = curBRot;
+                cond.subfields[0].colorByFrame[f]   = bHiddenColor;
+                cond.subfields[0].visibleByFrame[f] = bVisible;
+            }
 
             // Sub1: Field A by default, Field B if dots50 swapped
             cond.subfields[1].motionKindByFrame[f] = sub1isA ? curARot : curBRot;
@@ -310,10 +440,19 @@ public class ExpSpecTestPhase : ExperimentSpec
                 cond.subfields[1].visibleByFrame[f] = bVisible;
             }
 
-            // Sub2: always Field B
-            cond.subfields[2].motionKindByFrame[f] = curBRot;
-            cond.subfields[2].colorByFrame[f]   = bHiddenColor;
-            cond.subfields[2].visibleByFrame[f] = bVisible;
+            // Sub2: Field B by default, Field A if Dots50A swapped
+            if (sub2isB)
+            {
+                cond.subfields[2].motionKindByFrame[f] = curBRot;
+                cond.subfields[2].colorByFrame[f]   = bHiddenColor;
+                cond.subfields[2].visibleByFrame[f] = bVisible;
+            }
+            else
+            {
+                cond.subfields[2].motionKindByFrame[f] = curARot;
+                cond.subfields[2].colorByFrame[f]   = aHiddenColor;
+                cond.subfields[2].visibleByFrame[f] = aVisible;
+            }
 
             // Sub3: Field B by default, Field A if dots50 swapped
             if (sub3isA)
@@ -339,9 +478,9 @@ public class ExpSpecTestPhase : ExperimentSpec
                 CondLib.DepthPlane curADepth = (depthSwap && afterSwap) ? fieldBDepth : fieldADepth;
                 CondLib.DepthPlane curBDepth = (depthSwap && afterSwap) ? fieldADepth : fieldBDepth;
 
-                cond.subfields[0].depthByFrame[f] = curADepth;                      // sub0: always Field A
+                cond.subfields[0].depthByFrame[f] = sub0isA ? curADepth : curBDepth; // sub0: follows membership
                 cond.subfields[1].depthByFrame[f] = sub1isA ? curADepth : curBDepth; // sub1: follows membership
-                cond.subfields[2].depthByFrame[f] = curBDepth;                      // sub2: always Field B
+                cond.subfields[2].depthByFrame[f] = sub2isB ? curBDepth : curADepth; // sub2: follows membership
                 cond.subfields[3].depthByFrame[f] = sub3isA ? curADepth : curBDepth; // sub3: follows membership
             }
             else
@@ -446,18 +585,51 @@ public class ExpSpecTestPhase : ExperimentSpec
 
         for (int f = fStart; f < fEndClamped; f++)
         {
-            if (dots50Swap)
+            if (dots50Swap && dots50ASwap)
             {
-                // Field B={sub2,sub1}: sub2=Linear, sub1=NonCoherent
+                // Db: full dot-swap — both D and Da simultaneously. All subfields change field.
+                // After tStart: FieldB={sub0,sub1}, FieldA={sub2,sub3}.
+                // CUED (FieldB translates): sub0 (coh→FieldB)=Linear, sub1 (noise→FieldB)=NonCoherent.
+                // UNCUED (FieldA translates): sub2 (coh→FieldA)=Linear, sub3 (noise→FieldA)=NonCoherent.
+                if (isCued)
+                {
+                    cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+                else
+                {
+                    cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+            }
+            else if (dots50Swap)
+            {
+                // Field B={sub2,sub1}: sub2 original→Linear, sub1 swapped-in→NonCoherent
                 if (isCued)
                 {
                     cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
                     cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
                 }
-                else  // Field A={sub0,sub3}: sub0=Linear, sub3=NonCoherent
+                else  // Field A={sub0,sub3}: sub0 original→Linear, sub3 swapped-in→NonCoherent
                 {
                     cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
                     cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+            }
+            else if (dots50ASwap)
+            {
+                // Coherent-half swap: Field B={sub0,sub3}, Field A={sub2,sub1} after tStart.
+                // Sub0 (swapped-in from A's coherent half) inherits coherent role; sub3 (original B noise) = NonCoherent.
+                // Sub2 (swapped-in from B's coherent half) inherits coherent role; sub1 (original A noise) = NonCoherent.
+                if (isCued)
+                {
+                    cond.subfields[0].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[3].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
+                }
+                else  // Field A={sub2,sub1}: sub2 swapped-in coherent→Linear, sub1 original noise→NonCoherent
+                {
+                    cond.subfields[2].motionKindByFrame[f] = CondLib.MotionKind.Linear;
+                    cond.subfields[1].motionKindByFrame[f] = CondLib.MotionKind.NonCoherent;
                 }
             }
             else if (depth50ASwap || depth50BSwap)

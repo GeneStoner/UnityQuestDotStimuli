@@ -56,6 +56,10 @@ public class StimulusBuilder : MonoBehaviour
         // Cached renderer references — populated in BuildFromCondition so that
         // ApplyScreenSpaceDots never calls GetComponent() per frame.
         public List<Renderer> renderers;
+
+        // Cached material references (one per dot, same order as renderers).
+        // Storing these explicitly avoids any sharedMaterial getter ambiguity.
+        public List<Material> materials;
     }
 
     public SubfieldRuntime[] Subfields { get; private set; } = new SubfieldRuntime[4];
@@ -88,13 +92,14 @@ public class StimulusBuilder : MonoBehaviour
              "Default 0.063 m (average adult). Only used when useScreenSpaceShader = true.")]
     public float ipdMeters = 0.063f;
 
-    // Reusable MaterialPropertyBlock — allocated once, reused for every per-dot write.
-    private MaterialPropertyBlock _mpb;
-
     // Last condition/frame passed to ApplyScreenSpaceDots so that RefreshRotation
     // can re-apply NDC positions during the WaitingForStart preview loop.
     private CondLib.StimulusCondition _lastSSCond;
     private int _lastSSFrame = 0;
+
+    // One-shot diagnostic flag: reset each BuildFromCondition, fires first
+    // ApplyScreenSpaceDots call so key shader params are visible in logcat.
+    private bool _ssDiagPending;
 
     float ApertureRadiusMeters => DegToMeters(apertureDeg * 0.5f, viewDistanceMeters);
 
@@ -202,6 +207,7 @@ public class StimulusBuilder : MonoBehaviour
 
             sf.trajectoryPos = new Vector2[count];
             sf.renderers     = new List<Renderer>(count);
+            sf.materials     = new List<Material>(count);
 
             for (int d = 0; d < count; d++)
             {
@@ -215,11 +221,13 @@ public class StimulusBuilder : MonoBehaviour
                 dot.transform.localScale = Vector3.one * dotSizeMeters;
 
                 var r = dot.GetComponent<Renderer>();
+                Material dotMat = null;
                 if (r != null)
                 {
-                    r.material = useScreenSpaceShader
+                    dotMat = useScreenSpaceShader
                         ? MakeScreenSpaceMaterial(sf.color)
                         : MakeAdditiveMaterial(sf.color);
+                    r.sharedMaterial = dotMat; // assign directly; avoids Unity auto-instance copy
                     r.enabled = false; // Start hidden; ApplyAppearance will enable as needed
                 }
 
@@ -228,7 +236,8 @@ public class StimulusBuilder : MonoBehaviour
                     transform.position + transform.right * p.x + transform.up * p.y;
 
                 sf.dots.Add(dot.transform);
-                sf.renderers.Add(r);   // cache — may be null if Renderer missing
+                sf.renderers.Add(r);      // cache — may be null if Renderer missing
+                sf.materials.Add(dotMat); // cache material for zero-ambiguity writes
                 sf.trajectoryPos[d] = p;
             }
 
@@ -240,6 +249,7 @@ public class StimulusBuilder : MonoBehaviour
             if (sf != null && sf.dots != null)
                 totalDots += sf.dots.Count;
 
+        _ssDiagPending = true; // fire diagnostic on first ApplyScreenSpaceDots call
         Debug.Log($"[StimulusBuilder] Built condition '{cond.name}' with {totalDots} dots total.");
     }
 
@@ -267,15 +277,20 @@ public class StimulusBuilder : MonoBehaviour
             if (tracks.colorByFrame != null && frame < tracks.colorByFrame.Length)
                 col = tracks.colorByFrame[frame];
 
-            if (runtime.material != null)
-                runtime.material.color = col;
-
-            foreach (var t in runtime.dots)
+            // Update each dot's cached material directly (zero-ambiguity path).
+            if (runtime.materials != null)
             {
-                if (t == null) continue;
-                var r = t.GetComponent<Renderer>();
-                if (r != null)
-                    r.enabled = visible; // respect visibleByFrame setting
+                for (int k = 0; k < runtime.materials.Count; k++)
+                    if (runtime.materials[k] != null)
+                        runtime.materials[k].color = col;
+            }
+
+            // Enable/disable renderers per visibleByFrame.
+            if (runtime.renderers != null)
+            {
+                for (int k = 0; k < runtime.renderers.Count; k++)
+                    if (runtime.renderers[k] != null)
+                        runtime.renderers[k].enabled = visible;
             }
         }
     }
@@ -466,8 +481,6 @@ public class StimulusBuilder : MonoBehaviour
         _lastSSCond  = cond;
         _lastSSFrame = frame;
 
-        if (_mpb == null) _mpb = new MaterialPropertyBlock();
-
         // Stimulus plane axes — passed to shader so it can build billboard corners
         // in world space without any axis-alignment constraint on the camera.
         Vector4 rightDir = transform.right;
@@ -477,11 +490,22 @@ public class StimulusBuilder : MonoBehaviour
         int sfCount = Mathf.Min(Subfields.Length,
                                 cond.subfields == null ? 0 : cond.subfields.Length);
 
+        // One-shot diagnostic: fire on first call after each BuildFromCondition.
+        bool logThis = _ssDiagPending;
+        if (logThis) _ssDiagPending = false;
+
+        var diagSB = logThis ? new System.Text.StringBuilder() : null;
+        if (logThis)
+            diagSB.Append($"[SSDots] FIRST CALL cond={cond.name} frame={frame} " +
+                          $"depthOff={depthOffset_m:F4} bias={depthBias_m:F4} " +
+                          $"ipd={ipdMeters:F4} viewDist={viewDistanceMeters:F4}\n" +
+                          $"  rightDir={rightDir}  upDir={upDir}  halfSize={halfSize:F5}\n");
+
         for (int s = 0; s < sfCount; s++)
         {
             var sf = Subfields[s];
             if (sf == null || sf.dots == null || sf.trajectoryPos == null
-                           || sf.renderers == null) continue;
+                           || sf.renderers == null || sf.materials == null) continue;
 
             // Depth plane → Δz (metres from fixation, same sign logic as ApplyDepthOffsets).
             float Δz = 0f;
@@ -506,13 +530,18 @@ public class StimulusBuilder : MonoBehaviour
             //   Left eye shifts LEFT = uncrossed / Far disparity ✓
             float halfDispWorld = -(ipdMeters * Δz / (2f * viewDistanceMeters));
 
-            int dotCount = Mathf.Min(sf.dots.Count, sf.trajectoryPos.Length);
+            if (logThis)
+                diagSB.Append($"  sub{s}: Δz={Δz:F4} halfDispWorld={halfDispWorld:F6} " +
+                              $"nDots={sf.dots.Count} ren0={sf.renderers[0]?.enabled} " +
+                              $"mat0={(sf.materials.Count > 0 ? sf.materials[0]?.name : "null")}\n");
+
+            int dotCount = Mathf.Min(sf.dots.Count,
+                           Mathf.Min(sf.trajectoryPos.Length, sf.materials.Count));
             for (int k = 0; k < dotCount; k++)
             {
                 var dot = sf.dots[k];
-                var ren = (sf.renderers != null && k < sf.renderers.Count)
-                         ? sf.renderers[k] : null;
-                if (dot == null || ren == null) continue;
+                var mat = sf.materials[k];
+                if (dot == null || mat == null) continue;
 
                 // Dot centre in world space at the fixation plane.
                 Vector3 worldCenter = FromLocalPlane(
@@ -522,15 +551,40 @@ public class StimulusBuilder : MonoBehaviour
                 // dot in view when it should be (world ≈ render position).
                 dot.position = worldCenter;
 
-                ren.GetPropertyBlock(_mpb);
-                _mpb.SetVector("_WorldCenter",        new Vector4(worldCenter.x,
-                                                                   worldCenter.y,
-                                                                   worldCenter.z, 0f));
-                _mpb.SetVector("_RightDir",           rightDir);
-                _mpb.SetVector("_UpDir",              upDir);
-                _mpb.SetFloat ("_HalfSizeMeters",     halfSize);
-                _mpb.SetFloat ("_HalfDisparityWorld", halfDispWorld);
-                ren.SetPropertyBlock(_mpb);
+                // Write directly to the cached per-dot material.
+                // The shader's CBuffer is named DotPerRenderer (not UnityPerMaterial),
+                // which makes it NOT SRP Batcher compatible. Unity therefore uses the
+                // legacy per-draw-call path: properties are uploaded fresh every frame,
+                // no stale-CBuffer issues for static WaitingForStart renderers.
+                mat.SetVector("_WorldCenter",        new Vector4(worldCenter.x,
+                                                                  worldCenter.y,
+                                                                  worldCenter.z, 0f));
+                mat.SetVector("_RightDir",           rightDir);
+                mat.SetVector("_UpDir",              upDir);
+                mat.SetFloat ("_HalfSizeMeters",     halfSize);
+                mat.SetFloat ("_HalfDisparityWorld", halfDispWorld);
+
+                if (logThis && k == 0)
+                    diagSB.Append($"    dot0 worldCenter={worldCenter}\n");
+            }
+        }
+
+        if (logThis)
+        {
+            // Write to file (not Debug.Log) so it survives logcat buffer overflow.
+            // Pull with: adb pull .../files/ss_diag.txt /tmp/ss_diag.txt
+            try
+            {
+                string diagPath = System.IO.Path.Combine(
+                    Application.persistentDataPath, "ss_diag.txt");
+                bool append = System.IO.File.Exists(diagPath);
+                System.IO.File.AppendAllText(diagPath,
+                    $"--- trial (append mode) ---\n{diagSB}\n");
+                Debug.Log($"[SSDots] Diagnostic appended to {diagPath}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[SSDots] Could not write diagnostic: {e.Message}");
             }
         }
     }
@@ -672,7 +726,9 @@ public class StimulusBuilder : MonoBehaviour
         float R = ApertureRadiusMeters;
         Vector2 v = new Vector2(lp.x, lp.y);
 
-        if (v.magnitude <= R) return;
+        bool outsideAperture  = v.magnitude > R;
+        bool insideExclusion  = exclusionRadiusMeters > 0f && v.magnitude < exclusionRadiusMeters;
+        if (!outsideAperture && !insideExclusion) return;
 
         if (!respawnWhenOutOfBounds)
         {
@@ -729,6 +785,27 @@ public class StimulusBuilder : MonoBehaviour
         float r  = Mathf.Sqrt(u * (R_out * R_out - R_in * R_in) + R_in * R_in);
         float th = (float)rng.NextDouble() * (2f * Mathf.PI);
         return new Vector2(r * Mathf.Cos(th), r * Mathf.Sin(th));
+    }
+
+    /// <summary>
+    /// Randomly reposition all dots in a subfield (uniform annulus), using a deterministic
+    /// seed offset that is distinct from normal out-of-bounds respawn seeds.
+    /// Call once at translation onset to remove dot-identity continuity.
+    /// </summary>
+    public void ReplotSubfield(int subfieldIndex, int frame)
+    {
+        if (!IsValid(subfieldIndex)) return;
+        var sf = Subfields[subfieldIndex];
+        int count = sf.trajectoryPos.Length;
+        for (int d = 0; d < count; d++)
+        {
+            // Use a large prime offset on frame so these seeds never collide with
+            // HandleOutOfBounds seeds (which use the raw frame value).
+            int seed = Hash(sf.seedBase, d, frame + 7919983);
+            System.Random rng = new System.Random(seed);
+            Vector2 p = UniformAnnulus(rng, ApertureRadiusMeters, exclusionRadiusMeters);
+            sf.trajectoryPos[d] = p;
+        }
     }
 
     static float DegToMeters(float angleDeg, float viewDistMeters)

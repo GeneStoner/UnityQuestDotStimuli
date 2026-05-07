@@ -14,6 +14,29 @@ public class Fixation_Controller : MonoBehaviour
     [Tooltip("Use shader-based quads for smooth anti-aliased circles (recommended). If false, uses assigned cylinder GameObjects.")]
     public bool useShaderCircles = true;
 
+    [Tooltip("Generate fixation target as a single runtime PNG sprite (recommended for Quest). " +
+             "Uses Custom/FixationSprite shader (Queue=Overlay+20, ZTest Always) so target always " +
+             "appears in front of dots. Ignored when useShaderCircles=false.")]
+    public bool usePNGSprite = true;
+
+    [Tooltip("Use analytical SDF shader (Custom/FixationSpriteSDF) instead of a pre-baked texture. " +
+             "Resolution-independent — crisp at any size. Requires fixationSDFShaderAsset to be assigned. " +
+             "ROLLBACK: uncheck this to revert to texture mode (fixationSpriteShaderAsset + spriteTexSize).")]
+    public bool useSDFShader = false;
+
+    [Tooltip("Direct reference to Custom/FixationSpriteSDF shader (SDF mode). " +
+             "Drag FixationSpriteSDF.shader here.")]
+    public Shader fixationSDFShaderAsset;
+
+    [Tooltip("Resolution of the generated sprite texture (texture mode only, ignored in SDF mode). " +
+             "512 is recommended; higher = smoother edges at large sizes.")]
+    [Range(64, 512)]
+    public int spriteTexSize = 256;
+
+    [Tooltip("Direct reference to Custom/FixationSprite shader (texture mode). Drag FixationSprite.shader here. " +
+             "When assigned, Unity auto-bundles the shader in builds (more reliable than Shader.Find).")]
+    public Shader fixationSpriteShaderAsset;
+
     [Header("Shader Circle Settings (when useShaderCircles=true)")]
     [Range(0.005f, 0.1f)]
     public float edgeSmoothness = 0.03f;
@@ -37,6 +60,13 @@ public class Fixation_Controller : MonoBehaviour
     private Material _centerMaterial;
     private Material _crossMaterialH;
     private Material _crossMaterialV;
+
+    // PNG Sprite mode — single quad with runtime-generated RGBA texture.
+    // Renders in Queue=Overlay+20 (after dots at Overlay+10), ZTest Always.
+    // Avoids all procedural-mesh / shader-circle complexity.
+    private GameObject _spriteObj;
+    private Material   _spriteMaterial;
+    private Texture2D  _spriteTexture;
 
     // Nonius line objects (binocular — both eyes see both lines)
     // Note: true dichoptic rendering is not achievable via Unity APIs with the
@@ -95,15 +125,22 @@ public class Fixation_Controller : MonoBehaviour
     public bool diskNormalIsPlusZ = true;
 
     [Header("Bullseye diameters (degrees)")]
-    [Tooltip("Inner circle DIAMETER in degrees.")]
-    public float innerDiam_deg = 0.40f;
-
-    [Tooltip("Outer circle DIAMETER in degrees.")]
+    [Tooltip("Outer disc DIAMETER in degrees.")]
     public float outerDiam_deg = 1.00f;
+
+    [Tooltip("In PNG sprite mode: center dot DIAMETER in degrees (white dot over crosshair intersection). " +
+             "In procedural mesh mode: inner ring diameter.")]
+    public float innerDiam_deg = 0.30f;
 
     [Header("Crosshair geometry (decoupled from inner circle)")]
     [Tooltip("Crosshair stroke thickness in degrees (independent knob).")]
     public float crossThickness_deg = 0.12f;
+
+    [Tooltip("SDF mode only: how far the cross tips extend beyond the disc edge, in degrees. " +
+             "Small value (e.g. 0.10) creates a visible stub of the cross just outside the white disc. " +
+             "0 = arms end exactly at disc edge (clipped). Ignored in texture mode.")]
+    [Min(0f)]
+    public float crossOvershoot_deg = 0.10f;
 
     [Tooltip("Cross half-length scale relative to outer radius. 1.00 reaches edge; 1.02 slightly overshoots to hide ring tips.")]
     public float crossHalfLenScale = 1.00f;
@@ -173,7 +210,8 @@ public class Fixation_Controller : MonoBehaviour
 
         if (useShaderCircles)
         {
-            if (_ringObj == null)
+            // In PNG sprite mode _ringObj is null by design; check _spriteObj too.
+            if (_ringObj == null && _spriteObj == null)
                 CreateShaderObjects();
 
             ApplyShaderCircles();
@@ -203,17 +241,21 @@ public class Fixation_Controller : MonoBehaviour
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
 
         float mPerDeg = spec.GetMetersPerDegree();
-        float s = Mathf.Max(0.1f, previewScale);
+        float s = Mathf.Max(0.1f, previewScale) * (spec != null && spec.fixationScaleFactor > 0f ? spec.fixationScaleFactor : 1f);
+
+        float effOuterDiam_deg = outerDiam_deg;
+        float effInnerDiam_deg = innerDiam_deg;
+        float effCrossThk_deg  = crossThickness_deg;
 
         // --- Bullseye meters (truth -> effective) ---
-        float innerDiam_m = Mathf.Max(1e-6f, innerDiam_deg * mPerDeg) * s;
-        float outerDiam_m = Mathf.Max(1e-6f, outerDiam_deg * mPerDeg) * s;
+        float innerDiam_m = Mathf.Max(1e-6f, effInnerDiam_deg * mPerDeg) * s;
+        float outerDiam_m = Mathf.Max(1e-6f, effOuterDiam_deg * mPerDeg) * s;
 
         // --- Cross derived from outer circle, thickness is independent ---
         float outerRadius_m = 0.5f * outerDiam_m;
         float crossHalfLen_m = outerRadius_m * Mathf.Max(0.1f, crossHalfLenScale);
 
-        float crossThk_m = Mathf.Max(1e-6f, crossThickness_deg * mPerDeg) * s;
+        float crossThk_m = Mathf.Max(1e-6f, effCrossThk_deg * mPerDeg) * s;
 
         // Optional dot from spec (if enabled)
         float dotDiam_m = Mathf.Max(1e-6f, (2f * spec.fixationDotRadius_deg * mPerDeg)) * s;
@@ -340,6 +382,72 @@ public class Fixation_Controller : MonoBehaviour
 
     void CreateShaderObjects()
     {
+        // Hide old cylinder-based objects if assigned
+        if (ringOuter) ringOuter.SetActive(false);
+        if (ringInner) ringInner.SetActive(false);
+        if (hArm) hArm.SetActive(false);
+        if (vArm) vArm.SetActive(false);
+        if (fixDot) fixDot.SetActive(false);
+
+        // Nonius lines — shared between both rendering modes
+        Shader noniusShader = Shader.Find("Custom/NoniusLine");
+        if (noniusShader != null)
+        {
+            _noniusMaterialL = new Material(noniusShader) { name = "NoniusTop"    };
+            _noniusMaterialR = new Material(noniusShader) { name = "NoniusBottom" };
+            _noniusMaterialL.SetInt("_TargetEye", 0);  // top segment → left eye only
+            _noniusMaterialR.SetInt("_TargetEye", 1);  // bottom segment → right eye only
+            _noniusLeft  = CreateShaderQuad("NoniusTop",    _noniusMaterialL);
+            _noniusRight = CreateShaderQuad("NoniusBottom", _noniusMaterialR);
+        }
+        else
+        {
+            Debug.LogWarning("[Fixation_Controller] Custom/NoniusLine shader not found. Nonius lines disabled.");
+        }
+
+        if (usePNGSprite)
+        {
+            // SDF path: analytical shader, no texture — resolution-independent.
+            // Texture path: pre-baked RGBA texture, resolution limited by spriteTexSize.
+            // Both use Queue=Overlay+20, ZTest Always — always on top of dots (Overlay+10).
+            Shader spriteShader = null;
+
+            if (useSDFShader)
+            {
+                spriteShader = fixationSDFShaderAsset != null
+                    ? fixationSDFShaderAsset
+                    : Shader.Find("Custom/FixationSpriteSDF");
+                if (spriteShader == null)
+                    Debug.LogWarning("[Fixation_Controller] Custom/FixationSpriteSDF not found. " +
+                                     "Assign FixationSpriteSDF.shader to fixationSDFShaderAsset. " +
+                                     "Falling back to texture mode.");
+            }
+
+            if (spriteShader == null)
+            {
+                // Texture mode (also SDF fallback)
+                spriteShader = fixationSpriteShaderAsset != null
+                    ? fixationSpriteShaderAsset
+                    : Shader.Find("Custom/FixationSprite");
+            }
+
+            if (spriteShader == null)
+            {
+                Debug.LogError("[Fixation_Controller] No fixation sprite shader found! " +
+                               "Assign FixationSprite.shader or FixationSpriteSDF.shader. " +
+                               "Falling back to procedural mesh mode.");
+                usePNGSprite = false;
+                // fall through to procedural mesh path below
+            }
+            else
+            {
+                _spriteMaterial = new Material(spriteShader) { name = "FixSpriteMat" };
+                _spriteObj = CreateShaderQuad("FixSprite", _spriteMaterial);
+                return; // sprite mode set up; nonius already created above
+            }
+        }
+
+        // Procedural mesh path (fallback when usePNGSprite=false or shader not found)
         Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
         if (unlitShader == null)
             unlitShader = Shader.Find("Unlit/Color");
@@ -362,35 +470,19 @@ public class Fixation_Controller : MonoBehaviour
         // Cross arms stay as flat quads (rectangles are correct by construction).
         _shaderHCross = CreateShaderQuad("HCross", _crossMaterialH);
         _shaderVCross = CreateShaderQuad("VCross", _crossMaterialV);
-
-        // Nonius line quads — dichoptic: top segment to left eye only, bottom to right eye only.
-        // Requires Multiview stereo mode (m_StereoRenderingModeAndroid: 2) for unity_StereoEyeIndex
-        // to be populated. In Multipass mode _TargetEye has no effect (both eyes see both lines).
-        Shader noniusShader = Shader.Find("Custom/NoniusLine");
-        if (noniusShader != null)
-        {
-            _noniusMaterialL = new Material(noniusShader) { name = "NoniusTop"    };
-            _noniusMaterialR = new Material(noniusShader) { name = "NoniusBottom" };
-            _noniusMaterialL.SetInt("_TargetEye", 0);  // top segment → left eye only
-            _noniusMaterialR.SetInt("_TargetEye", 1);  // bottom segment → right eye only
-            _noniusLeft  = CreateShaderQuad("NoniusTop",    _noniusMaterialL);
-            _noniusRight = CreateShaderQuad("NoniusBottom", _noniusMaterialR);
-        }
-        else
-        {
-            Debug.LogWarning("[Fixation_Controller] Custom/NoniusLine shader not found. Nonius lines disabled.");
-        }
-
-        // Hide old cylinder-based objects if assigned
-        if (ringOuter) ringOuter.SetActive(false);
-        if (ringInner) ringInner.SetActive(false);
-        if (hArm) hArm.SetActive(false);
-        if (vArm) vArm.SetActive(false);
-        if (fixDot) fixDot.SetActive(false);
     }
 
     void DestroyShaderObjects()
     {
+        // PNG sprite mode objects
+        SafeDestroyObj(_spriteObj);
+        SafeDestroyObj(_spriteMaterial);
+        SafeDestroyObj(_spriteTexture);
+        _spriteObj = null;
+        _spriteMaterial = null;
+        _spriteTexture = null;
+
+        // Procedural mesh mode objects
         SafeDestroyObj(_ringObj);
         SafeDestroyObj(_centerObj);
         SafeDestroyObj(_shaderHCross);
@@ -449,11 +541,19 @@ public class Fixation_Controller : MonoBehaviour
 
     void ApplyShaderCircles()
     {
-        if (_ringObj == null || _ringMaterial == null) return;
         if (spec == null) return;
 
+        if (usePNGSprite)
+        {
+            ApplySpriteMode();
+            ApplyNoniusLines();
+            return;
+        }
+
+        if (_ringObj == null || _ringMaterial == null) return;
+
         float mPerDeg = spec.GetMetersPerDegree();
-        float s = Mathf.Max(0.1f, previewScale);
+        float s = Mathf.Max(0.1f, previewScale) * (spec != null && spec.fixationScaleFactor > 0f ? spec.fixationScaleFactor : 1f);
 
         float outerDiam_m = Mathf.Max(1e-6f, outerDiam_deg * mPerDeg) * s;
         float innerDiam_m = Mathf.Max(1e-6f, innerDiam_deg * mPerDeg) * s;
@@ -509,29 +609,217 @@ public class Fixation_Controller : MonoBehaviour
             }
         }
 
-        // --- Nonius lines (dichoptic) ---
+        ApplyNoniusLines();
+    }
+
+    // ==================== PNG SPRITE MODE ====================
+
+    void ApplySpriteMode()
+    {
+        if (_spriteObj == null || _spriteMaterial == null) return;
+
+        if (useSDFShader && _spriteMaterial.shader.name == "Custom/FixationSpriteSDF")
+        {
+            ApplySDFMode();
+            return;
+        }
+
+        // --- Texture mode ---
+        float mPerDeg = spec.GetMetersPerDegree();
+        float s = Mathf.Max(0.1f, previewScale) * (spec != null && spec.fixationScaleFactor > 0f ? spec.fixationScaleFactor : 1f);
+
+        float outerDiam_m = Mathf.Max(1e-6f, outerDiam_deg * mPerDeg) * s;
+
+        // Regenerate texture whenever Apply() is called (covers Inspector changes).
+        SafeDestroyObj(_spriteTexture);
+        _spriteTexture = GenerateFixationTexture(mPerDeg, s);
+        _spriteMaterial.mainTexture = _spriteTexture;
+
+        // Quad = outer disc diameter; crosshairs are clipped inside, nothing outside.
+        _spriteObj.transform.localPosition = new Vector3(0f, 0f, zOuterRing);
+        _spriteObj.transform.localScale    = new Vector3(outerDiam_m, outerDiam_m, 1f);
+        _spriteObj.transform.localRotation = Quaternion.identity;
+        _spriteObj.SetActive(true);
+    }
+
+    void ApplySDFMode()
+    {
+        // SDF mode: no texture — geometry is computed analytically in the fragment shader.
+        // Parameters are passed as normalized ratios (UV half-space: 0=center, 0.5=disc edge).
+        if (_spriteObj == null || _spriteMaterial == null) return;
+
+        float mPerDeg = spec.GetMetersPerDegree();
+        float s = Mathf.Max(0.1f, previewScale) * (spec != null && spec.fixationScaleFactor > 0f ? spec.fixationScaleFactor : 1f);
+
+        float outerDiam_m   = Mathf.Max(1e-6f, outerDiam_deg * mPerDeg) * s;
+        float outerDiam_deg_eff = Mathf.Max(1e-6f, outerDiam_deg);
+
+        // Normalized: outer disc radius = 0.5 (fills quad edge-to-edge).
+        // All other values scale relative to that.
+        float crossHalfWNorm    = 0.5f * crossThickness_deg / outerDiam_deg_eff;
+        float dotRadiusNorm     = 0.5f * innerDiam_deg       / outerDiam_deg_eff;
+        float crossOvershootNorm = 0.5f * Mathf.Max(0f, crossOvershoot_deg) / outerDiam_deg_eff;
+
+        Color fixC = driveColorFromSpec ? spec.fixationColor : overrideFixColor;
+
+        _spriteMaterial.SetFloat("_CrossHalfWNorm",    crossHalfWNorm);
+        _spriteMaterial.SetFloat("_DotRadiusNorm",     dotRadiusNorm);
+        _spriteMaterial.SetFloat("_CrossOvershootNorm", crossOvershootNorm);
+        _spriteMaterial.SetColor("_FixColor",           fixC);
+        _spriteMaterial.SetColor("_CrossColor",         crossColor);
+
+        // Free any stale texture from a previous texture-mode run
+        SafeDestroyObj(_spriteTexture);
+        _spriteTexture = null;
+
+        _spriteObj.transform.localPosition = new Vector3(0f, 0f, zOuterRing);
+        _spriteObj.transform.localScale    = new Vector3(outerDiam_m, outerDiam_m, 1f);
+        _spriteObj.transform.localRotation = Quaternion.identity;
+        _spriteObj.SetActive(true);
+    }
+
+    // Generates an RGBA32 Texture2D containing the full fixation bulls-eye.
+    // Layout (UV origin at bottom-left, center at (0.5, 0.5)):
+    //   - White annulus (fixC):  innerR_m ≤ r ≤ outerR_m
+    //   - Black crosshairs:      |wx| ≤ crossHalfW_m  OR  |wy| ≤ crossHalfW_m
+    //   - Black center disc:     r ≤ innerR_m  (covers cross intersection)
+    //   - Transparent elsewhere (corners of quad, hole between arms outside inner disc)
+    //
+    // The quad world-size = 2 × crossHalfLen_m, so crosshair arms reach exactly the
+    // outer ring edge (crossHalfLenScale=1.0) or slightly beyond (>1.0).
+    // Generates an RGBA32 Texture2D with the CCP-style fixation target:
+    //
+    //   Layer 1 (bottom): White filled disc, radius = outerR_m
+    //   Layer 2:          Black crosshairs clipped to disc (|wx|<crossHalfW OR |wy|<crossHalfW)
+    //   Layer 3 (top):    Small white center dot, radius = innerR_m  (innerDiam_deg repurposed)
+    //
+    // Quad world-size = outerDiam_m (crosshairs end at disc edge, nothing outside).
+    Texture2D GenerateFixationTexture(float mPerDeg, float s)
+    {
+        int texSize = Mathf.Max(64, spriteTexSize);
+
+        float outerR_m     = 0.5f * Mathf.Max(1e-6f, outerDiam_deg      * mPerDeg) * s;
+        float centerDotR_m = 0.5f * Mathf.Max(1e-6f, innerDiam_deg      * mPerDeg) * s; // center dot
+        float crossHalfW_m = 0.5f * Mathf.Max(1e-6f, crossThickness_deg * mPerDeg) * s;
+
+        // Quad covers exactly the disc diameter — crosshairs are clipped inside it.
+        float quadHalf = outerR_m;
+        float pixM = 2f * quadHalf / texSize;
+        float aaR  = pixM * 1.5f;   // anti-alias radius (1.5 pixels)
+
+        Color fixC = driveColorFromSpec ? spec.fixationColor : overrideFixColor;
+
+        var pixels = new Color32[texSize * texSize];
+
+        for (int py = 0; py < texSize; py++)
+        {
+            for (int px = 0; px < texSize; px++)
+            {
+                float wx = (px + 0.5f - texSize * 0.5f) * pixM;
+                float wy = (py + 0.5f - texSize * 0.5f) * pixM;
+                float r  = Mathf.Sqrt(wx * wx + wy * wy);
+
+                // Layer 1: white filled disc
+                float discAlpha = 0f;
+                if (showRings)
+                    discAlpha = 1f - Mathf.Clamp01((r - (outerR_m - aaR)) / (2f * aaR));
+
+                // Layer 2: black crosshairs, clipped to disc boundary
+                float crossAlpha = 0f;
+                if (showCross && discAlpha > 0f)
+                {
+                    float hFade = 1f - Mathf.Clamp01((Mathf.Abs(wy) - (crossHalfW_m - aaR)) / (2f * aaR));
+                    float vFade = 1f - Mathf.Clamp01((Mathf.Abs(wx) - (crossHalfW_m - aaR)) / (2f * aaR));
+                    crossAlpha  = Mathf.Max(hFade, vFade) * discAlpha;
+                }
+
+                // Layer 3: small white center dot
+                float dotAlpha = 0f;
+                if (showRings)
+                    dotAlpha = 1f - Mathf.Clamp01((r - (centerDotR_m - aaR)) / (2f * aaR));
+
+                // --- Porter-Duff "over": disc → crosshairs → center dot ---
+                float rF = 0f, gF = 0f, bF = 0f, aF = 0f;
+
+                // Layer 1: disc (fixC = white)
+                if (discAlpha > 0f)
+                {
+                    rF = fixC.r; gF = fixC.g; bF = fixC.b; aF = discAlpha;
+                }
+
+                // Layer 2: crosshairs (crossColor = black) over disc
+                if (crossAlpha > 0f)
+                {
+                    float aOut = crossAlpha + aF * (1f - crossAlpha);
+                    if (aOut > 1e-6f)
+                    {
+                        rF = (crossColor.r * crossAlpha + rF * aF * (1f - crossAlpha)) / aOut;
+                        gF = (crossColor.g * crossAlpha + gF * aF * (1f - crossAlpha)) / aOut;
+                        bF = (crossColor.b * crossAlpha + bF * aF * (1f - crossAlpha)) / aOut;
+                    }
+                    aF = aOut;
+                }
+
+                // Layer 3: center dot (fixC = white) over crosshairs
+                if (dotAlpha > 0f)
+                {
+                    float aOut = dotAlpha + aF * (1f - dotAlpha);
+                    if (aOut > 1e-6f)
+                    {
+                        rF = (fixC.r * dotAlpha + rF * aF * (1f - dotAlpha)) / aOut;
+                        gF = (fixC.g * dotAlpha + gF * aF * (1f - dotAlpha)) / aOut;
+                        bF = (fixC.b * dotAlpha + bF * aF * (1f - dotAlpha)) / aOut;
+                    }
+                    aF = aOut;
+                }
+
+                pixels[py * texSize + px] = new Color32(
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(rF) * 255f),
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(gF) * 255f),
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(bF) * 255f),
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(aF) * 255f)
+                );
+            }
+        }
+
+        var tex = new Texture2D(texSize, texSize, TextureFormat.RGBA32, false);
+        tex.name       = "FixationSpriteTex";
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode   = TextureWrapMode.Clamp;
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        return tex;
+    }
+
+    // ==================== NONIUS LINE HELPERS ====================
+
+    void ApplyNoniusLines()
+    {
+        if (spec == null) return;
+        float mPerDeg = spec.GetMetersPerDegree();
+        float s = Mathf.Max(0.1f, previewScale) * (spec != null && spec.fixationScaleFactor > 0f ? spec.fixationScaleFactor : 1f);
+
         bool noniusReady = showNoniusLines && _noniusLeft != null && _noniusRight != null;
         if (_noniusLeft  != null) _noniusLeft.SetActive(noniusReady);
         if (_noniusRight != null) _noniusRight.SetActive(noniusReady);
 
-        if (noniusReady)
-        {
-            float nLen_m  = Mathf.Max(1e-5f, noniusLength_deg * mPerDeg) * s;
-            float nWidth_m = Mathf.Max(1e-5f, noniusWidth_deg  * mPerDeg) * s;
-            float nGap_m   = Mathf.Max(0f,    noniusGap_deg    * mPerDeg) * s;
+        if (!noniusReady) return;
 
-            float centerY = nGap_m + nLen_m * 0.5f;
+        float nLen_m   = Mathf.Max(1e-5f, noniusLength_deg * mPerDeg) * s;
+        float nWidth_m = Mathf.Max(1e-5f, noniusWidth_deg  * mPerDeg) * s;
+        float nGap_m   = Mathf.Max(0f,    noniusGap_deg    * mPerDeg) * s;
 
-            _noniusLeft.transform.localPosition  = new Vector3(0f,  centerY, zCross);
-            _noniusLeft.transform.localScale      = new Vector3(nWidth_m, nLen_m, 1f);
-            _noniusLeft.transform.localRotation   = Quaternion.identity;
-            _noniusMaterialL.SetColor(ShaderColorId, noniusColor);
+        float centerY = nGap_m + nLen_m * 0.5f;
 
-            _noniusRight.transform.localPosition = new Vector3(0f, -centerY, zCross);
-            _noniusRight.transform.localScale     = new Vector3(nWidth_m, nLen_m, 1f);
-            _noniusRight.transform.localRotation  = Quaternion.identity;
-            _noniusMaterialR.SetColor(ShaderColorId, noniusColor);
-        }
+        _noniusLeft.transform.localPosition  = new Vector3(0f,  centerY, zCross);
+        _noniusLeft.transform.localScale      = new Vector3(nWidth_m, nLen_m, 1f);
+        _noniusLeft.transform.localRotation   = Quaternion.identity;
+        _noniusMaterialL.SetColor(ShaderColorId, noniusColor);
+
+        _noniusRight.transform.localPosition = new Vector3(0f, -centerY, zCross);
+        _noniusRight.transform.localScale     = new Vector3(nWidth_m, nLen_m, 1f);
+        _noniusRight.transform.localRotation  = Quaternion.identity;
+        _noniusMaterialR.SetColor(ShaderColorId, noniusColor);
     }
 
     // ==================== PROCEDURAL CIRCLE MESH HELPERS ====================

@@ -68,6 +68,9 @@ public class CsvLogger : MonoBehaviour
     // swap type code (N, M, C, MC, Z, etc.)
     private string _curSwapType = "";
 
+    // lateral shift direction at tStart: "R", "L", or "" (none)
+    private string _curLateralShiftDir = "";
+
     // delayed-field depth (N/F)
     private string _curDelayedFieldDepth = "";
 
@@ -91,6 +94,8 @@ public class CsvLogger : MonoBehaviour
 
     // trial timing / seeds
     private int _curOn = -1, _curTS = -1, _curTE = -1, _curN = -1;
+    private int _curPresentedDurFrames = -1;
+    private float _curPresentedDurMs = -1f;
     private int _curSeedA0 = 0, _curSeedA1 = 0, _curSeedB2 = 0, _curSeedB3 = 0;
 
     // session constants
@@ -153,8 +158,9 @@ public class CsvLogger : MonoBehaviour
         "Trial","Experiment","Cond","RotCfg","TransDeg",
         "RespDeg","RespIndex","RespDigit","RTf",
         "OnsetFrame","TransStartFrame","TransEndFrame","TotalFrames",
+        "PresentedDurFrames","PresentedDurMs",
         "SeedA0","SeedA1","SeedB2","SeedB3",
-        "DelayedFieldColor","DelayedFieldDepth","SwapType","EndKey","Device",
+        "DelayedFieldColor","DelayedFieldDepth","SwapType","LateralShiftDir","EndKey","Device",
         "MkHash32","ColorHash32","DepthHash32",
         "MotionTypeByFrame_SubfieldCodes","ColorByFrame_SubfieldCodes","DepthByFrame_SubfieldCodes"
     };
@@ -319,6 +325,8 @@ public class CsvLogger : MonoBehaviour
         _curDelayedFieldColor = (trial.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
         _curDelayedFieldDepth = (trial.delayedFieldDepthCode == ExperimentSpec.DEPTH_NEAR) ? "N" : "F";
         _curSwapType = ExperimentSpec.SwapFlagsToCode(trial.swapFlags);
+        _curLateralShiftDir = trial.lateralShiftDir == 0 ? "" :
+                              trial.lateralShiftDir > 0  ? "R" : "L";
 
         _trialOpen = true;
     }
@@ -398,6 +406,12 @@ public class CsvLogger : MonoBehaviour
         string colOut = writeTrajectoryPayloads ? Sanitize(_curColorRows) : "";
         string depthOut = writeTrajectoryPayloads ? Sanitize(_curDepthRows) : "";
 
+        // Compute presented translation duration from the trial timing fields (set by TrialBlockRunner,
+        // may differ from spec.translationDuration_ms when variable-duration mode is active).
+        _curPresentedDurFrames = (_curTS >= 0 && _curTE >= _curTS) ? (_curTE - _curTS) : -1;
+        _curPresentedDurMs     = (_curPresentedDurFrames > 0 && _simDt > 0f)
+                                 ? _curPresentedDurFrames * _simDt * 1000f : -1f;
+
         string line =
             _curTrialIndex + "\t" +
             Sanitize(_curExperiment) + "\t" +
@@ -412,6 +426,8 @@ public class CsvLogger : MonoBehaviour
             _curTS + "\t" +
             _curTE + "\t" +
             _curN + "\t" +
+            _curPresentedDurFrames + "\t" +
+            F(_curPresentedDurMs) + "\t" +
             _curSeedA0 + "\t" +
             _curSeedA1 + "\t" +
             _curSeedB2 + "\t" +
@@ -419,6 +435,7 @@ public class CsvLogger : MonoBehaviour
             _curDelayedFieldColor + "\t" +
             _curDelayedFieldDepth + "\t" +
             _curSwapType + "\t" +
+            _curLateralShiftDir + "\t" +
             Sanitize(_curEndKey) + "\t" +
             Sanitize(_curDevice) + "\t" +
             _curMkHash32.ToString("X8") + "\t" +
@@ -619,9 +636,10 @@ public class CsvLogger : MonoBehaviour
 
             var sb = new StringBuilder(16384);
             sb.Append("{\n");
-            sb.Append("  \"schema_version\": \"vrdots.sidecar.v5\",\n");
+            sb.Append("  \"schema_version\": \"vrdots.sidecar.v6\",\n");
             sb.Append("  \"experiment_name\": \"").Append(esc(_curExperiment)).Append("\",\n");
             sb.Append("  \"created_iso8601\": \"").Append(esc(DateTimeOffset.Now.ToString("o"))).Append("\",\n");
+            sb.Append("  \"build_date\": \"").Append(esc(BuildInfo.BUILD_DATE)).Append("\",\n");
             sb.Append("  \"data_file\": \"").Append(esc(Path.GetFileName(_tsvPath))).Append("\",\n");
             sb.Append("  \"sidecar_file\": \"").Append(esc(Path.GetFileName(sidecarPath))).Append("\",\n");
             sb.Append("  \"session_seed\": ").Append(sessionSeed).Append(",\n");
@@ -629,23 +647,84 @@ public class CsvLogger : MonoBehaviour
             sb.Append("  \"git_commit\": \"").Append(esc(gitCommit)).Append("\",\n");
             sb.Append("  \"git_branch\": \"").Append(esc(gitBranch)).Append("\",\n");
 
+            // Cast to ExpSpecTestPhase for full parameter access (null if base type used)
+            var epSpec = spec as ExpSpecTestPhase;
+
             sb.Append("  \"experiment_spec\": {\n");
             sb.Append("    \"spec_name\": \"").Append(esc(spec != null ? spec.name : "")).Append("\",\n");
             sb.Append("    \"unique_stimulus_count\": ").Append(uniqueN).Append(",\n");
             sb.Append("    \"planned_trials\": ").Append(plannedN).Append(",\n");
             if (spec != null)
             {
+                // ── Motion / timing ──────────────────────────────────────────────────
                 sb.Append("    \"sim_hz\": ").Append(spec.simHz).Append(",\n");
-                sb.Append("    \"delayed_onset_ms\": ").Append(f(spec.delayedOnset_ms)).Append(",\n");
-                sb.Append("    \"pre_translation_ms\": ").Append(f(spec.preTranslation_ms)).Append(",\n");
-                sb.Append("    \"translation_duration_ms\": ").Append(f(spec.translationDuration_ms)).Append(",\n");
-                sb.Append("    \"rotation_speed_deg_per_sec\": ").Append(f(spec.rotationSpeed_degPerSec)).Append(",\n");
-                sb.Append("    \"translation_speed_deg_per_sec\": ").Append(f(spec.translationSpeed_degPerSec)).Append(",\n");
                 sb.Append("    \"view_distance_m\": ").Append(f(spec.viewDistance_m)).Append(",\n");
                 sb.Append("    \"aperture_radius_deg\": ").Append(f(spec.apertureRadius_deg)).Append(",\n");
                 sb.Append("    \"dot_size_deg\": ").Append(f(spec.dotSize_deg)).Append(",\n");
                 sb.Append("    \"dots_per_field\": ").Append(spec.dotsPerField).Append(",\n");
-                sb.Append("    \"depth_separation_m\": ").Append(f(spec.depthSeparation_m)).Append("\n");
+                sb.Append("    \"rotation_speed_deg_per_sec\": ").Append(f(spec.rotationSpeed_degPerSec)).Append(",\n");
+                sb.Append("    \"translation_speed_deg_per_sec\": ").Append(f(spec.translationSpeed_degPerSec)).Append(",\n");
+                sb.Append("    \"translation_duration_ms\": ").Append(f(spec.translationDuration_ms)).Append(",\n");
+                sb.Append("    \"delayed_onset_ms\": ").Append(f(spec.delayedOnset_ms)).Append(",\n");
+                sb.Append("    \"pre_translation_ms\": ").Append(f(spec.preTranslation_ms)).Append(",\n");
+                sb.Append("    \"depth_separation_m\": ").Append(f(spec.depthSeparation_m)).Append(",\n");
+                sb.Append("    \"depth_bias_m\": ").Append(f(spec.depthBias_m)).Append(",\n");
+                sb.Append("    \"lateral_shift_deg\": ").Append(f(spec.lateralShiftDeg)).Append(",\n");
+
+                // ── Density / field balance ──────────────────────────────────────────
+                if (epSpec != null)
+                {
+                    sb.Append("    \"repeats_per_stimulus\": ").Append(epSpec.repeatsPerStimulus).Append(",\n");
+                    sb.Append("    \"balance_delayed_field_color\": ").Append(epSpec.balanceDelayedFieldColor ? "true" : "false").Append(",\n");
+                    sb.Append("    \"balance_delayed_field_depth\": ").Append(epSpec.balanceDelayedFieldDepth ? "true" : "false").Append(",\n");
+                    sb.Append("    \"both_fields_same_plane\": ").Append(epSpec.bothFieldsSamePlane ? "true" : "false").Append(",\n");
+
+                    // ── Fixation ─────────────────────────────────────────────────────
+                    sb.Append("    \"fixation_style\": ").Append((int)epSpec.fixationStyle).Append(",\n");
+                    sb.Append("    \"fixation_scale_factor\": ").Append(f(epSpec.fixationScaleFactor)).Append(",\n");
+                    sb.Append("    \"fixation_exclusion_radius_deg\": ").Append(f(epSpec.fixationExclusionRadius_deg)).Append(",\n");
+                    sb.Append("    \"fixation_dot_radius_deg\": ").Append(f(epSpec.fixationDotRadius_deg)).Append(",\n");
+                    sb.Append("    \"fixation_ring_inner_radius_deg\": ").Append(f(epSpec.fixationRingInnerRadius_deg)).Append(",\n");
+                    sb.Append("    \"fixation_ring_thickness_deg\": ").Append(f(epSpec.fixationRingThickness_deg)).Append(",\n");
+                    sb.Append("    \"fixation_crosshair_arm_length_deg\": ").Append(f(epSpec.fixationCrosshairArmLength_deg)).Append(",\n");
+                    sb.Append("    \"fixation_crosshair_thickness_deg\": ").Append(f(epSpec.fixationCrosshairThickness_deg)).Append(",\n");
+                    sb.Append("    \"fixation_color\": [").Append(f(epSpec.fixationColor.r)).Append(", ").Append(f(epSpec.fixationColor.g)).Append(", ").Append(f(epSpec.fixationColor.b)).Append(", ").Append(f(epSpec.fixationColor.a)).Append("],\n");
+
+                    // ── Included swap conditions ─────────────────────────────────────
+                    sb.Append("    \"include_both_rotation_configs\": ").Append(epSpec.includeBothRotationConfigs ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_no_swap_baseline\": ").Append(epSpec.includeNoSwapBaseline ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_motion_swaps\": ").Append(epSpec.includeMotionSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_color_swaps\": ").Append(epSpec.includeColorSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_cm_swaps\": ").Append(epSpec.includeCMSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_dots50_swaps\": ").Append(epSpec.includeDots50Swaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_dots50a_swaps\": ").Append(epSpec.includeDots50ASwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_dots50_both_swaps\": ").Append(epSpec.includeDots50BothSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_depth_swaps\": ").Append(epSpec.includeDepthSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_depth_partial_swaps\": ").Append(epSpec.includeDepthPartialSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_depth50a_swaps\": ").Append(epSpec.includeDepth50ASwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"include_depth50b_swaps\": ").Append(epSpec.includeDepth50BSwaps ? "true" : "false").Append(",\n");
+                    sb.Append("    \"link_depth_color\": ").Append(epSpec.linkDepthColor ? "true" : "false").Append(",\n");
+                    sb.Append("    \"delay_translator\": ").Append(epSpec.delayTranslator ? "true" : "false").Append(",\n");
+
+                    // ── QUEST adaptive parameters ────────────────────────────────────
+                    sb.Append("    \"use_quest_adaptive\": ").Append(epSpec.useQuestAdaptive ? "true" : "false").Append(",\n");
+                    sb.Append("    \"quest_t_guess_ms\": ").Append(f(epSpec.questTGuessMs)).Append(",\n");
+                    sb.Append("    \"quest_t_guess_sd\": ").Append(f(epSpec.questTGuessSd)).Append(",\n");
+                    sb.Append("    \"quest_beta\": ").Append(f(epSpec.questBeta)).Append(",\n");
+                    sb.Append("    \"quest_delta\": ").Append(f(epSpec.questDelta)).Append(",\n");
+                    sb.Append("    \"quest_x_min_ms\": ").Append(f(epSpec.questXMinMs)).Append(",\n");
+                    sb.Append("    \"quest_x_max_ms\": ").Append(f(epSpec.questXMaxMs)).Append(",\n");
+
+                    // ── MoCS durations array ─────────────────────────────────────────
+                    sb.Append("    \"translation_durations_ms\": [");
+                    if (epSpec.translationDurations_ms != null && epSpec.translationDurations_ms.Length > 0)
+                        sb.Append(string.Join(", ", System.Array.ConvertAll(epSpec.translationDurations_ms, v => f(v))));
+                    sb.Append("]\n");
+                }
+                else
+                {
+                    sb.Append("    \"_note\": \"spec is not ExpSpecTestPhase; extended fields unavailable\"\n");
+                }
             }
             sb.Append("  },\n");
 
@@ -801,6 +880,7 @@ public class CsvLogger : MonoBehaviour
         _curDelayedFieldColor = "";
         _curDelayedFieldDepth = "";
         _curSwapType = "";
+        _curLateralShiftDir = "";
 
         _curRespDeg = -1f;
         _curRespIndex = -1;
@@ -818,6 +898,8 @@ public class CsvLogger : MonoBehaviour
         _curDepthHash32 = 0;
 
         _curOn = _curTS = _curTE = _curN = -1;
+        _curPresentedDurFrames = -1;
+        _curPresentedDurMs = -1f;
         _curSeedA0 = _curSeedA1 = _curSeedB2 = _curSeedB3 = 0;
     }
 

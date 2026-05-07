@@ -1,8 +1,9 @@
 // FILE: SmoothFixationTarget.cs
-// Shader-based fixation target with smooth anti-aliased circles
+// DEPRECATED — superseded by Fixation_Controller.cs (PNG sprite mode).
+// This class is kept to avoid missing-script errors on existing scene GameObjects.
+// All methods are no-ops; Fixation_Controller handles all rendering.
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class SmoothFixationTarget : MonoBehaviour
 {
     [Header("Geometry Source")]
@@ -60,42 +61,12 @@ public class SmoothFixationTarget : MonoBehaviour
     private static readonly int OuterRadiusId = Shader.PropertyToID("_OuterRadius");
     private static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
 
-    void OnEnable()
-    {
-        CreateFixation();
-    }
+    void OnEnable()  { DestroyFixation(); } // destroy any previously created objects
+    void OnDisable() { DestroyFixation(); }
+    void OnValidate() { }
 
-    void OnDisable()
-    {
-        DestroyFixation();
-    }
-
-    void OnValidate()
-    {
-        if (isActiveAndEnabled)
-        {
-            #if UNITY_EDITOR
-            UnityEditor.EditorApplication.delayCall += () =>
-            {
-                if (this != null && isActiveAndEnabled)
-                    UpdateFixation();
-            };
-            #else
-            UpdateFixation();
-            #endif
-        }
-    }
-
-    public void Refresh()
-    {
-        UpdateFixation();
-    }
-
-    public void SetPreviewScale(float scale)
-    {
-        previewScale = Mathf.Max(0.1f, scale);
-        UpdateFixation();
-    }
+    public void Refresh() { }
+    public void SetPreviewScale(float scale) { previewScale = Mathf.Max(0.1f, scale); }
 
     void CreateFixation()
     {

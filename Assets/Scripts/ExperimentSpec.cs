@@ -75,6 +75,10 @@ public abstract class ExperimentSpec : ScriptableObject
              "E.g. depthSeparation_m=0.025, depthBias_m=0.075 → planes at +0.05m and +0.10m (both behind fixation).")]
     public float depthBias_m = 0f;
 
+    [Tooltip("If > 0, the entire stimulus (aperture + all dots) shifts laterally by this amount (degrees) " +
+             "at translation onset. Direction is randomised ±1 per trial. 0 = disabled.")]
+    public float lateralShiftDeg = 0f;
+
     [Header("Dot Layout")]
     [Tooltip("Dots per perceptual FIELD (so ~dotsPerField/2 per subfield).")]
     public int dotsPerField = 200;
@@ -113,6 +117,11 @@ public abstract class ExperimentSpec : ScriptableObject
     [Tooltip("Exclusion zone RADIUS around fixation (degrees). Dots will not spawn within this radius.")]
     public float fixationExclusionRadius_deg = 1.1f;
 
+    [Tooltip("Uniform scale factor applied to all fixation target dimensions (outer disc, ring, crosshair, center dot). " +
+             "1.0 = normal size. Use values < 1.0 to shrink the fixation for smaller aperture stimuli (e.g. 0.47 for Catek 1.65°/3.5° ratio).")]
+    [Min(0.05f)]
+    public float fixationScaleFactor = 1.0f;
+
     //temmp color fudging to get closer to red/green isoluminance
     // [Header("Color Palette")]
 
@@ -140,11 +149,12 @@ public abstract class ExperimentSpec : ScriptableObject
         None    = 0,
         Motion  = 1 << 0,   // rotation directions swap at tStart
         Color   = 1 << 1,   // field colors swap at tStart
-        Dots50  = 1 << 2,   // 50% of dots swap field membership (sub1↔sub3)
+        Dots50  = 1 << 2,   // 50% of dots swap field membership (sub1↔sub3, noise halves)
         Depth   = 1 << 3,   // depth planes swap at tStart (100%)
         Depth50  = 1 << 4,  // S0↔S2 swap depth planes at tStart (50%); color follows plane (legacy)
         Depth50A = 1 << 5,  // S0↔S2 swap; both translators same plane (Far); cued dot moves plane
         Depth50B = 1 << 6,  // S1↔S3 swap; both translators same plane (Near); cued dot stays in plane
+        Dots50A  = 1 << 7,  // 50% coherent-half swap: sub0↔sub2 exchange field membership at tStart
     }
 
     public static string SwapFlagsToCode(int flags)
@@ -153,7 +163,11 @@ public abstract class ExperimentSpec : ScriptableObject
         var parts = new List<string>();
         if ((flags & (int)SwapFlags.Motion)   != 0) parts.Add("M");
         if ((flags & (int)SwapFlags.Color)    != 0) parts.Add("C");
-        if ((flags & (int)SwapFlags.Dots50)   != 0) parts.Add("D");
+        bool hasD  = (flags & (int)SwapFlags.Dots50)  != 0;
+        bool hasDa = (flags & (int)SwapFlags.Dots50A) != 0;
+        if (hasD && hasDa) parts.Add("Db");   // full dot-swap (D + Da combined)
+        else if (hasD)     parts.Add("D");
+        else if (hasDa)    parts.Add("Da");
         if ((flags & (int)SwapFlags.Depth)    != 0) parts.Add("Z");
         if ((flags & (int)SwapFlags.Depth50)  != 0) parts.Add("Zd");
         if ((flags & (int)SwapFlags.Depth50A) != 0) parts.Add("ZdA");
@@ -195,6 +209,9 @@ public abstract class ExperimentSpec : ScriptableObject
         // which depth plane is the DELAYED-ONSET field (field B).
         // 0 = Near, 1 = Far.
         public int delayedFieldDepthCode;
+
+        // Lateral shift of entire stimulus at tStart. 0 = none, +1 = rightward, -1 = leftward.
+        public int lateralShiftDir = 0;
     }
 
     // ---------- Helpers ----------

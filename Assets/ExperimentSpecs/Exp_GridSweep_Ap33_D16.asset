@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6b2bce2bb36a4c26bd3ffebf54318e4, type: 3}
+  m_Name: Exp_GridSweep_Ap33_D16
+  m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
+  experimentName: GridSweep_Ap33_D16_v1
+  simHz: 90
+  viewDistance_m: 2
+  apertureRadius_deg: 3.3
+  dotSize_deg: 0.08
+  rotationSpeed_degPerSec: 81
+  translationSpeed_degPerSec: 2.26
+  translationDuration_ms: 80
+  delayedOnset_ms: 750
+  preTranslation_ms: 300
+  repeatsPerStimulus: 2
+  balanceDelayedFieldColor: 1
+  balanceDelayedFieldDepth: 0
+  bothFieldsSamePlane: 1
+  depthSeparation_m: 0
+  depthBias_m: 0
+  lateralShiftDeg: 0
+  dotsPerField: 547
+  fixationStyle: 2
+  fixationColor: {r: 1, g: 1, b: 1, a: 1}
+  fixationDotRadius_deg: 0.089
+  fixationRingInnerRadius_deg: 0.119
+  fixationRingThickness_deg: 0.178
+  fixationCrosshairArmLength_deg: 0.594
+  fixationCrosshairThickness_deg: 0.071
+  fixationExclusionRadius_deg: 0.594
+  fixationScaleFactor: 1
+  rgbaRed: {r: 0.8, g: 0.2, b: 0.2, a: 1}
+  rgbaGreen: {r: 0.133, g: 0.545, b: 0.133, a: 1}
+  rgbaBlack: {r: 0, g: 0, b: 0, a: 1}
+  includeBothRotationConfigs: 1
+  includeMotionSwaps: 0
+  includeColorSwaps: 0
+  includeCMSwaps: 1
+  includeDots50Swaps: 0
+  includeDots50ASwaps: 0
+  includeDots50BothSwaps: 0
+  includeDepthSwaps: 0
+  includeDepthPartialSwaps: 0
+  includeDepth50ASwaps: 0
+  includeDepth50BSwaps: 0
+  includeNoSwapBaseline: 1
+  linkDepthColor: 0
+  delayTranslator: 1
+  translationDurations_ms: []
+  useQuestAdaptive: 1
+  questTGuessMs: 80
+  questTGuessSd: 0.4
+  questBeta: 2
+  questDelta: 0.02
+  questXMinMs: 15
+  questXMaxMs: 400
