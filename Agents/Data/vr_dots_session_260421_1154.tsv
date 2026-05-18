@@ -1,0 +1,2 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	DensityCompare_Catek_v1	UNCUED	1	270	-1	-1	-1	-1	68	95	102	138	1551589372	675250989	1094431391	511667011	R	N	N	ABORT	OnApplicationQuit	00000000	00000000	00000000			

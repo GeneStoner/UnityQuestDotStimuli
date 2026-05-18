@@ -27,8 +27,8 @@ public class CsvLogger : MonoBehaviour
     public string experimentVersion = "";
 
     [Header("Logging controls")]
-    [Tooltip("If false (recommended), TSV payload columns for mkrows/colorrows are left empty. Hash columns still logged.")]
-    public bool writeTrajectoryPayloads = false;
+    [Tooltip("If true, full per-frame motionKind/color/depth sequences are written as payload strings in the TSV in addition to the hash columns. Increases file size (~10 KB/trial) but enables direct frame-level audit without reconstruction.")]
+    public bool writeTrajectoryPayloads = true;
 
     // ---------------- internal ----------------
     private string _tsvPath;

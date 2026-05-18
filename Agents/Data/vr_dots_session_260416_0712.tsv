@@ -1,0 +1,5 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	DecoupledDots_005m_v2	UNCUED	0	225	225	5	1	126	56	78	84	114	2140682013	1158842594	568209467	639301620	R	N	N		XR Controller	F088AE08	BC9E36AC	E4FFF864			
+1	DecoupledDots_005m_v2	CUED	0	0	0	2	6	126	56	78	84	114	1023842367	461896719	187821828	1764468032	G	N	CZ		XR Controller	6CBED730	E283626C	81535EE4			
+2	DecoupledDots_005m_v2	CUED	1	0	0	2	6	100	56	78	84	114	1865668384	1180914470	35527355	923186116	R	F	C		XR Controller	CB090948	95473DAC	B7EB8364			
+3	DecoupledDots_005m_v2	UNCUED	0	270	-1	-1	-1	-1	56	78	84	114	1292646396	417468184	691190871	940951167	R	F	CZ	ABORT	OnApplicationQuit	00000000	00000000	00000000			

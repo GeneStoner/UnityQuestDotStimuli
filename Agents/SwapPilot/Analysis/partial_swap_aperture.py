@@ -41,8 +41,7 @@ def load(bn, dur_filter=None):
     if dur_filter is not None:
         df = df[np.isclose(df["PresentedDurMs"], dur_filter, atol=0.5)]
     df = df[df["RespDeg"] != -1].copy()
-    df["Correct"] = (((df["RespDeg"] - df["TransDeg"]) + 360) % 360).apply(
-        lambda d: d if d <= 180 else d - 360).abs() <= 67.5
+    df["Correct"] = (df["RespDeg"] == df["TransDeg"]).astype(float)
     return df
 
 def flip_labels(df):

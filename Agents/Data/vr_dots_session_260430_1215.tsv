@@ -1,0 +1,4 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	PresentedDurFrames	PresentedDurMs	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	LateralShiftDir	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	GridSweep_Ap11_D2_v1	CUED	1	315	90	0	8	118	68	95	102	167	7	77.778	511531628	1427052659	1529559488	130830446	G	N	N			XR Controller	011C534A	08EB445B	34C58FFB			
+1	GridSweep_Ap11_D2_v1	CUED	1	180	180	6	4	144	68	95	108	167	13	144.445	1071019270	1915780250	1653439053	1644166968	G	N	N			XR Controller	C73DF316	08EB445B	34C58FFB			
+2	GridSweep_Ap11_D2_v1	CUED	0	315	-1	-1	-1	-1	68	95	102	167	7	77.778	587014162	653134647	1186898439	1209729515	R	N	MC		ABORT	OnApplicationQuit	00000000	00000000	00000000			

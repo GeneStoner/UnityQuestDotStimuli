@@ -19,8 +19,7 @@ def load(bn):
 
 def add_correct(df):
     df = df.copy()
-    df["Correct"] = (((df["RespDeg"] - df["TransDeg"]) + 360) % 360).apply(
-        lambda d: d if d <= 180 else d - 360).abs() <= 67.5
+    df["Correct"] = (df["RespDeg"] == df["TransDeg"]).astype(float)
     return df
 
 def flip_db(df):
@@ -226,7 +225,7 @@ ax_a.legend(handles=leg_a, fontsize=11, framealpha=0.92,
 fig.suptitle(
     "VRDots — MC and Db Conditions: All MCS Sessions  (2026-05-01, S&B Ap3.5 pooled n=2)\n"
     "Db trials: CUED/UNCUED labels flipped to onset-cue convention  |  "
-    "Accuracy window: ±67.5°",
+    "Accuracy window: exact match (8AFC)",
     fontsize=11.5, y=0.995, va="top", color="#333333")
 
 out = "/Users/genestoner1/Projects/ObjectBasedAttention/VRDots/Agents/SwapPilot/Figures"

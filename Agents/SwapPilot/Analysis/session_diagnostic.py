@@ -17,7 +17,7 @@ def load_and_prep(path):
     df = df[df["RespDeg"] != -1].copy()
     df["err"] = (((df["RespDeg"] - df["TransDeg"]) + 360) % 360).apply(
         lambda d: d if d <= 180 else d - 360)
-    df["Correct"] = df["err"].abs() <= 67.5
+    df["Correct"] = (df["RespDeg"] == df["TransDeg"]).astype(float)
     return df
 
 s1 = load_and_prep("/tmp/quest_pull_sb35_80ms_v2/vr_dots_session_260501_1420.tsv")
@@ -155,7 +155,7 @@ for row_idx, (sess_label, df) in enumerate(SESSIONS):
 fig.suptitle(
     "StonerBlanc_Ap35_80ms — Response direction analysis\n"
     "Polar plots: response error relative to TransDeg  |  gold bar = correct (0° error)  "
-    "|  % shown = accuracy within ±67.5°",
+    "|  % shown = exact-match accuracy (8AFC)",
     fontsize=11, y=0.995, va="top", color="#333")
 
 fig.savefig(f"{OUT}/session_diagnostic_ap35_80ms.png", dpi=150,

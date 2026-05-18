@@ -1,0 +1,3 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	DensityCompare_Catek_v1	CUED	1	315	225	5	1	601	68	95	102	138	2127120548	1442893832	1828426895	1655752215	G	N	N		XR Controller	8892A655	BBE350AC	C06EAC7C			
+1	DensityCompare_Catek_v1	UNCUED	1	270	-1	-1	-1	-1	68	95	102	138	996984232	398113149	941059423	1618621540	R	N	N	ABORT	OnApplicationQuit	00000000	00000000	00000000			

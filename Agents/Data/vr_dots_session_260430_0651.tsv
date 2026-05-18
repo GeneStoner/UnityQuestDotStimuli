@@ -1,0 +1,2 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	PresentedDurFrames	PresentedDurMs	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	LateralShiftDir	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	GridSweep_Ap11_D2_v1	CUED	1	0	-1	-1	-1	-1	68	95	102	167	7	77.778	299314749	939339103	94695808	1914883740	R	N	N		ABORT	OnApplicationQuit	00000000	00000000	00000000			

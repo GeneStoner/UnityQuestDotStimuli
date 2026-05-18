@@ -16,9 +16,10 @@ Shader "Custom/DotScreenSpace"
     //   _UpDir                float4   Stimulus plane up vector (xyz)
     //   _HalfSizeMeters       float    Half the dot diameter in world-space metres
     //   _HalfDisparityWorld   float    Per-eye horizontal shift in world-space metres
-    //                                  positive = uncrossed / Far
-    //                                  negative = crossed  / Near
-    //                                  left eye adds +value, right eye adds -value
+    //                                  positive = crossed  / Near  (left eye shifts right)
+    //                                  negative = uncrossed / Far  (left eye shifts left)
+    //                                  Applied as: centre += RightDir * (eyeSign * value)
+    //                                  where eyeSign = left eye +1, right eye -1
     //
     // Per-subfield (shared material):
     //   _Color                float4   RGBA colour
@@ -71,7 +72,15 @@ Shader "Custom/DotScreenSpace"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            CBUFFER_START(UnityPerMaterial)
+            // Named DotPerRenderer (not UnityPerMaterial) so Unity marks this shader
+            // as NOT SRP Batcher compatible. The legacy per-draw-call path then
+            // uploads these properties fresh every draw call, which is critical:
+            // the SRP Batcher's UnityPerMaterial CBuffer is cached per-renderer and
+            // is NOT re-uploaded for static renderers (same transform every frame),
+            // causing stale _WorldCenter / _HalfDisparityWorld values during the
+            // WaitingForStart preview. Legacy path = correct behaviour, negligible
+            // overhead for our ~100 dots.
+            CBUFFER_START(DotPerRenderer)
                 float4 _Color;
                 float4 _WorldCenter;
                 float4 _RightDir;
@@ -86,8 +95,9 @@ Shader "Custom/DotScreenSpace"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                // Left eye (+1) shifts right for Far (uncrossed) disparity.
-                // Right eye (-1) shifts left for Far disparity.
+                // Left eye (+1) shifts right for Near (crossed) disparity.
+                // Right eye (-1) shifts left for Near disparity.
+                // _HalfDisparityWorld positive = Near (crossed), negative = Far (uncrossed).
                 float eyeSign = (unity_StereoEyeIndex == 0) ? 1.0 : -1.0;
 
                 // Billboard: place quad corners in world space around the dot centre,

@@ -1,0 +1,3 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	DensityCompare_VRDots_v1	UNCUED	1	225	90	0	8	143	68	95	102	138	1710759864	1806081492	169829258	918792884	G	N	N		XR Controller	06CF5C65	BBE350AC	C06EAC7C			
+1	DensityCompare_VRDots_v1	CUED	0	270	-1	-1	-1	-1	68	95	102	138	855877905	230186269	1082574893	1128384135	G	N	N	ABORT	OnApplicationQuit	00000000	00000000	00000000			

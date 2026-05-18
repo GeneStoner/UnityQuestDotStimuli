@@ -35,8 +35,7 @@ def load(bn):
 def add_correct(df):
     df = df.copy()
     df = df[df["RespDeg"] != -1]
-    df["Correct"] = (((df["RespDeg"]-df["TransDeg"])+360)%360).apply(
-        lambda d: d if d<=180 else d-360).abs() <= 67.5
+    df["Correct"] = (df["RespDeg"] == df["TransDeg"]).astype(float)
     return df
 
 def flip_db(df):

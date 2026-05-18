@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""
+sb_traj_figure.py — Feature trajectory schematics, S&B replication.
+
+Abstract-role convention (DO NOT CHANGE):
+  RED   solid  circle-markers  = translating-field role
+  GREEN dashed square-markers  = non-translating-field role
+
+CUED / UNCUED panels are IDENTICAL after TB.
+  Pre-TB CUED  : only GREEN visible  (always-on field = non-translating role)
+  Pre-TB UNCUED: only RED  visible   (always-on field = translating role)
+
+Y-tracks: CW (top) | TRANS (middle) | CCW (bottom)
+  — no coherent / non-coherent subdivision (S&B uses 50 % fixed coherence)
+
+Layout: 2 rows (N, MC) × 2 cols (CUED, UNCUED).
+"""
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
+
+# ── colours ───────────────────────────────────────────────────────────────────
+RCOL = "#c0392b"    # translating-field role — RED
+GCOL = "#1a7a1a"    # non-translating-field role — GREEN
+
+# ── Y positions ───────────────────────────────────────────────────────────────
+Y_CW    = 3.0
+Y_TRANS = 2.0
+Y_CCW   = 1.0
+
+# ── time axis (ms) ────────────────────────────────────────────────────────────
+T0   =    0
+TB   =  750    # FieldB onset
+TS   = 1050    # translation start
+TE   = 1094    # translation end (44 ms)
+TEND = 1350
+
+LW     = 2.0          # main line weight
+MS     = 7            # marker size
+MSTEP  = 55           # ms between markers
+
+
+def draw_traj(ax, is_cued, condition):
+    """
+    Draw one trajectory panel.
+
+    is_cued  : True  → CUED panel  (pre-TB GREEN; post-TB RED makes V-dip)
+               False → UNCUED panel (pre-TB RED;  post-TB RED makes V-dip)
+    condition: 'N' or 'MC'
+
+    Post-TB content is IDENTICAL in both panels.
+    """
+
+    # ── time samples for markers ──────────────────────────────────────────────
+    t_pre   = np.arange(T0, TB, MSTEP)
+    t_rot   = np.arange(TB, TS, MSTEP)
+    t_post  = np.arange(TE, TEND + 1, MSTEP)
+
+    # ── translation window shading ────────────────────────────────────────────
+    ax.axvspan(TS, TE, color='#bbbbbb', alpha=0.5, zorder=0)
+
+    # ── TB onset marker ───────────────────────────────────────────────────────
+    ax.axvline(TB, color='#aaaaaa', lw=0.8, ls=':', zorder=2)
+
+    # ── helper: draw a line segment + markers ─────────────────────────────────
+    def seg(t_arr, y_val, col, mk, ls='-', alpha=1.0):
+        if len(t_arr) == 0:
+            return
+        y_arr = np.full_like(t_arr, float(y_val), dtype=float)
+        ax.plot(t_arr, y_arr, color=col, lw=LW, ls=ls,
+                alpha=alpha, zorder=4, solid_capstyle='butt')
+        ax.scatter(t_arr, y_arr, color=col, marker=mk, s=MS**2 * 0.35,
+                   zorder=5, alpha=alpha, linewidths=0)
+
+    # ── pre-TB: only always-on field ──────────────────────────────────────────
+    if is_cued:
+        # always-on = non-translating role → GREEN squares at Y_CW
+        seg(t_pre, Y_CW, GCOL, 's', ls='--')
+    else:
+        # always-on = translating role → RED circles at Y_CW
+        seg(t_pre, Y_CW, RCOL, 'o')
+
+    # ── post-TB: RED (translating) — CW until TS, V-dip, CW after TE ─────────
+    seg(t_rot,  Y_CW, RCOL, 'o')
+    seg(t_post, Y_CW, RCOL, 'o')
+
+    # V-dip: smooth line T_S → midpoint → T_E
+    T_mid = (TS + TE) / 2
+    t_dip  = np.array([TS, T_mid, TE])
+    y_dip  = np.array([Y_CW, Y_TRANS, Y_CW])
+    ax.plot(t_dip, y_dip, color=RCOL, lw=LW, zorder=5, solid_capstyle='round')
+    ax.scatter([T_mid], [Y_TRANS], color=RCOL, marker='o',
+               s=MS**2 * 0.35, zorder=6, linewidths=0)
+
+    # ── post-TB: GREEN (non-translating) — CCW flat ───────────────────────────
+    t_green = np.arange(TB, TEND + 1, MSTEP)
+    seg(t_green, Y_CCW, GCOL, 's', ls='--')
+
+    # ── MC additions ──────────────────────────────────────────────────────────
+    if condition == 'MC':
+        # Non-translating (GREEN) reverses direction at TS: CCW → CW
+        # Redraw GREEN post-TS at Y_CW
+        t_mc_green = np.arange(TS, TEND + 1, MSTEP)
+        seg(t_mc_green, Y_CW, GCOL, 's', ls='--')
+        # Direction reversal arrow
+        ax.annotate('', xy=(TS, Y_CW + 0.08), xytext=(TS, Y_CCW - 0.08),
+                    arrowprops=dict(arrowstyle='->', color=GCOL, lw=1.4),
+                    zorder=8)
+        # Color-swap stars (★) on both fields just before TS
+        for ypos in [Y_CW, Y_CCW]:
+            ax.text(TS - 40, ypos, '★', fontsize=10, color='#e67e22',
+                    ha='center', va='center', zorder=9,
+                    bbox=dict(boxstyle='round,pad=0.05',
+                              fc='white', ec='none', alpha=0.8))
+
+    # ── axes formatting ───────────────────────────────────────────────────────
+    ax.set_xlim(T0 - 40, TEND + 40)
+    ax.set_ylim(Y_CCW - 0.6, Y_CW + 0.65)
+    ax.set_yticks([Y_CCW, Y_TRANS, Y_CW])
+    ax.set_yticklabels(['CCW\nrotation', 'Translation', 'CW\nrotation'], fontsize=8)
+    ax.set_xticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+
+    # TB label
+    ax.text(TB, Y_CW + 0.55, 'TB\n(onset)', ha='center', va='bottom',
+            fontsize=6.5, color='#777')
+
+    # "onset field only" annotation for pre-TB region
+    ax.text((T0 + TB) / 2, Y_CW + 0.50, 'onset\nfield only',
+            ha='center', va='bottom', fontsize=6, color='#999', style='italic')
+
+
+# ── figure layout ─────────────────────────────────────────────────────────────
+CONDITIONS = ['N', 'MC']
+COND_META = {
+    'N':  {'label': 'N\n(no swap)',             'col': '#2c6e2c'},
+    'MC': {'label': 'MC\n(motion + color swap)', 'col': '#7b2d8b'},
+}
+
+fig = plt.figure(figsize=(9, 6), facecolor='white')
+gs = gridspec.GridSpec(
+    2, 2,
+    figure=fig,
+    height_ratios=[1, 1],
+    hspace=0.50, wspace=0.30,
+    left=0.14, right=0.96, top=0.88, bottom=0.09
+)
+
+for ri, cond in enumerate(CONDITIONS):
+    for ci, is_cued in enumerate([True, False]):
+        ax = fig.add_subplot(gs[ri, ci])
+        draw_traj(ax, is_cued, cond)
+
+        # Column header (top row only)
+        if ri == 0:
+            cue_lbl = 'CUED' if is_cued else 'UNCUED'
+            cue_col = '#8b0000' if is_cued else '#00008b'
+            ax.set_title(cue_lbl, fontsize=12, fontweight='bold',
+                         color=cue_col, pad=7)
+
+        # Row label on left (first column only)
+        if ci == 0:
+            m = COND_META[cond]
+            ax.set_ylabel(m['label'], fontsize=9, fontweight='bold',
+                          color=m['col'], labelpad=8, rotation=0,
+                          ha='right', va='center')
+            ax.yaxis.set_label_coords(-0.22, 0.5)
+
+# ── time arrows on bottom row ─────────────────────────────────────────────────
+for ci in range(2):
+    ax_bot = fig.axes[2 + ci]
+    ax_bot.annotate('', xy=(TEND + 35, Y_CCW - 0.50),
+                    xytext=(T0 - 35, Y_CCW - 0.50),
+                    xycoords='data', textcoords='data',
+                    arrowprops=dict(arrowstyle='->', color='black', lw=1.1),
+                    annotation_clip=False)
+    ax_bot.text((T0 + TEND) / 2, Y_CCW - 0.58, 'Time',
+                ha='center', va='top', fontsize=8.5, style='italic',
+                transform=ax_bot.transData)
+
+# ── legend ────────────────────────────────────────────────────────────────────
+handles = [
+    Line2D([0],[0], color=RCOL, lw=2, ls='-', marker='o', markersize=5,
+           label='Translating-field role  (RED)'),
+    Line2D([0],[0], color=GCOL, lw=2, ls='--', marker='s', markersize=5,
+           label='Non-translating-field role  (GREEN)'),
+    mpatches.Patch(color='#bbbbbb', alpha=0.5, label='Translation window (TS → TE)'),
+]
+fig.legend(handles=handles, fontsize=8.5, loc='upper center', ncol=3,
+           bbox_to_anchor=(0.55, 1.00), framealpha=0.9, handlelength=2.5)
+
+fig.suptitle(
+    'Feature trajectory schematics  —  S&B Replication  (VRDots, Meta Quest 3)\n'
+    'Ap radius = 2.0°  ·  63 dots/field  ·  5 dots/deg²/field  ·  44 ms translation',
+    fontsize=9.5, fontweight='bold', y=1.09
+)
+
+# ── save ──────────────────────────────────────────────────────────────────────
+import os, shutil
+
+OUT = os.path.expanduser(
+    '~/Projects/ObjectBasedAttention/VRDots/Agents/SwapPilot/Figures/sb_traj_schematic.png')
+OUT_PDF = OUT.replace('.png', '.pdf')
+plt.savefig(OUT,     dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig(OUT_PDF,          bbox_inches='tight', facecolor='white')
+print('Saved:', OUT)
+
+OUT_SITE = os.path.expanduser(
+    '~/Sites/open-perception/public/figures/sb_traj_schematic.png')
+os.makedirs(os.path.dirname(OUT_SITE), exist_ok=True)
+shutil.copy(OUT, OUT_SITE)
+print('Copied to site:', OUT_SITE)

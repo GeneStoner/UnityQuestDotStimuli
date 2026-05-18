@@ -1,0 +1,4 @@
+Trial	Experiment	Cond	RotCfg	TransDeg	RespDeg	RespIndex	RespDigit	RTf	OnsetFrame	TransStartFrame	TransEndFrame	TotalFrames	PresentedDurFrames	PresentedDurMs	SeedA0	SeedA1	SeedB2	SeedB3	DelayedFieldColor	DelayedFieldDepth	SwapType	LateralShiftDir	EndKey	Device	MkHash32	ColorHash32	DepthHash32	MotionTypeByFrame_SubfieldCodes	ColorByFrame_SubfieldCodes	DepthByFrame_SubfieldCodes
+0	SubfieldSwap_AperSweep_Ap25_v1	UNCUED	0	135	0	2	6	125	68	95	97	163	2	22.222	1522749505	1617106328	1767713002	589219577	G	N	Db			XR Controller	0A8A1357	CDC3FBBB	E9223BFB			
+1	SubfieldSwap_AperSweep_Ap25_v1	UNCUED	1	315	-1	-1	-1	39	68	95	117	163	22	244.444	373929373	609702957	1352708528	1124541152	G	N	Db			XR Controller	99B3F537	CDC3FBBB	E9223BFB			
+2	SubfieldSwap_AperSweep_Ap25_v1	UNCUED	1	270	-1	-1	-1	-1	68	95	111	163	16	177.778	1180081520	1144142301	1789413193	528866880	G	N	Da		ABORT	OnApplicationQuit	00000000	00000000	00000000			

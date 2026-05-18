@@ -35,8 +35,7 @@ def load(bn):
 
 def add_correct(df):
     df = df.copy()
-    df["Correct"] = (((df["RespDeg"] - df["TransDeg"]) + 360) % 360).apply(
-        lambda d: d if d <= 180 else d - 360).abs() <= 67.5
+    df["Correct"] = (df["RespDeg"] == df["TransDeg"]).astype(float)
     return df
 
 def flip_db(df):
@@ -434,7 +433,7 @@ ax_t.set_title(
 
 fig.suptitle(
     "VRDots — N vs MC/Db Cueing: Aperture, Duration & Density Comparison  (GS, 2026-05)\n"
-    "Accuracy window ±67.5°  |  CatekExact uses Db (noise-half swap ≡ MC in consequence)",
+    "Accuracy window exact match (8AFC)  |  CatekExact uses Db (noise-half swap ≡ MC in consequence)",
     fontsize=11.5, y=0.995, va="top", color="#333")
 
 fig.savefig(f"{OUT}/sb_aperture_comparison.png", dpi=150,
