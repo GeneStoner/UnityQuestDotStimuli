@@ -880,13 +880,19 @@ public class TrialBlockRunner : MonoBehaviour
         if (_frameInStimulus == _currentTrial.translationStartFrame && spec.lateralShiftDeg > 0f)
             _builderLateralOffsetX_m = spec.lateralShiftDeg * metersPerDeg * _currentTrial.lateralShiftDir;
 
-        // Replot coherently-translating dots at tStart to remove dot-identity continuity.
+        // Replot dots at tStart to remove dot-identity continuity (one or both fields).
         if (_frameInStimulus == _currentTrial.translationStartFrame &&
-            spec is ExpSpecTestPhase epSpecReplot && epSpecReplot.replotTranslatingAtTStart)
+            spec is ExpSpecTestPhase epSpecReplot)
         {
             for (int i = 0; i < builder.Subfields.Length; i++)
             {
-                if (_currentCond.subfields[i].motionKindByFrame[_frameInStimulus] == CondLib.MotionKind.Linear)
+                var mkAtTStart = _currentCond.subfields[i].motionKindByFrame[_frameInStimulus];
+                bool isTranslating    = mkAtTStart == CondLib.MotionKind.Linear;
+                bool isNonTranslating = mkAtTStart == CondLib.MotionKind.RotationCW ||
+                                        mkAtTStart == CondLib.MotionKind.RotationCCW;
+
+                if ((epSpecReplot.replotTranslatingAtTStart    && isTranslating) ||
+                    (epSpecReplot.replotNonTranslatingAtTStart && isNonTranslating))
                     builder.ReplotSubfield(i, _frameInStimulus);
             }
         }

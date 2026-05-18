@@ -70,6 +70,12 @@ public class ExpSpecTestPhase : ExperimentSpec
              "coherently from frame+1 onward). Non-translating and noise subfields are unaffected.")]
     public bool replotTranslatingAtTStart = false;
 
+    [Tooltip("When true, the rotating (non-translating) dot field's subfields are randomly " +
+             "repositioned at the first frame of translation. Removes dot-identity continuity " +
+             "for the competitor field across the transition. " +
+             "MotionKind.RotationCW and RotationCCW subfields are replotted; Linear and NonCoherent are unaffected.")]
+    public bool replotNonTranslatingAtTStart = false;
+
     [Header("Variable translation duration (MoCS)")]
     [Tooltip("If non-empty, each trial randomly samples one of these durations (ms) instead of " +
              "the fixed translationDuration_ms. Values are quantized to the frame grid at runtime. " +
