@@ -884,6 +884,9 @@ public class TrialBlockRunner : MonoBehaviour
         if (_frameInStimulus == _currentTrial.translationStartFrame &&
             spec is ExpSpecTestPhase epSpecReplot)
         {
+            bool replotAll = epSpecReplot.replotTranslatingAtTStart &&
+                             epSpecReplot.replotNonTranslatingAtTStart;
+
             for (int i = 0; i < builder.Subfields.Length; i++)
             {
                 var mkAtTStart = _currentCond.subfields[i].motionKindByFrame[_frameInStimulus];
@@ -891,7 +894,8 @@ public class TrialBlockRunner : MonoBehaviour
                 bool isNonTranslating = mkAtTStart == CondLib.MotionKind.RotationCW ||
                                         mkAtTStart == CondLib.MotionKind.RotationCCW;
 
-                if ((epSpecReplot.replotTranslatingAtTStart    && isTranslating) ||
+                if (replotAll ||
+                    (epSpecReplot.replotTranslatingAtTStart    && isTranslating) ||
                     (epSpecReplot.replotNonTranslatingAtTStart && isNonTranslating))
                     builder.ReplotSubfield(i, _frameInStimulus);
             }
