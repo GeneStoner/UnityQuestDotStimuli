@@ -797,12 +797,17 @@ public class StimulusBuilder : MonoBehaviour
         if (!IsValid(subfieldIndex)) return;
         var sf = Subfields[subfieldIndex];
         int count = sf.trajectoryPos.Length;
+
+        // One RNG for the whole subfield, drawn sequentially — same approach as
+        // initial dot placement in BuildFromCondition. Per-dot separate RNGs seeded
+        // by Hash(seedBase, d, frame) produce seeds that differ by ~31, which causes
+        // System.Random (subtractive generator) to output correlated positions visible
+        // as visible patterns at high dot counts.
+        int seed = Hash(sf.seedBase, 0, frame + 7919983);
+        System.Random rng = new System.Random(seed);
+
         for (int d = 0; d < count; d++)
         {
-            // Use a large prime offset on frame so these seeds never collide with
-            // HandleOutOfBounds seeds (which use the raw frame value).
-            int seed = Hash(sf.seedBase, d, frame + 7919983);
-            System.Random rng = new System.Random(seed);
             Vector2 p = UniformAnnulus(rng, ApertureRadiusMeters, exclusionRadiusMeters);
             sf.trajectoryPos[d] = p;
         }
