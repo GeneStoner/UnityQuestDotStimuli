@@ -143,12 +143,13 @@ public class FlickerCalibrator : MonoBehaviour
         // Setup fixation target
         SetupFixation();
 
-        // Apply initial colors (flicker disabled until trial starts)
+        // Apply initial colors (flicker disabled until trial starts); hide until subject engages
         if (stimulus != null)
         {
             stimulus.SetRedIntensity(redIntensity);
             stimulus.SetGreenIntensity(greenIntensity);
             stimulus.flickerEnabled = false;
+            stimulus.gameObject.SetActive(false);
         }
 
         // Check for existing calibration data on disk
@@ -383,6 +384,8 @@ public class FlickerCalibrator : MonoBehaviour
                 Debug.Log("[FlickerCalibrator] User chose to redo calibration.");
                 _existingCalibration = null;
                 _state = State.WaitingToStart;
+                if (stimulus != null)
+                    stimulus.gameObject.SetActive(false);
                 break;
         }
     }
@@ -531,9 +534,10 @@ public class FlickerCalibrator : MonoBehaviour
             fixation.spec = experimentSpec;
         }
 
-        // Apply fixation settings
+        // Apply fixation settings but keep hidden until calibration is done
         fixation.Apply("FlickerCalibrator.SetupFixation");
-        Debug.Log("[FlickerCalibrator] Fixation target configured.");
+        fixation.gameObject.SetActive(false);
+        Debug.Log("[FlickerCalibrator] Fixation target configured (hidden until calibration complete).");
     }
 
     // ============== XR Input Setup ==============

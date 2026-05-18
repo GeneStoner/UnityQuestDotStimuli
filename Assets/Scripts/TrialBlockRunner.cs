@@ -884,20 +884,31 @@ public class TrialBlockRunner : MonoBehaviour
         if (_frameInStimulus == _currentTrial.translationStartFrame &&
             spec is ExpSpecTestPhase epSpecReplot)
         {
+            // replotAll: both full-field flags set → replot every subfield regardless of kind
             bool replotAll = epSpecReplot.replotTranslatingAtTStart &&
                              epSpecReplot.replotNonTranslatingAtTStart;
 
+            bool replotedFirstRotating = false;
+
             for (int i = 0; i < builder.Subfields.Length; i++)
             {
-                var mkAtTStart = _currentCond.subfields[i].motionKindByFrame[_frameInStimulus];
-                bool isTranslating    = mkAtTStart == CondLib.MotionKind.Linear;
-                bool isNonTranslating = mkAtTStart == CondLib.MotionKind.RotationCW ||
-                                        mkAtTStart == CondLib.MotionKind.RotationCCW;
+                var mkAtTStart    = _currentCond.subfields[i].motionKindByFrame[_frameInStimulus];
+                bool isLinear     = mkAtTStart == CondLib.MotionKind.Linear;
+                bool isNC         = mkAtTStart == CondLib.MotionKind.NonCoherent;
+                bool isRotating   = mkAtTStart == CondLib.MotionKind.RotationCW ||
+                                    mkAtTStart == CondLib.MotionKind.RotationCCW;
 
-                if (replotAll ||
-                    (epSpecReplot.replotTranslatingAtTStart    && isTranslating) ||
-                    (epSpecReplot.replotNonTranslatingAtTStart && isNonTranslating))
+                bool shouldReplot = replotAll
+                    || (epSpecReplot.replotTranslatingAtTStart         && isLinear)
+                    || (epSpecReplot.replotNoiseTranslatingAtTStart     && isNC)
+                    || (epSpecReplot.replotNonTranslatingAtTStart       && isRotating)
+                    || (epSpecReplot.replotSingleNonTranslatingAtTStart && isRotating && !replotedFirstRotating);
+
+                if (shouldReplot)
+                {
                     builder.ReplotSubfield(i, _frameInStimulus);
+                    if (isRotating) replotedFirstRotating = true;
+                }
             }
         }
 

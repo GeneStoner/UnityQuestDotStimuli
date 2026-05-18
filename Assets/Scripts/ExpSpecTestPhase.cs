@@ -76,6 +76,17 @@ public class ExpSpecTestPhase : ExperimentSpec
              "MotionKind.RotationCW and RotationCCW subfields are replotted; Linear and NonCoherent are unaffected.")]
     public bool replotNonTranslatingAtTStart = false;
 
+    [Tooltip("When true, the noise (NonCoherent) subfield of the translating field is randomly " +
+             "repositioned at tStart. Matched in N to replotTranslatingAtTStart (both replot one " +
+             "subfield = ~250 dots at Peak density). Rotating subfields are unaffected.")]
+    public bool replotNoiseTranslatingAtTStart = false;
+
+    [Tooltip("When true, exactly ONE rotating (non-translating) subfield is randomly repositioned " +
+             "at tStart — the first rotating subfield encountered by index. Matched in N to " +
+             "replotTranslatingAtTStart and replotNoiseTranslatingAtTStart (~250 dots). " +
+             "Use instead of replotNonTranslatingAtTStart when you want half the non-translating field.")]
+    public bool replotSingleNonTranslatingAtTStart = false;
+
     [Header("Variable translation duration (MoCS)")]
     [Tooltip("If non-empty, each trial randomly samples one of these durations (ms) instead of " +
              "the fixed translationDuration_ms. Values are quantized to the frame grid at runtime. " +
