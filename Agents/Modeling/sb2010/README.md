@@ -130,8 +130,15 @@ in numerical predictions) once we set up the verification pipeline.
    (and others) in MATLAB on the laptop, then build the equivalent
    case in our Python machinery and compare numerically. This is the
    next planned step.
-2. **Add adaptation back in** alongside the fixed attention field, and
-   see how the two mechanisms combine.
+2. **Adaptation-only vs fixed-attention-only**, side by side. These are
+   competing accounts of the cueing advantage, not complementary
+   mechanisms — we don't stack them.  The SB 2010 model uses adaptation
+   alone (no attentional modulation).  Our current R&H layer uses a
+   fixed attention bias alone (no adaptation).  Compare them head-to-head
+   against the same target data, and consider whether either, neither,
+   or both reproduce key behavioural patterns. The Stoner 2018 SFN
+   "point-set" feedback model is yet a third alternative to evaluate
+   alongside.
 3. **Compare metrics.** The current bias (+54.7 % in SB Fig 3 reproduction,
    vs paper's ~21 %) likely reflects "peak of R_TD" vs the paper's
    different summary (mean or integral over the translation window).
