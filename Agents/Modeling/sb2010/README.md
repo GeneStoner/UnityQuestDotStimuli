@@ -39,7 +39,20 @@ tracking, the Stoner 2018 "point-set" feedback model) into.
   Left/Right/Up channel layout. Color-framed columns flag the input
   equivalence between trial-type pairs. PNG: `inputs_figure.png`.
 
-### R&H normalization layer (no adaptation)
+### R&H normalization on the SB stimulus — canonical (verified)
+
+- **`sb_rh_verified.py` — current canonical R&H-on-SB script.** Uses the
+  bit-for-bit-verified port of `attentionModel.m`
+  (`../verification/port_attention_model.py`) with time substituted for
+  the spatial RF-center axis. Sweeps σ and prints the cued/uncued bias;
+  also saves `sb_rh_verified.png`, a 2-panel figure with the
+  translation-detector time course at R&H's default σ=1e-6 (bias = +42.94%)
+  and a σ sweep showing the operating-regime dependence. **This is the
+  file that closes the loop between the published R&H model and our SB
+  predictions.** The files below were earlier hand-rolled attempts and
+  are superseded.
+
+### R&H normalization layer — earlier hand-rolled attempts (superseded)
 - `drive_figure.py` — population stimulus drive `E(θ, t)` via von Mises
   tuning over three input channels. Computes the heatmap shown in
   R&H-style cascades. Also exports `stimulus_drive_field()` for reuse.
