@@ -99,13 +99,37 @@ cd ~/Projects/ObjectBasedAttention/VRDots/Agents/Modeling/sb2010
 # ...etc
 ```
 
+## Reference code (Heeger & Reynolds 2009 MATLAB)
+
+`../reference_code/attentionModel/` contains the authors' published
+MATLAB implementation, downloaded 2026-06-10 from
+<https://www.cns.nyu.edu/heegerlab/?page=software&id=attentionModel>
+(mirrored from <https://snl.salk.edu/~reynolds/Normalization_Model_of_Attention>).
+
+Contents include `attentionModel.m` (the main function), helper
+functions (`conv2sepYcirc.m`, `rconv2.m`, `makeGaussian.m`, `upConv.*`
+from Simoncelli's `matlabPyrTools`), and `Figure2A.m` through
+`Figure7C.m` — one script per published figure, driven by
+`createFigures.m`.
+
+The included `upConv` MEX binaries are 2009-era Intel/PPC builds and
+will not load on Apple Silicon. When we actually run their code, we
+must either recompile `upConv.c` or rely on the pure-MATLAB
+fallback `upConv.m`.
+
+This is the ground-truth code we will diff against (in structure and
+in numerical predictions) once we set up the verification pipeline.
+
 ## Open threads
 
 1. **Verification against R&H Fig 1 / Fig 4 published cases.** Pick one
    of R&H's canonical attention regimes (small attention field with
    small stim → response gain; large with large → contrast gain; etc.)
    and confirm our normalization machinery reproduces the predicted
-   bias pattern parameter-for-parameter. This is the next planned step.
+   bias pattern parameter-for-parameter. Plan: run their `Figure4C.m`
+   (and others) in MATLAB on the laptop, then build the equivalent
+   case in our Python machinery and compare numerically. This is the
+   next planned step.
 2. **Add adaptation back in** alongside the fixed attention field, and
    see how the two mechanisms combine.
 3. **Compare metrics.** The current bias (+54.7 % in SB Fig 3 reproduction,
