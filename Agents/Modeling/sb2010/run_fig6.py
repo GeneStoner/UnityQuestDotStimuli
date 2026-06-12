@@ -52,8 +52,10 @@ def run_one(condition, motion_swap, dt=0.5):
     stim_cw, stim_ccw, c_trans = channels_for_trial(condition, motion_swap)
     R_cw,  _ = simulate_adapting_channel(stim_cw,  t)
     R_ccw, _ = simulate_adapting_channel(stim_ccw, t)
-    C = c_trans(t)
-    R_TD = translation_detector(C, R_cw, R_ccw)
+    # Per S&B App. A, the translation input is itself an Eq 4-5 adapting
+    # response (not a raw box) before entering the detector (Eq 3).
+    R_trans, _ = simulate_adapting_channel(c_trans, t)
+    R_TD = translation_detector(R_trans, R_cw, R_ccw)
     return t, R_cw, R_ccw, R_TD
 
 
@@ -66,7 +68,7 @@ def main():
     results = []
     for label, condition, swap, color in CONDITIONS:
         t, R_cw, R_ccw, R_TD = run_one(condition, swap)
-        peak = peak_in_window(t, R_TD, T_TRANS_START, T_TRANS_END)
+        peak = peak_in_window(t, R_TD, T_TRANS_START, T_TRANS_END + 120)
         results.append({
             'label': label, 'condition': condition, 'swap': swap,
             'color': color, 't': t, 'R_cw': R_cw, 'R_ccw': R_ccw,
@@ -116,7 +118,7 @@ def main():
         ax.plot(r['t'], r['R_TD'], color=r['color'], lw=1.8,
                 label=r['label'].replace('\n', ' / '))
     ax.axvspan(T_TRANS_START, T_TRANS_END, color='lightgray', alpha=0.5, zorder=0)
-    ax.set_xlim(T_TRANS_START - 80, T_TRANS_END + 80)
+    ax.set_xlim(T_TRANS_START - 80, T_TRANS_END + 120)
     ax.set_xlabel('Time (ms)')
     ax.set_ylabel(r'$R_{TD}(t)$')
     ax.set_title('A. Translation detector response over the translation window',

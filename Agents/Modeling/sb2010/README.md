@@ -26,8 +26,9 @@ tracking, the Stoner 2018 "point-set" feedback model) into.
 
 ### S&B 2010 reproductions
 - `run_fig3.py` — reproduces Fig. 3 (no-swap, CUED vs UNCUED). Model gives
-  cued > uncued bias of **+54.7 %** (paper reports ~21 % using a different
-  summary metric; qualitative result matches). PNG: `fig3_reproduction.png`.
+  cued > uncued bias of **+32.9 %** (paper reports ~21 %). PNG:
+  `fig3_reproduction.png`. (Was +54.7 % before the 2026-06-11 translation-
+  adaptation fix — see Methods note below.)
 - `run_fig6.py` — reproduces Fig. 6 (no-swap and motion-swap, both
   conditions). Confirms the model's predicted **reversal** under motion
   swap: (CUED, no-swap) and (UNCUED, swap) give identical R_TD because the
@@ -75,6 +76,22 @@ tracking, the Stoner 2018 "point-set" feedback model) into.
   normalization layer predicts a **+37.3 %** cued vs uncued bias at the
   peak — entirely through the suppressive pool being asymmetric. PNG:
   `translation_response.png`.
+
+## Methods note (2026-06-11) — translation input is adapted
+
+Per S&B Appendix A: *"These adapting responses constitute the inputs
+(i.e. the Cs in Eqs. 1 and 2) to a translation detector modeled by
+Eq. 3."* All three Cs — both rotations **and the translation** — are
+Eq. 4–5 adapting responses; the detector (Eq. 3) is static and pools
+them. The original code adapted only the rotations and fed the
+translation input in as a **raw binary box**, which made R_TD snap
+on/ramp/drop vertically (unrealistic) and inflated the bias to +54.7 %.
+Fix: route the translation input through `simulate_adapting_channel`
+too, so `E = W_TRANS · R_trans`. This yields the realistic rise→peak→
+decay transient and **+32.9 %** no-swap bias (closer to the paper's
+~21 %). Applied in `web_figures.py`, `run_fig3.py`, and `run_fig6.py`.
+Peak is now measured over the full transient (window + 120 ms), since
+R_TD peaks near translation offset.
 
 ## Direction conventions (current)
 
@@ -152,10 +169,11 @@ in numerical predictions) once we set up the verification pipeline.
    or both reproduce key behavioural patterns. The Stoner 2018 SFN
    "point-set" feedback model is yet a third alternative to evaluate
    alongside.
-3. **Compare metrics.** The current bias (+54.7 % in SB Fig 3 reproduction,
-   vs paper's ~21 %) likely reflects "peak of R_TD" vs the paper's
-   different summary (mean or integral over the translation window).
-   Confirm which.
+3. **Residual bias gap (33 % vs ~21 %).** After the 2026-06-11 fix
+   (translation input adapted; see Methods note), the no-swap bias is
+   **+32.9 %** vs the paper's ~21 %. The earlier +54.7 % and its
+   "peak-vs-mean" explanation were an artifact of feeding the translation
+   input in raw. Remaining gap may be the exact peak metric, σ, or timing.
 4. **Connect to VRDots empirical data.** Once the model side is solid,
    use it as a falsification target / prior for the experimental
    cued/uncued biases recorded in `Agents/SwapPilot/`.

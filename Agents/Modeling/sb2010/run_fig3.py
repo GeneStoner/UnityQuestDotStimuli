@@ -22,7 +22,7 @@ matplotlib.use('Agg')  # headless rendering — saves PNG without a display
 import matplotlib.pyplot as plt
 
 from parameters import (
-    T_END, T_TRANS_START, T_TRANS_END,
+    T_END, T_TRANS_START, T_TRANS_END, W_TRANS,
 )
 from stimulus import stim_field1, stim_field2, translation_input
 from model import simulate_adapting_channel, translation_detector
@@ -31,7 +31,7 @@ from model import simulate_adapting_channel, translation_detector
 def run_condition(condition, dt=0.5):
     """Simulate the model for one condition ('cued' or 'uncued').
 
-    Returns (t, R_field1, R_field2, R_TD)  — all arrays sampled at dt ms.
+    Returns (t, R_field1, R_field2, R_trans, R_TD) — arrays sampled at dt ms.
     """
     t = np.arange(0.0, T_END + dt, dt)
 
@@ -42,10 +42,13 @@ def run_condition(condition, dt=0.5):
     R_field1, _ = simulate_adapting_channel(f1, t)
     R_field2, _ = simulate_adapting_channel(f2, t)
 
-    C_trans = translation_input(t)
-    R_TD = translation_detector(C_trans, R_field1, R_field2)
+    # Per S&B App. A: ALL three Cs (including translation) are Eq 4-5
+    # adapting responses; the detector (Eq 3) pools them. Adapt the
+    # translation input rather than feeding the raw binary box.
+    R_trans, _ = simulate_adapting_channel(translation_input, t)
+    R_TD = translation_detector(R_trans, R_field1, R_field2)
 
-    return t, R_field1, R_field2, R_TD
+    return t, R_field1, R_field2, R_trans, R_TD
 
 
 def peak_in_window(t, signal, t_start, t_end):
@@ -56,12 +59,14 @@ def peak_in_window(t, signal, t_start, t_end):
 
 def main():
     # --- run both conditions ------------------------------------------------
-    t_c, R1_c, R2_c, RTD_c = run_condition('cued')
-    t_u, R1_u, R2_u, RTD_u = run_condition('uncued')
+    t_c, R1_c, R2_c, Rtrans_c, RTD_c = run_condition('cued')
+    t_u, R1_u, R2_u, Rtrans_u, RTD_u = run_condition('uncued')
 
     # --- summarize ----------------------------------------------------------
-    peak_c = peak_in_window(t_c, RTD_c, T_TRANS_START, T_TRANS_END)
-    peak_u = peak_in_window(t_u, RTD_u, T_TRANS_START, T_TRANS_END)
+    # Peak of the full transient (it now peaks near translation offset and
+    # decays after), not just the stimulus window.
+    peak_c = peak_in_window(t_c, RTD_c, T_TRANS_START, T_TRANS_END + 120)
+    peak_u = peak_in_window(t_u, RTD_u, T_TRANS_START, T_TRANS_END + 120)
     bias_pct = (peak_c / peak_u - 1.0) * 100.0
 
     print("S&B 2010 Fig. 3 reproduction — motion-competition model, no-swap conditions")
@@ -80,8 +85,8 @@ def main():
 
     # Panel A — CUED adapting responses
     ax = axes[0, 0]
-    ax.plot(t_c, R1_c, color='#2E8B57', label='first-on')
-    ax.plot(t_c, R2_c, color='#C0392B', label='delayed')
+    ax.plot(t_c, R1_c, color='#C0392B', label='first-on')          # red solid
+    ax.plot(t_c, R2_c, color='#2E8B57', ls='--', label='delayed')  # green dashed
     shade_trans(ax)
     ax.set_title('A. CUED — adapting rotation responses')
     ax.set_ylabel('R (Hz)')
@@ -90,19 +95,18 @@ def main():
 
     # Panel B — UNCUED adapting responses
     ax = axes[0, 1]
-    ax.plot(t_u, R1_u, color='#2E8B57', label='first-on')
-    ax.plot(t_u, R2_u, color='#C0392B', label='delayed')
+    ax.plot(t_u, R1_u, color='#C0392B', label='first-on')          # red solid
+    ax.plot(t_u, R2_u, color='#2E8B57', ls='--', label='delayed')  # green dashed
     shade_trans(ax)
     ax.set_title('B. UNCUED — adapting rotation responses')
     ax.set_xlim(t_u[0], t_u[-1])
     ax.legend(fontsize=8, loc='upper right')
 
     # Panel C — CUED translation-detector inputs
-    C_trans_c = translation_input(t_c)
     ax = axes[1, 0]
     ax.plot(t_c, R1_c + R2_c, color='black', label='Inhibition (R1+R2)')
-    ax.plot(t_c, C_trans_c / 4.0, color='#1F4E79', linestyle='--',
-            label='Excitation (×1/4)')
+    ax.plot(t_c, W_TRANS * Rtrans_c, color='#1F4E79', linestyle='--',
+            label='Excitation E')
     shade_trans(ax)
     ax.set_title('C. CUED — translation detector inputs')
     ax.set_ylabel('Drive')
@@ -110,11 +114,10 @@ def main():
     ax.legend(fontsize=8, loc='upper right')
 
     # Panel D — UNCUED translation-detector inputs
-    C_trans_u = translation_input(t_u)
     ax = axes[1, 1]
     ax.plot(t_u, R1_u + R2_u, color='black', label='Inhibition (R1+R2)')
-    ax.plot(t_u, C_trans_u / 4.0, color='#1F4E79', linestyle='--',
-            label='Excitation (×1/4)')
+    ax.plot(t_u, W_TRANS * Rtrans_u, color='#1F4E79', linestyle='--',
+            label='Excitation E')
     shade_trans(ax)
     ax.set_title('D. UNCUED — translation detector inputs')
     ax.set_xlim(t_u[0], t_u[-1])
