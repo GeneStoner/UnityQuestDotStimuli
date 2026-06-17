@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Circle
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Circle, Ellipse
 from matplotlib.lines import Line2D
 
 from parameters import (
@@ -451,8 +451,8 @@ def fig_responses():
                 ax.set_ylabel(rlab[i])
         # row 0 — channel responses
         ax = axes[0, j]
-        ax.plot(t, d["other"], color=OTHER, lw=2.2)
-        ax.plot(t, d["test"], color=TEST, lw=2.2, ls=(0, (5, 2)))
+        ax.plot(t, d["other"], color=OTHER, lw=2.2, zorder=3)
+        ax.plot(t, d["test"], color=TEST, lw=2.2, ls=(0, (1, 1.5)), zorder=4)
         ax.set_ylim(0, 100)
         ax.set_title(f"{d['cue']}\n{d['sw']}", fontsize=11,
                      fontweight="bold", pad=8)
@@ -471,7 +471,7 @@ def fig_responses():
         ax.set_xlabel("time  (ms)")
 
     leg = [
-        Line2D([0], [0], color=TEST, lw=2.2, ls=(0, (5, 2)),
+        Line2D([0], [0], color=TEST, lw=2.2, ls=(0, (1, 1.5)),
                label="channel interrupted by translation"),
         Line2D([0], [0], color=OTHER, lw=2.2, label="other rotation channel"),
     ]
@@ -484,11 +484,7 @@ def fig_responses():
 
     bias_ns = (data[0]["peak"] / data[1]["peak"] - 1) * 100
     bias_sw = (data[2]["peak"] / data[3]["peak"] - 1) * 100
-    fig.suptitle("Model responses across trial types  —  cued advantage "
-                 f"+{bias_ns:.0f}% (no swap) reverses to {bias_sw:.0f}% "
-                 "(motion swap)", fontsize=12.5, fontweight="bold",
-                 color=INK, y=1.005)
-    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    fig.tight_layout()
     fig.savefig("web_model_responses.png", bbox_inches="tight",
                 pad_inches=0.2)
     plt.close(fig)
@@ -542,7 +538,7 @@ def fig_trajectories():
     ax = axes[0]
     ax.plot([0, T_END], [CCW, CCW], color=OTHER, lw=2.8)
     tx, ty = test_line(T0)
-    ax.plot(tx, ty, color=TEST, lw=2.8, ls=(0, (5, 2)))
+    ax.plot(tx, ty, color=TEST, lw=2.8, ls=(0, (1, 1.5)))
     ax.set_title("CUED", fontsize=13, fontweight="bold", pad=8)
 
     # UNCUED — test field (dashed) is the FIRST-ON one (full width from 0);
@@ -550,7 +546,7 @@ def fig_trajectories():
     ax = axes[1]
     ax.plot([T0, T_END], [CCW, CCW], color=OTHER, lw=2.8)
     tx, ty = test_line(0)
-    ax.plot(tx, ty, color=TEST, lw=2.8, ls=(0, (5, 2)))
+    ax.plot(tx, ty, color=TEST, lw=2.8, ls=(0, (1, 1.5)))
     ax.set_title("UNCUED", fontsize=13, fontweight="bold", pad=8)
 
     fig.suptitle("Feature trajectories  —  replication of Stoner & Blanc "
@@ -566,6 +562,17 @@ def fig_trajectories():
 # ======================================================================
 # FIGURE 6 — Directional inputs (the trajectories as per-channel drive)
 # ======================================================================
+
+def _no_risers(t, y):
+    """Return x, y with NaN breaks inserted at each level transition, so a
+    line plot shows the horizontal level segments only — no vertical risers."""
+    x, out = [t[0]], [y[0]]
+    for i in range(1, len(t)):
+        if y[i] != y[i - 1]:
+            x.append(t[i - 1]); out.append(np.nan)
+        x.append(t[i]); out.append(y[i])
+    return np.array(x), np.array(out)
+
 
 def _input_drives(t, cue, motion_swap):
     """Per-field drive placed on the track each field occupies over time
@@ -611,11 +618,12 @@ def fig_inputs():
             ax.axvspan(T_TRANS_START, T_TRANS_END, **WIN)
             tsig, csig = dr[row]
             if csig.max() > 0:
-                ax.fill_between(t, 0, csig, color=OTHER, alpha=0.14, lw=0)
-                ax.plot(t, csig, color=OTHER, lw=2.2)
+                xx, yy = _no_risers(t, csig)
+                ax.plot(xx, yy, color=OTHER, lw=2.2, zorder=3)
             if tsig.max() > 0:
-                ax.fill_between(t, 0, tsig, color=TEST, alpha=0.14, lw=0)
-                ax.plot(t, tsig, color=TEST, lw=2.2, ls=(0, (5, 2)))
+                xx, yy = _no_risers(t, tsig)
+                ax.plot(xx, yy, color=TEST, lw=2.2, ls=(0, (1, 1.5)),
+                        zorder=4)
             ax.set_xlim(0, T_END)
             ax.set_ylim(-5, 58)
             ax.set_yticks([0, 25, 50])
@@ -628,17 +636,13 @@ def fig_inputs():
                 ax.set_xlabel("time  (ms)")
 
     leg = [
-        Line2D([0], [0], color=TEST, lw=2.2, ls=(0, (5, 2)),
+        Line2D([0], [0], color=TEST, lw=2.2, ls=(0, (1, 1.5)),
                label="test field  (translates)"),
         Line2D([0], [0], color=OTHER, lw=2.2, label="other field"),
     ]
     axes[0, 3].legend(handles=leg, loc="upper right", frameon=False,
                       fontsize=8)
-    fig.suptitle("Directional inputs S(t) across trial types  —  the test "
-                 "field (dashed) keeps its identity but changes rotation "
-                 "track under motion swap", fontsize=11.5, fontweight="bold",
-                 color=INK, y=1.0)
-    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    fig.tight_layout()
     fig.savefig("web_model_inputs.png", bbox_inches="tight", pad_inches=0.2)
     plt.close(fig)
     print("wrote web_model_inputs.png")
@@ -649,120 +653,83 @@ def fig_inputs():
 # ======================================================================
 
 def fig_biased_competition():
-    """Reynolds, Chelazzi & Desimone (1999) biased-competition circuit
-    (their Fig. 2) re-cast for our translation detector and mapped onto
-    cortex.  Output neuron = translation detector (MT/MST); input
-    populations = direction-selective channels (V1->MT).  Translation
-    drives excitation; the two rotation fields drive divisive inhibition
-    (the competitors).  S&B's adaptation sits on the rotation inputs."""
-    fig, ax = plt.subplots(figsize=(10, 7.2))
+    """Biased-competition circuit in the Reynolds, Chelazzi & Desimone (1999)
+    Fig. 2 idiom: response variable inside the output circle, input variables
+    inside the input circles, curved projections ending in filled synaptic
+    terminals on the soma (excitatory + / inhibitory -) with weight labels,
+    and the equations stacked and numbered below.  Symbols only — the caption
+    carries the cortical mapping, the citations, and the role of adaptation."""
+    fig, ax = plt.subplots(figsize=(7.6, 8.0))
     ax.set_xlim(0, 100)
-    ax.set_ylim(0, 80)
+    ax.set_ylim(0, 100)
+    ax.set_aspect("equal", adjustable="box")
     ax.axis("off")
-    GREEN, RED = CUED, UNCUED
 
-    def inhib_bar(p0, p1, color, lw=2.2, bar=2.0, shrinkA=2, shrinkB=2):
-        ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-", color=color,
-                     lw=lw, zorder=2, shrinkA=shrinkA, shrinkB=shrinkB))
-        dx, dy = p1[0] - p0[0], p1[1] - p0[1]
-        L = (dx * dx + dy * dy) ** 0.5
-        px, py = -dy / L, dx / L
-        ax.plot([p1[0] - px * bar, p1[0] + px * bar],
-                [p1[1] - py * bar, p1[1] + py * bar],
-                color=color, lw=lw + 0.4, zorder=4, solid_capstyle="round")
+    cx, cy, r = 50.0, 70.0, 12.0          # output neuron (large, on top)
 
-    # --- output neuron (detector) ---
-    out = (50, 58)
-    ax.add_patch(Circle(out, 7.0, facecolor="white", edgecolor=ACCENT,
-                        lw=2.4, zorder=4))
-    ax.text(out[0], out[1] + 1.6, "Translation", ha="center", va="center",
-            fontsize=11.5, fontweight="bold", color=INK, zorder=5)
-    ax.text(out[0], out[1] - 2.0, "detector", ha="center", va="center",
-            fontsize=11.5, fontweight="bold", color=INK, zorder=5)
-    ax.text(out[0], out[1] + 11, "MT / MST   —   large RF, sees both surfaces",
-            ha="center", fontsize=9.5, color=INK2, style="italic")
-    ax.add_patch(FancyArrowPatch((out[0], out[1] + 7), (out[0], 76),
-                 arrowstyle="-|>", mutation_scale=16, color=ACCENT, lw=2.4))
-    ax.text(out[0] + 1.6, 75, "$R_{TD}$", fontsize=12, color=ACCENT, va="top")
+    # --- output neuron: response variable inside ---
+    ax.add_patch(Circle((cx, cy), r, facecolor="white", edgecolor=INK,
+                        lw=2.2, zorder=4))
+    ax.text(cx, cy, "$R_{TD}$", ha="center", va="center", fontsize=20,
+            color=INK, zorder=5)
 
-    # --- input populations ---
-    yIn = 26
-    xT, xR1, xR2 = 18, 50, 82
+    # --- input neurons: input variables inside ---
+    yIn = 34.0
+    rin = 7.0
 
-    def innode(x, label, sub, color):
-        ax.add_patch(Circle((x, yIn), 5.0, facecolor="white",
-                            edgecolor=color, lw=2.2, zorder=4))
-        ax.text(x, yIn, label, ha="center", va="center", fontsize=10,
-                fontweight="bold", color=color, zorder=5)
-        ax.text(x, yIn - 8.0, sub, ha="center", va="center", fontsize=8.5,
-                color=INK2, zorder=5)
+    def innode(x, lab):
+        ax.add_patch(Circle((x, yIn), rin, facecolor="white", edgecolor=INK,
+                            lw=2.0, zorder=4))
+        ax.text(x, yIn, lab, ha="center", va="center", fontsize=16,
+                color=INK, zorder=5)
         return (x, yIn)
 
-    nT = innode(xT, "TRANS", "coherent shift", GREEN)
-    nR1 = innode(xR1, "ROT 1", "field 1 rotation", RED)
-    nR2 = innode(xR2, "ROT 2", "field 2 rotation", RED)
-    ax.text(50, 12, "direction-selective inputs   ·   V1 to MT  (small RF)",
-            ha="center", fontsize=9.5, color=INK2, style="italic")
+    nC = innode(50, "$T$")
+    nR1 = innode(16, "$R_1$")
+    nR2 = innode(84, "$R_2$")
 
-    # excitatory: TRANS -> detector
-    ax.add_patch(FancyArrowPatch((nT[0] + 2, nT[1] + 4.8),
-                 (out[0] - 6.2, out[1] - 3.0), arrowstyle="-|>",
-                 mutation_scale=15, color=INK, lw=2.6, shrinkA=2, shrinkB=2))
-    ax.text(28, 36, "$w^{+}$  excite", fontsize=10.5, color=INK,
-            ha="center")
+    def blob(theta_deg, color):
+        """Filled synaptic terminal sitting tangent on the soma."""
+        th = np.radians(theta_deg)
+        P = (cx + r * np.cos(th), cy + r * np.sin(th))
+        ax.add_patch(Ellipse(P, 5.0, 2.4, angle=theta_deg + 90,
+                     facecolor=color, edgecolor=color, zorder=6))
+        return P
 
-    # inhibitory: ROT1, ROT2 -> interneuron -> detector (divisive)
-    intn = (out[0] + 4, out[1] - 11)
-    ax.add_patch(Circle(intn, 2.4, facecolor=INK2, edgecolor=INK2, zorder=4))
-    ax.text(intn[0] + 3.6, intn[1] - 1.0, "inhibitory\ninterneuron",
-            fontsize=8, color=INK2, ha="left", va="center")
-    for n in (nR1, nR2):
-        ax.add_patch(FancyArrowPatch((n[0], n[1] + 5.0),
-                     (intn[0], intn[1] - 2.4), arrowstyle="-|>",
-                     mutation_scale=11, color=INK2, lw=1.8,
-                     shrinkA=2, shrinkB=2, connectionstyle="arc3,rad=0.04"))
-    inhib_bar((intn[0], intn[1] + 2.4), (out[0] + 1, out[1] - 7),
-              INK2, lw=2.4, bar=2.2)
-    ax.text(intn[0] + 4.5, (intn[1] + out[1]) / 2 - 1, "$w^{-}$  ÷",
-            fontsize=10.5, color=INK2)
+    def project(node, P, color, rad):
+        """Curved projection from an input neuron to a terminal on the soma."""
+        d = (P[0] - node[0], P[1] - node[1])
+        L = (d[0] ** 2 + d[1] ** 2) ** 0.5
+        start = (node[0] + d[0] / L * rin, node[1] + d[1] / L * rin)
+        ax.add_patch(FancyArrowPatch(
+            start, P, arrowstyle="-", connectionstyle=f"arc3,rad={rad}",
+            color=color, lw=2.0, zorder=2, shrinkA=0, shrinkB=2))
 
-    # adaptation self-loops on rotation inputs (S&B addition)
-    for n in (nR1, nR2):
-        ax.add_patch(FancyArrowPatch((n[0] + 3.4, n[1] + 4.2),
-                     (n[0] - 3.4, n[1] + 4.2), connectionstyle="arc3,rad=-0.9",
-                     arrowstyle="-|>", mutation_scale=9, color=INK2, lw=1.3,
-                     zorder=5))
-    ax.text(xR2 + 7.5, yIn + 6.5, "adaptation\n(S&B 2010)", fontsize=8,
-            color=INK2, ha="left", va="center", style="italic")
+    # excitatory (C, +) at the soma bottom; inhibitory (R1, R2, -) on the sides
+    pC = blob(270, ACCENT)
+    project(nC, pC, ACCENT, 0.0)
+    ax.text(cx + 4.2, cy - r - 0.5, "$W^{+}$", fontsize=14, color=ACCENT,
+            ha="left", va="center")
 
-    # --- equations / lineage box ---
-    ax.add_patch(FancyBboxPatch((4, 0.5), 92, 8.5,
-                 boxstyle="round,pad=0.4,rounding_size=1.2",
-                 facecolor=PAPER, edgecolor=BORDER, lw=1.2, zorder=1))
-    ax.text(8, 6.2,
-            r"$E=W^{+}C_{\mathrm{trans}}$      "
-            r"$I=W^{-}(R_1{+}R_2)$      "
-            r"$R_{TD}=\dfrac{K\,E}{E+I+\sigma}$",
-            fontsize=12, color=INK, va="center", ha="left")
-    ax.text(8, 2.2,
-            "Same as Reynolds et al. (1999) Eq. 4:  y = B E/(E+I+A).   "
-            "What biases the competition: adaptation (S&B 2010) or "
-            "attention (Reynolds & Heeger 2009).",
-            fontsize=8.5, color=INK2, va="center", ha="left", style="italic")
+    pR1 = blob(206, INHIB)
+    project(nR1, pR1, INHIB, 0.12)
+    ax.text(pR1[0] - 4.8, pR1[1] + 0.3, "$W^{-}$", fontsize=14, color=INHIB,
+            ha="right", va="center")
 
-    # legend strip
-    leg = [
-        Line2D([0], [0], color=INK, lw=2.6, marker=">", markersize=7,
-               markerfacecolor=INK, label="excitation  ($w^{+}$)"),
-        Line2D([0], [0], color=INK2, lw=2.2, marker="|", markersize=12,
-               markeredgewidth=2.2, label="divisive inhibition  ($w^{-}$)"),
-    ]
-    ax.legend(handles=leg, loc="upper right", frameon=False, fontsize=9.5,
-              bbox_to_anchor=(1.0, 0.96))
+    pR2 = blob(334, INHIB)
+    project(nR2, pR2, INHIB, -0.12)
+    ax.text(pR2[0] + 4.8, pR2[1] + 0.3, "$W^{-}$", fontsize=14, color=INHIB,
+            ha="left", va="center")
 
-    ax.text(0, 79.5, "Biased competition (Reynolds et al. 1999) applied to "
-            "translation detection", ha="left", va="top", fontsize=13.5,
-            fontweight="bold", color=INK)
+    # --- equations stacked and numbered below (Reynolds layout) ---
+    eqs = [r"$E = W^{+}T$",
+           r"$I = W^{-}(R_1 + R_2)$",
+           r"$R_{TD} = \dfrac{K\,E}{E + I + \sigma}$"]
+    yq = [17, 10, 2.5]
+    for eq, y, n in zip(eqs, yq, "123"):
+        ax.text(20, y, eq, fontsize=15, color=INK, ha="left", va="center")
+        ax.text(82, y, f"({n})", fontsize=13, color=INK2, ha="right",
+                va="center")
 
     fig.savefig("web_model_circuit.png", bbox_inches="tight", pad_inches=0.2)
     plt.close(fig)
@@ -776,17 +743,23 @@ def fig_biased_competition():
 CW_, TRANS_, CCW_ = 2, 1, 0
 
 
-def _plot_field(ax, verts, tsplit, c_pre, c_post, ls, lw):
-    """Plot a field's feature trajectory, switching color at tsplit
-    (for color swaps) while keeping a fixed line style (= identity)."""
+def _plot_field(ax, verts, tsplit, c_pre, c_post, ls, lw, z=3):
+    """Plot a field's feature trajectory.  When the colour does not change
+    (no colour swap) the whole line is drawn in one pass so the dash pattern
+    stays continuous.  For a colour swap the colour switches at tsplit while
+    the line style (= field identity) is kept fixed."""
+    if c_pre == c_post:
+        ax.plot([x for x, _ in verts], [y for _, y in verts], color=c_pre,
+                ls=ls, lw=lw, solid_capstyle="round", zorder=z)
+        return
     pre = [(x, y) for x, y in verts if x <= tsplit]
     post = [(x, y) for x, y in verts if x >= tsplit]
     if len(pre) >= 2:
         ax.plot([p[0] for p in pre], [p[1] for p in pre], color=c_pre,
-                ls=ls, lw=lw, solid_capstyle="round", zorder=3)
+                ls=ls, lw=lw, solid_capstyle="round", zorder=z)
     if len(post) >= 2:
         ax.plot([p[0] for p in post], [p[1] for p in post], color=c_post,
-                ls=ls, lw=lw, solid_capstyle="round", zorder=3)
+                ls=ls, lw=lw, solid_capstyle="round", zorder=z)
 
 
 def _traj_panel(ax, cue, motion_swap=False, color_swap=False):
@@ -806,23 +779,32 @@ def _traj_panel(ax, cue, motion_swap=False, color_swap=False):
     ax.set_yticks([CCW_, TRANS_, CW_])
     ax.set_yticklabels(["CCW", "TRANS", "CW"])
 
-    test_onset = T0 if cue == "CUED" else 0
-    comp_onset = 0 if cue == "CUED" else T0
+    # Cued = the DELAYED dots translate.  The green (dotted) field rotates
+    # CW, the red (solid) field rotates CCW — fixed identities.  WITHOUT a
+    # swap the green field translates; the motion swap changes WHICH dots
+    # translate, so the RED field translates instead, while the non-
+    # translating field reverses its rotation direction.  The translator is
+    # the delayed field (onset T0) for cued, the first-on field (onset 0)
+    # for uncued.
+    transl_onset = T0 if cue == "CUED" else 0
+    other_onset = 0 if cue == "CUED" else T0
 
-    # test field (dashed): CW -> TRANS -> (CCW if motion swap else CW)
-    end_track = CCW_ if motion_swap else CW_
-    test_v = [(test_onset, CW_), (ts, CW_), (ts, TRANS_),
-              (te, TRANS_), (te, end_track), (T_END, end_track)]
-    # competitor (solid): CCW -> (CW at ts if motion swap)
-    if motion_swap:
-        comp_v = [(comp_onset, CCW_), (ts, CCW_), (ts, CW_), (T_END, CW_)]
+    if not motion_swap:
+        g_onset, r_onset = transl_onset, other_onset
+        green_v = [(g_onset, CW_), (ts, CW_), (ts, TRANS_),
+                   (te, TRANS_), (te, CW_), (T_END, CW_)]       # green translates
+        red_v = [(r_onset, CCW_), (ts, CCW_), (T_END, CCW_)]    # red steady
     else:
-        comp_v = [(comp_onset, CCW_), (ts, CCW_), (T_END, CCW_)]
+        r_onset, g_onset = transl_onset, other_onset
+        red_v = [(r_onset, CCW_), (ts, CCW_), (ts, TRANS_),
+                 (te, TRANS_), (te, CW_), (T_END, CW_)]         # red translates
+        green_v = [(g_onset, CW_), (ts, CW_),
+                   (ts, CCW_), (T_END, CCW_)]                   # green reverses
 
-    test_post = RED if color_swap else GREEN
-    comp_post = GREEN if color_swap else RED
-    _plot_field(ax, test_v, ts, GREEN, test_post, (0, (5, 2)), 2.6)
-    _plot_field(ax, comp_v, ts, RED, comp_post, "-", 2.6)
+    g_post = RED if color_swap else GREEN
+    r_post = GREEN if color_swap else RED
+    _plot_field(ax, red_v, ts, RED, r_post, "-", 2.6, z=3)
+    _plot_field(ax, green_v, ts, GREEN, g_post, (0, (1, 1.5)), 2.6, z=4)
 
 
 # ======================================================================
@@ -844,11 +826,7 @@ def fig_motionswap():
             if i == 1:
                 ax.set_xlabel("time  (ms)")
 
-    fig.suptitle("Motion swap  —  replication of Stoner & Blanc (2010), "
-                 "Fig. 4.   Dashed (test) field keeps its identity but "
-                 "reverses rotation direction",
-                 fontsize=12.5, fontweight="bold", color=INK, y=1.01)
-    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    fig.tight_layout()
     fig.savefig("web_model_motionswap.png", bbox_inches="tight",
                 pad_inches=0.2)
     plt.close(fig)
@@ -874,14 +852,89 @@ def fig_colorswap():
             if i == 1:
                 ax.set_xlabel("time  (ms)")
 
-    fig.suptitle("Colour swap  (CUED)  —  line style = identity is invariant; "
-                 "colour (dot colour) flips independently of motion",
-                 fontsize=12.5, fontweight="bold", color=INK, y=1.01)
-    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    fig.tight_layout()
     fig.savefig("web_model_colorswap.png", bbox_inches="tight",
                 pad_inches=0.2)
     plt.close(fig)
     print("wrote web_model_colorswap.png")
+
+
+# ======================================================================
+# FIGURE 10 — Stimulus input to the normalization model (direction x time)
+# ======================================================================
+
+def _dir_content(t, cue, motion_swap=False):
+    """Direction content of the stimulus over time.  The motion swap does
+    NOT change this — it only changes which dots give rise to it — so
+    motion_swap is ignored here.  CW (+90) = first-on rotation (from t=0);
+    CCW (-90) = delayed rotation (from 750 ms = delayed onset).  Cued =
+    the delayed dots translate, so the CCW rotation gaps during the window;
+    uncued = the first-on dots translate, so the CW rotation gaps.
+    Rotation drive = 50, translation = 25.  Returns (dCW, dTRANS, dCCW)."""
+    ts, te, T0 = T_TRANS_START, T_TRANS_END, T_FIELD2_ON
+    z = lambda: np.zeros_like(t)
+    dCW, dTR, dCC = z(), z(), z()
+    dTR[(t >= ts) & (t < te)] = 25
+    if cue == "CUED":                 # delayed (CCW) translates -> CCW gaps
+        dCW[t >= 0] = 50
+        dCC[(t >= T0) & (t < ts)] = 50
+        dCC[t >= te] = 50
+    else:                             # first-on (CW) translates -> CW gaps
+        dCC[t >= T0] = 50
+        dCW[(t >= 0) & (t < ts)] = 50
+        dCW[t >= te] = 50
+    return dCW, dTR, dCC
+
+
+def fig_stim_inputs():
+    """Stimulus input to the normalization model in the R&H Fig-1 idiom:
+    narrow bands on a continuous motion-direction axis (CW +90, TRANS 0,
+    CCW -90) over time, for the four trial types.  This is the direction-
+    only view the competition/normalization model receives — so the motion
+    swap is invisible to it: CUED-swap is identical to UNCUED-no-swap, and
+    UNCUED-swap identical to CUED-no-swap."""
+    t = np.linspace(0, T_END, 600)
+    th = np.linspace(-180, 180, 721)
+
+    def band(center):
+        # sharp, narrow band at the exact direction (input is NOT graded in
+        # direction — directional grading belongs to the tuned drive E(theta))
+        return (np.abs(th[:, None] - center) <= 2.5).astype(float)
+
+    bCW, bTR, bCC = band(90), band(0), band(-90)
+
+    fig, axes = plt.subplots(2, 2, figsize=(11, 6.4), sharex=True,
+                             sharey=True)
+    cols = [("no swap", False), ("motion swap", True)]
+    rows = ["CUED", "UNCUED"]
+    for i, cue in enumerate(rows):
+        for j, (ctitle, swap) in enumerate(cols):
+            ax = axes[i, j]
+            dCW, dTR, dCC = _dir_content(t, cue, swap)
+            D = bCW * dCW[None, :] + bTR * dTR[None, :] + bCC * dCC[None, :]
+            ax.imshow(D, extent=[0, T_END, -180, 180], origin="lower",
+                      aspect="auto", cmap="Greys", vmin=0, vmax=55,
+                      interpolation="nearest")
+            ax.axvline(T_TRANS_START, color=INHIB, lw=1.0, alpha=0.8)
+            ax.axvline(T_TRANS_END, color=INHIB, lw=1.0, alpha=0.8)
+            ax.set_yticks([-90, 0, 90])
+            ax.set_yticklabels(["CCW", "TRANS", "CW"])
+            ax.set_xlim(0, T_END)
+            ax.tick_params(length=4, width=1.0, colors=INK2)
+            for s in ax.spines.values():
+                s.set_edgecolor(BORDER)
+            if i == 0:
+                ax.set_title(ctitle, fontsize=12, fontweight="bold", pad=8)
+            if j == 0:
+                ax.set_ylabel("motion direction", fontsize=10.5)
+            if i == 1:
+                ax.set_xlabel("time  (ms)")
+
+    fig.tight_layout()
+    fig.savefig("web_model_stiminputs.png", bbox_inches="tight",
+                pad_inches=0.2)
+    plt.close(fig)
+    print("wrote web_model_stiminputs.png")
 
 
 if __name__ == "__main__":
@@ -894,4 +947,5 @@ if __name__ == "__main__":
     fig_biased_competition()
     fig_motionswap()
     fig_colorswap()
+    fig_stim_inputs()
     print("done.")

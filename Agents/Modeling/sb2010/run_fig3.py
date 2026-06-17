@@ -83,24 +83,30 @@ def main():
         ax.axvspan(T_TRANS_START, T_TRANS_END, color='lightgray',
                    alpha=0.5, zorder=0)
 
-    # Panel A — CUED adapting responses
+    # Convention (matches the feature-trajectory figure + S&B Fig 3):
+    # GREEN dashed = the field that TRANSLATES (the test field, whose rotation
+    # channel is interrupted during the window); RED solid = the steady
+    # competitor.  In CUED the delayed field (R2) translates; in UNCUED the
+    # first-on field (R1) translates.  So the green curve is the one that
+    # dips in BOTH panels — green is never the competitor.
+    GREEN, RED = '#2E8B57', '#C0392B'
+
+    # Panel A — CUED adapting responses (delayed field = R2 translates)
     ax = axes[0, 0]
-    ax.plot(t_c, R1_c, color='#C0392B', label='first-on')          # red solid
-    ax.plot(t_c, R2_c, color='#2E8B57', ls='--', label='delayed')  # green dashed
+    ax.plot(t_c, R1_c, color=RED, label='competitor')                       # first-on
+    ax.plot(t_c, R2_c, color=GREEN, ls='--')                                # delayed
     shade_trans(ax)
     ax.set_title('A. CUED — adapting rotation responses')
     ax.set_ylabel('R (Hz)')
     ax.set_xlim(t_c[0], t_c[-1])
-    ax.legend(fontsize=8, loc='upper right')
 
-    # Panel B — UNCUED adapting responses
+    # Panel B — UNCUED adapting responses (first-on field = R1 translates)
     ax = axes[0, 1]
-    ax.plot(t_u, R1_u, color='#C0392B', label='first-on')          # red solid
-    ax.plot(t_u, R2_u, color='#2E8B57', ls='--', label='delayed')  # green dashed
+    ax.plot(t_u, R2_u, color=RED)                                           # delayed
+    ax.plot(t_u, R1_u, color=GREEN, ls='--')                                # first-on
     shade_trans(ax)
     ax.set_title('B. UNCUED — adapting rotation responses')
     ax.set_xlim(t_u[0], t_u[-1])
-    ax.legend(fontsize=8, loc='upper right')
 
     # Panel C — CUED translation-detector inputs
     ax = axes[1, 0]

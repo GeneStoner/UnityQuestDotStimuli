@@ -89,12 +89,18 @@ def stimulus_drive_field(theta_prefs_deg, t, condition, motion_swap=False,
             + w_trans * S_trans[None, :])
 
 
-CONDITIONS = [
-    ("CUED, no swap",   'cued',   False),
-    ("UNCUED, no swap", 'uncued', False),
-    ("CUED, swap",      'cued',   True),
-    ("UNCUED, swap",    'uncued', True),
+# S&B (2010) Fig. 4 layout (top two rows, A-D), with the swap column's rows
+# flipped relative to the no-swap column: the motion swap turns a cued
+# (delayed-dots) translation into the functional uncued case, so the
+# cued-swap panel sits at D (bottom) and the uncued-swap panel at B (top).
+#   (row, col, letter, condition, motion_swap)
+PANELS = [
+    (0, 0, "A", "cued",   False),
+    (0, 1, "B", "uncued", True),
+    (1, 0, "C", "uncued", False),
+    (1, 1, "D", "cued",   True),
 ]
+COL_TITLES = ["No-motion-swap", "Motion-swap"]
 
 
 def main():
@@ -102,22 +108,23 @@ def main():
     t = np.arange(0.0, T_END + dt, dt)
     theta_prefs = np.arange(0.0, 360.0, 1.0)   # 1° resolution → 360 neurons
 
-    drives = []
-    for label, condition, swap in CONDITIONS:
+    panels = []
+    for row, col, letter, condition, swap in PANELS:
         d = stimulus_drive_field(theta_prefs, t, condition, swap)
-        drives.append((label, d))
+        panels.append((row, col, letter, d))
 
-    vmax = max(d.max() for _, d in drives)
+    vmax = max(d.max() for *_, d in panels)
     vmin = 0.0
 
     fig, axes = plt.subplots(
         2, 2,
         figsize=(13, 9),
         sharex=True, sharey=True,
-        gridspec_kw=dict(hspace=0.22, wspace=0.10),
+        gridspec_kw=dict(hspace=0.18, wspace=0.10),
     )
 
-    for (label, d), ax in zip(drives, axes.flat):
+    for row, col, letter, d in panels:
+        ax = axes[row, col]
         im = ax.imshow(
             d,
             extent=[t[0], t[-1], theta_prefs[0], theta_prefs[-1]],
@@ -126,7 +133,6 @@ def main():
             cmap='gray_r',
             vmin=vmin, vmax=vmax,
         )
-        ax.set_title(label, fontsize=11.5, fontweight='bold')
         ax.axvline(T_TRANS_START, color='white', lw=0.6, alpha=0.6)
         ax.axvline(T_TRANS_END,   color='white', lw=0.6, alpha=0.6)
         ax.set_yticks([0, 90, 180, 270, 360])
@@ -135,17 +141,21 @@ def main():
         # Light reference lines at the stimulus directions
         for y in (0, 90, 180):
             ax.axhline(y, color='white', lw=0.4, alpha=0.35)
+        # Panel letter, top-left, on a small white tag so it reads over the map
+        ax.text(0.02, 0.96, letter, transform=ax.transAxes,
+                fontsize=15, fontweight='bold', color='black',
+                va='top', ha='left',
+                bbox=dict(boxstyle='round,pad=0.22', facecolor='white',
+                          edgecolor='none', alpha=0.85))
+        # Column header on the top row only
+        if row == 0:
+            ax.set_title(COL_TITLES[col], fontsize=13, fontweight='bold',
+                         pad=10)
 
     for ax in axes[1, :]:
         ax.set_xlabel('Time (ms)', fontsize=11)
     for ax in axes[:, 0]:
         ax.set_ylabel('Preferred direction', fontsize=11)
-
-    fig.suptitle(
-        "Population stimulus drive — direction preference × time\n"
-        "(three binary inputs put through von Mises tuning, κ = 2)",
-        fontsize=13, fontweight='bold', y=0.995,
-    )
 
     fig.colorbar(
         im, ax=axes, shrink=0.85, pad=0.02,
