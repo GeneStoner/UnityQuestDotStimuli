@@ -51,8 +51,12 @@ def _adapt_motif_v(ax, Rc, Ic, rin, rI):
             color=INK2, zorder=7)
 
 
-def fig_circuit_rot():
-    fig, ax = plt.subplots(figsize=(11.6, 8.0))
+def draw_circuit_rot(ax, draw_inputs=True):
+    """Draw the rotated biased-competition circuit onto `ax`.
+
+    When draw_inputs is False the left-hand stimulus-drive arrows and the 'S'
+    label are omitted, so a caller (the inputs+circuit combo) can supply its
+    own aligned directional-input column instead."""
     ax.set_xlim(0, 130)
     ax.set_ylim(0, 100)
     ax.set_aspect("equal", adjustable="box")
@@ -82,15 +86,16 @@ def fig_circuit_rot():
         _adapt_motif_v(ax, Rc, Ic, rin, rI)
 
     # ---- stimulus drive arrows (from the LEFT) --------------------------
-    for c, lab in ((R1, "first-on field"), (T, "translation"),
-                   (R2, "delayed field")):
-        ax.add_patch(FancyArrowPatch((22.0, c[1]), (c[0] - rin - 0.5, c[1]),
-                     arrowstyle="-|>", mutation_scale=12, color=INK, lw=1.7,
-                     zorder=2))
-        ax.text(20.5, c[1], lab, ha="right", va="center", fontsize=9.5,
-                color=INK2)
-    ax.text(22.0, R1[1] + 8.5, "$S$", ha="center", va="center", fontsize=12,
-            color=INK)
+    if draw_inputs:
+        for c, lab in ((R1, "first-on field"), (T, "translation"),
+                       (R2, "delayed field")):
+            ax.add_patch(FancyArrowPatch((22.0, c[1]), (c[0] - rin - 0.5, c[1]),
+                         arrowstyle="-|>", mutation_scale=12, color=INK, lw=1.7,
+                         zorder=2))
+            ax.text(20.5, c[1], lab, ha="right", va="center", fontsize=9.5,
+                    color=INK2)
+        ax.text(22.0, R1[1] + 8.5, "$S$", ha="center", va="center", fontsize=12,
+                color=INK)
 
     # ---- Stage 2 detector on the RIGHT, aligned with the translation row -
     cx, cy, R = 96.0, T[1], 11.0
@@ -139,6 +144,12 @@ def fig_circuit_rot():
         ax.text(129, y, f"({n})", fontsize=11, color=INK2, ha="right",
                 va="center")
 
+    return ax
+
+
+def fig_circuit_rot():
+    fig, ax = plt.subplots(figsize=(11.6, 8.0))
+    draw_circuit_rot(ax, draw_inputs=True)
     fig.savefig("web_model_circuit_adapting_rot.png", bbox_inches="tight",
                 pad_inches=0.2)
     plt.close(fig)
