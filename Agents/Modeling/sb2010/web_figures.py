@@ -742,6 +742,17 @@ def fig_biased_competition():
 
 CW_, TRANS_, CCW_ = 2, 1, 0
 
+# Single-RF interpretation (modeling-page toggle pair ONLY): an MT hypercolumn
+# whose collective receptive field is positioned on the LEFT of the rotating
+# display.  There, CW rotation is locally UPWARD motion and CCW rotation is
+# locally DOWNWARD motion; the coherent translation is a rightward shift.  These
+# labels are used by traj_figure_sb4.py and dirinputs_figure_sb4.py so that
+# toggle pair stays consistent.  NOT used by _traj_panel / fig_motionswap, which
+# keep S&B's abstract CW/TRANS/CCW coordinates for the replication figures.
+# (Order matches yticks [CCW_, TRANS_, CW_] = bottom -> top.)
+ROW_TICKS = [CCW_, TRANS_, CW_]
+ROW_LABELS = ["Down", "Right", "Up"]
+
 
 def _plot_field(ax, verts, tsplit, c_pre, c_post, ls, lw, z=3):
     """Plot a field's feature trajectory.  When the colour does not change

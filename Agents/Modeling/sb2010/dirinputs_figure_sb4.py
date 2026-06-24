@@ -22,7 +22,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from web_figures import _style_axes, INK, INK2, ACCENT, GRID, WIN
+from web_figures import (_style_axes, INK, INK2, ACCENT, GRID, WIN,
+                         ROW_TICKS, ROW_LABELS)
 from parameters import T_END, T_FIELD2_ON, T_TRANS_START, T_TRANS_END
 
 CW_, TRANS_, CCW_ = 2, 1, 0
@@ -78,8 +79,8 @@ def _panel(ax, cue, motion_swap, letter, col, row):
     ax.axvspan(T_TRANS_START, T_TRANS_END, **WIN)
     ax.set_xlim(0, T_END)
     ax.set_ylim(-0.6, 2.6)
-    ax.set_yticks([CCW_, TRANS_, CW_])
-    ax.set_yticklabels(["CCW", "TRANS", "CW"])
+    ax.set_yticks(ROW_TICKS)
+    ax.set_yticklabels(ROW_LABELS)
 
     # De-identified twin of the trajectory figure: the SAME panels, but every
     # field's motion direction over time drawn as black, solid, horizontal

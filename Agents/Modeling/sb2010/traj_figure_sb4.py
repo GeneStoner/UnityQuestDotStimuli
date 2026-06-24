@@ -24,7 +24,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from web_figures import _traj_panel, INK, INK2
+from web_figures import _traj_panel, INK, INK2, ROW_TICKS, ROW_LABELS
 
 # (row, col, letter, cue, motion_swap)
 PANELS = [
@@ -41,6 +41,10 @@ def fig_traj_sb4(out="web_model_traj_sb4.png"):
     for row, col, letter, cue, swap in PANELS:
         ax = axes[row, col]
         _traj_panel(ax, cue, motion_swap=swap, color_swap=False)
+        # Single-RF (left) interpretation: relabel rotation/translation rows as
+        # local motion directions, matching the de-identified input figure.
+        ax.set_yticks(ROW_TICKS)
+        ax.set_yticklabels(ROW_LABELS)
         # panel letter, top-left inside the axes
         ax.text(0.015, 0.93, letter, transform=ax.transAxes,
                 fontsize=14, fontweight="bold", color=INK, va="top", ha="left")
