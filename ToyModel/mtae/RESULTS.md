@@ -1,5 +1,31 @@
 # MT autoencoder toy — results log
 
+# ===== CUED-SWAP / TRAINED-CONNECTIONS THREAD (2026-07-07, ps_train.py) =====
+Question (GS): the PS model (hand-designed V1 cooperation linking successive motions) gives a
+cued-swap effect. Does a TRAINED network find that solution, a different one, or none?
+Setup: ONE MT hypercolumn (D=2 dir units) + FIXED feature adaptation + L=32 V1 positions; trainable
+2x2 ff/fb/lat matrices. Trial = two fields, one delayed (cued=B), motion swap mid-trial. Objective:
+after the swap, MT signals the CUED object's motion (cross-entropy; also gives larger response,
+4.6x, but CE overshoots the "reasonable amplification" spec).
+FINDINGS:
+- Trained on SWAP-only: 100%, BUT it's the ADAPTATION SHORTCUT, not tracking. The delayed onset
+  makes the cued object's post-swap direction = the more-adapted direction, so "amplify the more-
+  adapted dir" scores 100%. Proof: same model on NO-SWAP trials (cued = fresh/less-adapted dir)
+  scores 0% -- systematically picks the wrong one. Shortcut confirmed (this is GS's "co-occurs with
+  larger response to the other field" confound: cued perfectly confounded with adaptation asymmetry).
+- **Trained 50/50 SWAP + NO-SWAP (closes the shortcut): the network is FORCED to discover V1
+  cooperation.** WITH trainable V1 lateral: 100% swap AND 100% no-swap. WITHOUT lateral (control):
+  100% swap / 0% no-swap -- cannot beat the shortcut. So V1 cross-direction lateral coupling is
+  NECESSARY and EMERGES from training = a PS-like solution, learned not hand-wired.
+- NUANCE (GS predicted "different solution"): learned cross-direction lateral is INHIBITORY
+  (off-diag -0.73/-2.03, coopg 2.33), not PS's FACILITATORY cooperation. Same structural motif
+  (V1 lateral links successive motions), opposite sign.
+- Mechanism: when a dot's motion flips at the swap, cross-direction V1 coupling makes a position-
+  specific signature that survives pooling to the single MT hypercolumn -> swap becomes detectable.
+- Files: ps_train.py (trainable), ps_v1coop.py (hand-designed PS control, fixed connections),
+  mt1_adapt.py (adaptation mechanism demo), mt1_headB.py (readout-memory route, set aside).
+## ==========================================================================
+
 ## ===== TL;DR: TRANSLATION-DOMAIN ACCOMPLISHMENTS (as of 2026-07-07) =====
 Headline: a concrete, tested REFINEMENT of Cavanagh's "attention for free from autoencoding" —
 it holds ONLY for an OBJECT-FACTORED code, not a plain distributed autoencoder.
