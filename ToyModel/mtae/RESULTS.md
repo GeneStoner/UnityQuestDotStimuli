@@ -1,5 +1,32 @@
 # MT autoencoder toy — results log
 
+# ===== RESUME HERE: FAITHFUL-STIMULUS THREAD (2026-07-07 late) =====
+Goal: model's INPUT = the real stimulus (no rotation): two fields OPPOSITE horizontal motion,
+delayed-onset cue, ONE field briefly translates in the ORTHOGONAL (up/down) direction at 50%
+coherence; motion swap; density range. Read out a TRANSLATION DETECTOR in MT (up/down).
+
+Stimulus movies: dot_movie3.gif (2D dots, correct), stim_viz.png (1D raster). real_anim.gif =
+animated stimulus + V1 (dot size = gain) + MT bars, SWAP vs NO-SWAP.
+
+WHAT WORKS (real_stim.py, MECHANISTIC, not trained): DOT/surface-level adaptation (delayed field's
+dots less adapted) -> MT translation detector responds ~1.2x more to CUED than UNCUED translation,
+SAME with and without swap, across density 15-120 (figs/real_detector.png). Clean, graded effect.
+
+WHAT FAILED (real_train.py, GS spec = MT direction-adaptation + mult feedback + TRAINED lateral):
+training unstable + chance detection + NO cued advantage. ⚠️ I (Fable) OVERSTATED this as "MT
+adaptation can't do it" -- GS correctly pushed back: the PS model (adaptation + like-to-like feedback
++ cooperation) DOES work; cooperation transfers the base-motion bias to the translation. My TRAINING
+just never found those connections because (a) BPTT unstable, (b) "detect U/D" objective gives ZERO
+pressure for a cued advantage (detection works regardless of which field). Training-setup failure,
+NOT a mechanism claim. RETRACTED the overstatement.
+
+NEXT STEP (agreed direction): HAND-WIRE the PS connections (MT direction-adaptation + like-to-like
+MULTIPLICATIVE feedback + cooperative lateral that carries base->translation) on the faithful
+stimulus, and show the MT translation-detector CUED advantage + swap survival directly (confirm what
+we already know works). THEN, only if wanted, retrain with an objective that actually rewards
+attending the cued field (like mixing swap/no-swap forced cooperation earlier) + stability fix.
+Files: real_stim.py, real_anim.py, real_train.py (failed), dot_movie*.py, stim_viz.py.
+
 # ===== CUED-SWAP / TRAINED-CONNECTIONS THREAD (2026-07-07, ps_train.py) =====
 Question (GS): the PS model (hand-designed V1 cooperation linking successive motions) gives a
 cued-swap effect. Does a TRAINED network find that solution, a different one, or none?
