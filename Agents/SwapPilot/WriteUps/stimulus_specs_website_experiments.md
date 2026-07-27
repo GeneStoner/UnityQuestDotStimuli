@@ -13,11 +13,11 @@ Generated 2026-07-27. Source: Unity `.asset` files in `Assets/ExperimentSpecs/` 
 
 **Coherence: 50% per field** (confirmed in `collab-stimulus-comparison.md`). Half the dots in the translating field move coherently in the target direction; the other half are distributed randomly across the remaining 7 directions.
 
-**Tangential speed distribution** assumes uniform area distribution in the annulus (the exact distribution produced by `UniformAnnulus`). For a dot at eccentricity *r*, tangential speed = ω × r, where ω = 81°/s. The statistics below are analytic for this distribution:
-- v_min = ω × r_inner
-- v_max = ω × r_outer
-- v_median = ω × √[(r_outer² + r_inner²) / 2]
-- v_mean = ω × 2(r_outer³ − r_inner³) / [3(r_outer² − r_inner²)]
+**Tangential speed distribution** assumes uniform area distribution in the annulus (the exact distribution produced by `UniformAnnulus`). For a dot at eccentricity *r* (degrees), tangential speed v(°/s) = ω_rad × r, where ω_rad = 81 × π/180 = **1.4137 rad/s**. Note: ω must be in rad/s — using 81°/s directly gives units of °²/s (wrong). The statistics below are analytic for this distribution:
+- v_min = ω_rad × r_inner
+- v_max = ω_rad × r_outer
+- v_median = ω_rad × √[(r_outer² + r_inner²) / 2]
+- v_mean = ω_rad × 2(r_outer³ − r_inner³) / [3(r_outer² − r_inner²)]
 
 ---
 
@@ -57,7 +57,7 @@ From the paper (not VRDots; included for cross-reference).
 | Pre-translation | 300 ms |
 | Display | Trinitron CRT, 75 Hz, 57 cm |
 
-Tangential speed range: 0 (center) – 162°/s (aperture edge); mean/median not well-defined without knowing fixation exclusion zone.
+Tangential speed range: 0 (center) – 2.83°/s (aperture edge); mean/median not well-defined without knowing fixation exclusion zone.
 
 ---
 
@@ -76,10 +76,10 @@ Tangential speed range: 0 (center) – 162°/s (aperture edge); mean/median not 
 | Dot density (full disk) | 5.01 dots/deg² (matches S&B) |
 | Translation duration | 44 ms (4 frames at 90 Hz) |
 | Fixation style | Ring-and-crosshair (fixationScaleFactor 0.222) |
-| Tangential speed — min | 32.1°/s |
-| Tangential speed — max | 162.0°/s |
-| Tangential speed — median | 116.8°/s |
-| Tangential speed — mean | 111.5°/s |
+| Tangential speed — min | 0.560°/s |
+| Tangential speed — max | 2.827°/s |
+| Tangential speed — median | 2.038°/s |
+| Tangential speed — mean | 1.947°/s |
 
 ---
 
@@ -99,10 +99,10 @@ Also applies to: `Exp_SubfieldSwap_CatekExact`, `Exp_SubfieldSwap_CatekExact_NDb
 | Dot density (full disk) | 5.03 dots/deg² (matches Çatak) |
 | Translation duration | 80 ms |
 | Fixation style | Ring-and-crosshair (fixationScaleFactor 0.47) |
-| Tangential speed — min | 40.5°/s |
-| Tangential speed — max | 133.7°/s |
-| Tangential speed — median | 98.7°/s |
-| Tangential speed — mean | 95.4°/s |
+| Tangential speed — min | 0.707°/s |
+| Tangential speed — max | 2.333°/s |
+| Tangential speed — median | 1.723°/s |
+| Tangential speed — mean | 1.665°/s |
 
 **Çatak et al. (2022) original (for comparison):** aperture 1.65° radius, 43 dots/field, 5 dots/deg², dot size 0.05°, translation 133 ms (0.30° displacement), 60 Hz CRT at 57 cm.
 
@@ -122,10 +122,10 @@ All four conditions share identical aperture, fixation, and timing parameters:
 | Full-disk area | 38.48 deg² |
 | Translation duration | 80 ms |
 | Fixation style | Large ring-and-crosshair (no fixationScaleFactor field — uses defaults) |
-| Tangential speed — min | 89.1°/s |
-| Tangential speed — max | 283.5°/s |
-| Tangential speed — median | 210.1°/s |
-| Tangential speed — mean | 203.2°/s |
+| Tangential speed — min | 1.555°/s |
+| Tangential speed — max | 4.948°/s |
+| Tangential speed — median | 3.667°/s |
+| Tangential speed — mean | 3.547°/s |
 
 Dot counts and densities by condition:
 
@@ -163,9 +163,9 @@ All use the same dot density target (~5 dots/deg²) and 80 ms translation.
 
 | Asset | Ap radius | Excl radius | Dots/field | Density (annulus) | v_min | v_max | v_median | v_mean |
 |---|---|---|---|---|---|---|---|---|
-| AperSweep Ap165 | 1.65° | 0.52° | 43 | 5.58/deg² | 42.1 | 133.7 | 99.1 | 95.8 °/s |
-| AperSweep Ap25 | 2.5° | 0.79° | 98 | 5.54/deg² | 64.0 | 202.5 | 150.2 | 145.2 °/s |
-| AperSweep Ap35 | 3.5° | 0.396° | 192 | 5.05/deg² | 32.1 | 283.5 | 201.7 | 191.2 °/s |
+| AperSweep Ap165 | 1.65° | 0.52° | 43 | 5.58/deg² | 0.735 | 2.333 | 1.729 | 1.673 °/s |
+| AperSweep Ap25 | 2.5° | 0.79° | 98 | 5.54/deg² | 1.117 | 3.534 | 2.621 | 2.535 °/s |
+| AperSweep Ap35 | 3.5° | 0.396° | 192 | 5.05/deg² | 0.560 | 4.948 | 3.521 | 3.337 °/s |
 
 *Note: AperSweep Ap165 uses excl 0.52° (not 0.5° like CatekExact), giving a slightly different tangential speed min.*
 
@@ -183,13 +183,13 @@ Same aperture as the S&B replication (2.0° radius, excl 0.396°) but 327 dots/f
 | Dots per field | 327 |
 | Density (annulus) | 27.08 dots/deg² |
 | Translation duration | 80 ms |
-| Tangential speeds (min/max/median/mean) | 32.1 / 162.0 / 116.8 / 111.5 °/s |
+| Tangential speeds (min/max/median/mean) | 0.560 / 2.827 / 2.038 / 1.947 °/s |
 
 ---
 
 ## Notes for modeling
 
-- **The 1.1° exclusion zone in density experiments is very large** — it removes the innermost ~10% of the area. The minimum eccentricity for dots in those experiments is 1.1°, minimum tangential speed 89.1°/s. If models are sensitive to speed range or eccentricity distribution, this matters.
+- **The 1.1° exclusion zone in density experiments is very large** — it removes the innermost ~10% of the area. The minimum eccentricity for dots in those experiments is 1.1°, minimum tangential speed 1.555°/s. If models are sensitive to speed range or eccentricity distribution, this matters.
 
 - **All VRDots experiments use 90 Hz**; one stimulus frame = 11.1 ms. Translation durations of 44 ms and 80 ms correspond to 4 and 7.2 frames respectively (80 ms is rounded — actual = 7 or 8 frames depending on implementation).
 
