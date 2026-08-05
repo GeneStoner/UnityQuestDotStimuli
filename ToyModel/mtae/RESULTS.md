@@ -1,6 +1,97 @@
 # MT autoencoder toy — results log
 
-# ===== RESUME HERE: FAITHFUL-STIMULUS THREAD (2026-07-07 late) =====
+# ===== RESUME HERE: POINT-SET MODEL, 2 V1 HC -> 1 MT HC (2026-07-07 night, ps_pointset.py) =====
+The CORRECT implementation GS asked for, replacing the flawed per-token ps_wire.py. This is the
+point-set model's SEGREGATED idealization (= ps_seg / SFN poster): because at the V1 cRF scale the
+S&B stimulus has ~0.1-0.2 dots/cRF/field, each active V1 hypercolumn is dominated by ONE surface, so
+the two transparent surfaces are TWO V1 hypercolumns (A=first-on, B=delayed/cued), 8 directions each,
+feeding ONE MT hypercolumn. NO oracle tagging — surface identity is the hypercolumn; cooperation is a
+legitimate within-HC pool. Faithful engine: PSP = K(=ff^p) * FB(like-to-like MT->V1) * Coop(1+CoopL*
+E_s, E_s = SLOW saturating within-HC pool) / Norm(global recurrent); MT = Reynolds-Heeger competition
+P_d^2/(sigM^2+sum P^2). Read-out = MT[UP]-MT[DOWN] over test window.
+RESULT (cue = delayed-onset feature adaptation; the physically-correct cue, = GS's spec):
+  coop OFF (CoopL=0):  no-swap +0.013   swap +0.006   (weak, feature-based)
+  coop ON  (CoopL=8):  no-swap +0.166   swap +0.037   (cooperation amplifies ~13x; SWAP SURVIVES +)
+  cued/uncued RATIO survives well: ~1.9x no-swap, ~2.3x swap (both fields more suppressed under swap
+  so the DIFFERENCE shrinks, but the ratio is preserved). Fig figs/ps_pointset.png.
+MECHANISM (correct, no cheat): delayed onset -> B less adapted -> B wins the within-HC cooperative
+  winner-take-all; the SLOW non-directional pool E_B carries B's dominance THROUGH the base->translation
+  (and swap) direction change -> cued>uncued survives. MT competition converts it to a read-out
+  difference (the attended/dominant non-translating surface suppresses the other's translation).
+KEY FINDING (why adaptation, not attention, is the cue): the pure directional-attention account
+  (cue='attend', no adaptation) REVERSES under swap (CoopL=0: +0.031 -> -0.031) AND cooperation CANNOT
+  rescue it (-0.026) -- because the FIRST-ON field wins the cooperative head-start (it builds E during
+  the solo period before B appears). Adaptation is NECESSARY: it suppresses the first-on field so the
+  cooperative WTA binds the CUED (delayed) surface. Vindicates the delayed-onset-via-adaptation spec.
+⚠️ HONEST CAVEAT (do not overclaim): swap-survival DIFFERENCE (+0.037) is ~0.22x no-swap (+0.166),
+  weaker than ps_seg's ~1.0 (which used clean attention + no head-start). Here swap coincides with test
+  onset, so under swap BOTH non-translating fields go fresh and globally suppress via MT competition,
+  shrinking absolute magnitudes. Ratio survives; difference is small. To strengthen: separate swap from
+  test onset (let swapped base motion register first), or a cleaner attention+adaptation regime. TUNING
+  is not fully explored. Params: BETA_AD=0.3 DECAY_AD=0.05 TAU_E=10 KSAT=0.6 CoopL=8 sigM=0.3.
+NEXT (check w/ GS): (1) strengthen swap survival (swap-before-test timing); (2) spatial version (many
+  cRF hypercolumns, moving dots) -- the documented motion-following-cooperation gap; (3) density knob.
+
+# ===== HAND-WIRED PS **RETRACTED / FLAWED** (2026-07-07 night, ps_wire.py) =====
+⛔ The "CONFIRMED" claim below is WRONG. GS caught two fatal flaws; diagnostics (ps_wire_diag.py)
+confirm both. DO NOT cite ps_wire.py's 1.35x as a result.
+ FLAW 1 — the "cooperative lateral" is NOT a lateral: ctxA/ctxB are SEPARATE PER-DOT arrays, so each
+   dot's translation is boosted by its OWN field's context. That is oracle surface-tagging; it assumes
+   the very segmentation the model was supposed to produce. Replace it with a REAL spatial lateral
+   (V1 RF cells pooling BOTH intermingled fields) and the advantage COLLAPSES to ~1.0 (even inverts:
+   0.92-0.99x, ps_wire_diag.py part B). The base motions are separable by direction (A=left,B=right)
+   only WHILE horizontal; during the translation the judged dots move UP, so their base direction is
+   gone -> routing the cued base bias to the cued up-motion REQUIRES token/trajectory tracking = the
+   segmentation itself. Same lesson as slot-vs-distributed AE: binding is the hard part, not a gain.
+ FLAW 2 — the SWAP is a no-op: it flips only the horizontal base dirs, but the U-D detector never
+   reads horizontal channels, and the bias is precomputed per-dot pre-swap. det is IDENTICAL to 2
+   decimals swap vs no-swap (ps_wire_diag.py part A). "Survives swap" was vacuous; the swap tests
+   nothing as coded. A real swap test needs the readout to depend on what the swap changes.
+ SO: ps_wire.py does not demonstrate object-based cueing on the faithful stimulus. Kept for the
+ record + the honest negative (a genuine spatial lateral fails). figs/ps_wire_*.png/gif show the
+ (flawed) per-token version. NEXT if resumed: either (a) give the model a real binding/segmentation
+ stage (slots / trajectory tracking) and let cooperation ride on THAT, or (b) redesign the swap so it
+ actually perturbs the readout. Check with GS on direction.
+--- original (WRONG) claim, retained for context: ---
+# ===== HAND-WIRED PS CONFIRMED (2026-07-07 night, ps_wire.py) =====
+DONE — the agreed next step. Hand-wired PS model on the faithful stimulus (NO training), reusing
+real_stim's geometry/timeline. Confirms the cued translation-detector advantage directly and it
+SURVIVES THE SWAP. Files: ps_wire.py (model + figs), ps_wire_anim.py (animation).
+
+THE THREE HAND-SET PS CONNECTIONS + the key design choice that makes cooperation load-bearing:
+ - DIRECTION-SPECIFIC adaptation carried by the dots: only the HORIZONTAL base channel adapts. The
+   test translation (UP) is a FRESH direction, so the UP channel is EQUALLY un-adapted for BOTH
+   fields. => the onset/adaptation asymmetry lives ONLY in the base channel and CANNOT reach the UP
+   detector on its own. (This is why adaptation alone gives NO cued advantage in this readout — the
+   coop-OFF ablation proves it, ratio 1.0.)
+ - LIKE-TO-LIKE MULTIPLICATIVE FEEDBACK (MT dir d -> V1 dir d): amplifies the cued field's stronger
+   (less-adapted) base channel more, so the bias it hands off is bigger.
+ - COOPERATIVE LATERAL carrying base->orthogonal: each surface's sustained horizontal base motion
+   builds a persistent per-dot context ctx (low-pass of its feedback-amplified base gain); when the
+   dot then translates, its UP contribution is multiplied by (1 + COOPG*ctx). ctx is larger for the
+   un-adapted CUED surface => its translation is amplified. This is the ONLY path the base bias
+   reaches UP, so the cooperation IS the mechanism (GS was right; my earlier "MT-adaptation can't"
+   was wrong — it does, THROUGH the connection).
+
+RESULT (density 60, COOPG=8, FBG=0.6, cue delay T_ON=20; reps-averaged MT detector U-D):
+   coop OFF:  no-swap cued/uncued 0.98x   swap 1.01x     (adaptation alone => no cued advantage)
+   coop ON :  no-swap 1.29x               swap 1.31x     (cued > uncued, SURVIVES SWAP)
+ Cued advantage scales with cue delay and COOPG (T_ON 12->26, COOPG 4->16 => 1.05x .. 1.99x); it is
+ the onset-driven base-adaptation ratio, transferred to UP by cooperation. Swap survival is because
+ ctx is built from horizontal motion BEFORE the swap and travels with the surface's dots.
+WHY IT SURVIVES SWAP (vs the failed direction-adaptation-only intuition): the carried bias is
+ surface/token-bound (per-dot ctx), not tied to the absolute base direction, so flipping the base
+ dirs at test does not erase it.
+FIGS: figs/ps_wire_detector.png (time course + coop-OFF/ON x swap bars + density sweep),
+ figs/ps_wire_v1mt.png (V1 4-dir maps + MT bars, cued vs uncued, shows UP-channel transfer),
+ figs/ps_wire_anim.gif (animated dots + V1 UP map + MT bars, cued vs uncued, swap trial).
+⏸ CHECKPOINT (GS asked to confirm before expanding scope). Options next: (a) tie the density knob to
+ crowding of the base channel (denser => base context saturates/normalizes => weaker transfer);
+ (b) retrain the connections with an objective that actually rewards attending the cued field
+ (mix swap/no-swap to close the adaptation shortcut, + stability fix) and compare learned vs
+ hand-wired kernels; (c) map ctx/coop onto the AE decoder (learned like-to-like + cooperation).
+
+# ===== FAITHFUL-STIMULUS THREAD (2026-07-07 late) =====
 Goal: model's INPUT = the real stimulus (no rotation): two fields OPPOSITE horizontal motion,
 delayed-onset cue, ONE field briefly translates in the ORTHOGONAL (up/down) direction at 50%
 coherence; motion swap; density range. Read out a TRANSLATION DETECTOR in MT (up/down).
