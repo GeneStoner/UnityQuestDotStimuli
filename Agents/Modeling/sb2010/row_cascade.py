@@ -23,7 +23,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-from web_figures import INK, INK2, ACCENT, CUED, UNCUED, GRID, WIN, _style_axes
+from web_figures import INK, INK2, ACCENT, CUED, UNCUED, GRID, WIN, _style_axes  # noqa: F401
 from parameters import (
     T_END, T_TRANS_START, T_TRANS_END, T_FIELD2_ON, W_TRANS, W_ROT,
 )
@@ -80,18 +80,18 @@ def _draw_input(ax, cond):
         ax.axhline(y, color=GRID, lw=1.0, zorder=0)
     ax.set_ylim(-0.6, 2.6)
     ax.set_yticks([CCW_, TRANS_, CW_])
-    ax.set_yticklabels(["CCW", "TRANS", "CW"])
+    ax.set_yticklabels(["Up", "TRANS", "Down"])
     ts, te, T0 = T_TRANS_START, T_TRANS_END, T_FIELD2_ON
     transl_onset = T0 if cond == "cued" else 0
     comp_onset = 0 if cond == "cued" else T0
     bw = 7.0
-    ax.plot([transl_onset, ts], [CW_, CW_], color=GREEN, lw=bw,
+    ax.plot([transl_onset, ts], [CW_, CW_], color=INK, lw=bw,
             solid_capstyle="butt", zorder=3)            # translating rotation
-    ax.plot([te, T_END], [CW_, CW_], color=GREEN, lw=bw,
+    ax.plot([te, T_END], [CW_, CW_], color=INK, lw=bw,
             solid_capstyle="butt", zorder=3)            # ... resumes after gap
-    ax.plot([comp_onset, T_END], [CCW_, CCW_], color=RED, lw=bw,
+    ax.plot([comp_onset, T_END], [CCW_, CCW_], color=INK, lw=bw,
             solid_capstyle="butt", zorder=3)            # competitor rotation
-    ax.plot([ts, te], [TRANS_, TRANS_], color=BLUE, lw=bw,
+    ax.plot([ts, te], [TRANS_, TRANS_], color=INK, lw=bw,
             solid_capstyle="butt", zorder=3)            # translation
 
 
@@ -117,15 +117,15 @@ def main():
 
         # 2 — adapting responses
         ax = axes[i, 1]; _ax(ax)
-        ax.plot(t, d["comp_R"], color=RED, lw=2.4)
-        ax.plot(t, d["transl_R"], color=GREEN, lw=2.4, ls=(0, (4, 2)))
+        ax.plot(t, d["comp_R"], color=INK, lw=2.4)
+        ax.plot(t, d["transl_R"], color=INK, lw=2.4, ls=(0, (4, 2)))
         ax.plot(t, d["R_tr"], color=BLUE, lw=2.0)
         ax.set_ylim(0, Rmax)
         lev = _peak(t, d["comp_R"])    # surviving competitor ~ the inhibition
         ax.annotate(f"competitor\n≈ {lev:.0f}", xy=(T_TRANS_END, lev),
                     xytext=(T_TRANS_END + 150, lev + (20 if cond == "cued" else -2)),
-                    fontsize=8.5, color=RED, va="center",
-                    arrowprops=dict(arrowstyle="->", color=RED, lw=1.1))
+                    fontsize=8.5, color=INK, va="center",
+                    arrowprops=dict(arrowstyle="->", color=INK, lw=1.1))
 
         # 3 — competition: inhibition vs excitation
         ax = axes[i, 2]; _ax(ax)
@@ -150,11 +150,6 @@ def main():
         axes[0, j].set_title(ti, fontsize=11.5, fontweight="bold", pad=8)
 
     # legends
-    axes[0, 0].legend(handles=[
-        Line2D([0], [0], color=GREEN, lw=4, label="translating"),
-        Line2D([0], [0], color=RED, lw=4, label="competitor"),
-        Line2D([0], [0], color=BLUE, lw=4, label="translation")],
-        fontsize=7, loc="upper left", frameon=False, handlelength=1.2)
     axes[0, 2].legend(handles=[
         Line2D([0], [0], color=INK, lw=2.4, label="$I=R_1{+}R_2$"),
         Line2D([0], [0], color=BLUE, lw=2.0, ls="--", label="$E$")],

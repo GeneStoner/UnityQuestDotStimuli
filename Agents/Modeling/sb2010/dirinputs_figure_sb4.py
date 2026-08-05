@@ -92,8 +92,9 @@ def _panel(ax, cue, motion_swap, letter, col, row):
         ax.plot([t0, t1], [rrow, rrow], color=INK, lw=2.6,
                 solid_capstyle="round", zorder=3)
 
-    ax.text(0.015, 0.93, letter, transform=ax.transAxes, fontsize=14,
-            fontweight="bold", color=INK, va="top", ha="left")
+    cue_label = "cued" if cue == "CUED" else "uncued"
+    ax.text(0.015, 0.93, f'{letter}: "{cue_label}"', transform=ax.transAxes,
+            fontsize=11, fontweight="bold", color=INK, va="top", ha="left")
     if row == 0:
         ax.set_title(COL_TITLES[col], fontsize=13, fontweight="bold",
                      pad=10, color=INK)

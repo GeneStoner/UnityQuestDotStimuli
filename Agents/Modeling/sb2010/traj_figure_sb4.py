@@ -40,14 +40,15 @@ def fig_traj_sb4(out="web_model_traj_sb4.png"):
     fig, axes = plt.subplots(2, 2, figsize=(11, 5.4), sharex=True)
     for row, col, letter, cue, swap in PANELS:
         ax = axes[row, col]
-        _traj_panel(ax, cue, motion_swap=swap, color_swap=False)
+        _traj_panel(ax, cue, motion_swap=swap, color_swap=False, field_color=INK)
         # Single-RF (left) interpretation: relabel rotation/translation rows as
         # local motion directions, matching the de-identified input figure.
         ax.set_yticks(ROW_TICKS)
         ax.set_yticklabels(ROW_LABELS)
-        # panel letter, top-left inside the axes
-        ax.text(0.015, 0.93, letter, transform=ax.transAxes,
-                fontsize=14, fontweight="bold", color=INK, va="top", ha="left")
+        # panel letter + cued/uncued label, top-left inside the axes
+        cue_label = "cued" if cue == "CUED" else "uncued"
+        ax.text(0.015, 0.93, f'{letter}: "{cue_label}"', transform=ax.transAxes,
+                fontsize=11, fontweight="bold", color=INK, va="top", ha="left")
         if row == 0:
             ax.set_title(COL_TITLES[col], fontsize=13, fontweight="bold",
                          pad=10, color=INK)

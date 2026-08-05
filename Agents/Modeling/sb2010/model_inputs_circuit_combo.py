@@ -29,7 +29,7 @@ from dirinputs_figure_sb4 import channel_occupancy, CW_, TRANS_, CCW_
 
 # y-heights of the circuit's channel neurons (must match draw_circuit_rot)
 YROW = {CW_: 80.0, TRANS_: 54.0, CCW_: 28.0}
-RLAB = {CW_: "Up", TRANS_: "Right", CCW_: "Down"}
+RLAB = {CW_: "Down", TRANS_: "Right", CCW_: "Up"}
 
 # input-column x-extent (the local time axis), kept left of the circuit
 XA0, XA1 = -60.0, -8.0
@@ -88,8 +88,8 @@ def main(out="model_inputs_circuit_combo.png"):
             va="top", ha="left")
     ax.text(18.0, 97.0, "B", fontsize=17, fontweight="bold", color=INK,
             va="top", ha="left")
-    ax.text((XA0 + XA1) / 2.0, 94.0, "Directional input\n(cued, no swap)",
-            ha="center", va="top", fontsize=10.5, color=INK2)
+    ax.text((XA0 + XA1) / 2.0, 98.0, "Directional input (cued, no swap)",
+            ha="center", va="top", fontsize=13, fontweight="bold", color=INK)
 
     # extend xlim left to include the input column (draw_circuit_rot set 0..130)
     ax.set_xlim(XA0 - 12.0, 132.0)

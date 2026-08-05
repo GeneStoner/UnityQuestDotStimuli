@@ -10,9 +10,9 @@ live in MT — the direction-selective channels that adapt, then the pattern /
 MST unit that detects translation.  This lets us reason with a directional MT
 drive without yet invoking MST / rotation-selective neurons.
 
-Geometry: the RF sits directly to the LEFT of fixation, so the CW field's
-local motion is UP and the CCW field's is DOWN — matching the drive figure
-(DIR_CW = 90 deg = up, DIR_CCW = -90 deg = down).
+Geometry: the RF sits directly to the RIGHT of fixation, so the CW field's
+local motion is DOWN and the CCW field's is UP — matching the drive figure
+(DIR_CW = -90 deg = down, DIR_CCW = 90 deg = up).
 
 Run:  /usr/bin/python3 mt_rf_figure.py
 """
@@ -28,7 +28,7 @@ from web_figures import INK, INK2, BORDER, ACCENT, CUED, UNCUED, SURFACE, GRID
 
 GREEN, RED = CUED, UNCUED          # field colours (match the rest of the set)
 APERTURE = 3.0                     # = 2.0 deg radius (4 deg stimulus, S&B 2010)
-RF_C, RF_R = (-2.0, 0.0), 0.9      # MT RF: directly left of fixation, eccentric
+RF_C, RF_R = (2.0, 0.0), 0.9       # MT RF: directly right of fixation, eccentric
                                    # enough to exclude the near-fixation dots
                                    # (whose local motion is not up/down)
 OMEGA = 81.0                       # rotation speed, deg/s (Stoner & Blanc 2010)
@@ -36,28 +36,42 @@ TRACE_MS = 100.0                   # duration each dot-trace represents
 SWEEP = OMEGA * TRACE_MS / 1000.0  # constant angular sweep (deg) ~ 12.15
 
 # Dot density: S&B used 5 dots/deg^2 per field.  Here 1 deg = 1.5 units, so
-# 1 deg^2 = 2.25 units^2 -> grid spacing = sqrt(2.25 / 5) ~ 0.67 units/field.
-DENS_SPACING = 0.67
+# 1 deg^2 = 2.25 units^2 -> ~55 dots in the annulus at that density.
+N_DOTS = 55
 
 
-def _field(spacing, jitter, seed, offset=(0.0, 0.0), rmin=0.7, rmax=None):
-    """A jittered grid of dot positions inside a disk: even density (unlike
-    pure uniform-random, which clumps) yet still random-looking thanks to the
-    per-dot jitter.  Two calls with different ``offset`` give two interleaved
-    fields."""
+def _field(n, seed, rmin=0.7, rmax=None):
+    """Uniform-random dot positions in an annulus (area-uniform sampling)."""
     if rmax is None:
         rmax = APERTURE - 0.08
     rng = np.random.default_rng(seed)
-    k = int(np.ceil(rmax / spacing)) + 1
-    coords = np.arange(-k, k + 1) * spacing
-    pts = []
-    for x in coords:
-        for y in coords:
-            p = np.array([x + offset[0], y + offset[1]]) + \
-                rng.uniform(-jitter, jitter, 2)
-            if rmin < np.hypot(*p) < rmax:
-                pts.append(p)
-    return np.array(pts)
+    angles = rng.uniform(0, 2 * np.pi, n)
+    rs = np.sqrt(rng.uniform(rmin ** 2, rmax ** 2, n))
+    return np.column_stack([rs * np.cos(angles), rs * np.sin(angles)])
+
+
+def _arc_in_circle(zp, fix_zoom, sense, sweep_deg, rz, margin=0.10):
+    """True iff the full arc about fix_zoom stays within rz of origin."""
+    zp = np.asarray(zp, float); fz = np.asarray(fix_zoom, float)
+    rvec = zp - fz
+    R = np.hypot(*rvec)
+    th0 = np.degrees(np.arctan2(rvec[1], rvec[0]))
+    s = -1.0 if sense == "CW" else 1.0
+    ths = np.radians(np.linspace(th0, th0 + s * sweep_deg, 24))
+    arc = fz[:, None] + R * np.array([np.cos(ths), np.sin(ths)])
+    return bool(np.all(np.hypot(arc[0], arc[1]) < rz - margin))
+
+
+def _spread_select(pts, min_dist, rng_seed=0):
+    """Greedy Poisson-disk selection: return a well-separated subset."""
+    rng = np.random.default_rng(rng_seed)
+    order = rng.permutation(len(pts))
+    selected = []
+    for i in order:
+        p = pts[i]
+        if all(np.hypot(*(p - s)) > min_dist for s in selected):
+            selected.append(p)
+    return selected
 
 
 def _rotation_arrow(ax, a0_deg, a1_deg, color, R=3.45):
@@ -114,10 +128,9 @@ def fig_mt_rf(out="mt_rf_figure.png"):
 
     # every dot is drawn as a TRACE: a short arc of its rigid-rotation path
     # about fixation, tipped with an arrowhead for direction.  Green = CW
-    # field, red = CCW field.  Two offset jittered grids -> even density.
-    g = _field(spacing=DENS_SPACING, jitter=0.18, seed=11, offset=(0.0, 0.0))
-    r = _field(spacing=DENS_SPACING, jitter=0.18, seed=12,
-               offset=(DENS_SPACING / 2, DENS_SPACING / 2))
+    # field, red = CCW field.  Uniform-random placement in the annulus.
+    g = _field(N_DOTS, seed=11)
+    r = _field(N_DOTS, seed=12)
     for p in g:
         axL.scatter(*p, s=9, color=GREEN, zorder=3)
         _arc_motion(axL, p, (0, 0), "CW", GREEN, lw=1.4, head=7, sweep_deg=SWEEP)
@@ -147,25 +160,42 @@ def fig_mt_rf(out="mt_rf_figure.png"):
     axR.add_patch(Circle((0, 0), rz, facecolor=SURFACE, edgecolor=INK,
                   lw=2.0, ls=(0, (5, 3)), zorder=1))
 
-    def _inrf(p):
-        return np.hypot(p[0] - RF_C[0], p[1] - RF_C[1]) < RF_R - 0.04
+    # Zoom candidates: sample a dense pool directly within the RF, check that
+    # each arc stays fully inside the zoom circle, then spread-select.
+    def _rf_pool(n, seed):
+        rng = np.random.default_rng(seed)
+        pts = []
+        while len(pts) < n:
+            p = rng.uniform(-RF_R, RF_R, 2) + np.array(RF_C)
+            if np.hypot(p[0] - RF_C[0], p[1] - RF_C[1]) < RF_R - 0.06:
+                pts.append(p)
+        return pts
 
-    for p in g:
-        if _inrf(p):
+    def _zoom_candidates(pool, sense):
+        out = []
+        for p in pool:
             zp = (np.asarray(p) - RF_C) * M
-            axR.scatter(*zp, s=22, color=GREEN, zorder=3)
-            _arc_motion(axR, zp, fix_zoom, "CW", GREEN, lw=2.4, head=11,
-                        sweep_deg=SWEEP)
-    for p in r:
-        if _inrf(p):
-            zp = (np.asarray(p) - RF_C) * M
-            axR.scatter(*zp, s=22, color=RED, zorder=3)
-            _arc_motion(axR, zp, fix_zoom, "CCW", RED, lw=2.4, head=11,
-                        sweep_deg=SWEEP)
+            if _arc_in_circle(zp, fix_zoom, sense, SWEEP, rz, margin=0.06):
+                out.append(zp)
+        return out
 
-    axR.text(rz + 0.12, 0.42, "CW ≈ up", color=GREEN, fontsize=11,
+    g_cands = _zoom_candidates(_rf_pool(120, seed=21), "CW")
+    r_cands = _zoom_candidates(_rf_pool(120, seed=22), "CCW")
+    g_zoom = _spread_select(g_cands, min_dist=0.82, rng_seed=7)[:5]
+    r_zoom = _spread_select(r_cands, min_dist=0.82, rng_seed=8)[:5]
+
+    for zp in g_zoom:
+        axR.scatter(*zp, s=22, color=GREEN, zorder=3)
+        _arc_motion(axR, zp, fix_zoom, "CW", GREEN, lw=2.4, head=11,
+                    sweep_deg=SWEEP)
+    for zp in r_zoom:
+        axR.scatter(*zp, s=22, color=RED, zorder=3)
+        _arc_motion(axR, zp, fix_zoom, "CCW", RED, lw=2.4, head=11,
+                    sweep_deg=SWEEP)
+
+    axR.text(rz + 0.12, -0.42, "CW ≈ down", color=GREEN, fontsize=11,
              fontweight="bold", ha="left", va="center")
-    axR.text(rz + 0.12, -0.42, "CCW ≈ down", color=RED, fontsize=11,
+    axR.text(rz + 0.12, 0.42, "CCW ≈ up", color=RED, fontsize=11,
              fontweight="bold", ha="left", va="center")
     axR.set_title("The same RF, magnified — local motion ≈ translations",
                   fontsize=11.5, color=INK, pad=6)

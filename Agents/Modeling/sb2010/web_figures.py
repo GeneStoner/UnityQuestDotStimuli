@@ -751,7 +751,7 @@ CW_, TRANS_, CCW_ = 2, 1, 0
 # keep S&B's abstract CW/TRANS/CCW coordinates for the replication figures.
 # (Order matches yticks [CCW_, TRANS_, CW_] = bottom -> top.)
 ROW_TICKS = [CCW_, TRANS_, CW_]
-ROW_LABELS = ["Down", "Right", "Up"]
+ROW_LABELS = ["Up", "Right", "Down"]
 
 
 def _plot_field(ax, verts, tsplit, c_pre, c_post, ls, lw, z=3):
@@ -773,12 +773,15 @@ def _plot_field(ax, verts, tsplit, c_pre, c_post, ls, lw, z=3):
                 ls=ls, lw=lw, solid_capstyle="round", zorder=z)
 
 
-def _traj_panel(ax, cue, motion_swap=False, color_swap=False):
+def _traj_panel(ax, cue, motion_swap=False, color_swap=False, field_color=None):
     """One feature-trajectory panel.  Convention: line STYLE = identity
     (dashed = test field that translates, solid = competitor); line COLOR
     = dot color (green test, red competitor; flips at swap if color_swap);
-    vertical position = motion type.  The SAME (dashed) field translates."""
+    vertical position = motion type.  The SAME (dashed) field translates.
+    Pass field_color to render both fields in a single colour (e.g. CUED)."""
     GREEN, RED = CUED, UNCUED
+    if field_color is not None:
+        GREEN = RED = field_color
     ts, te, T0 = T_TRANS_START, T_TRANS_END, T_FIELD2_ON
     _style_axes(ax)
     ax.grid(False)

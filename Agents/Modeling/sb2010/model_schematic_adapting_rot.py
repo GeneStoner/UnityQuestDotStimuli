@@ -33,22 +33,26 @@ def _adapt_motif_v(ax, Rc, Ic, rin, rI):
                         zorder=4))
     ax.text(Ic[0], Ic[1], "$I$", ha="center", va="center", fontsize=10,
             color=INK2, zorder=5)
-    # R -> I  (right side, excitatory, up into I)
+    # R -> I  (excitatory — ACCENT, arrowhead)
     pR = (Rc[0] + rin * np.cos(np.radians(60)), Rc[1] + rin * np.sin(np.radians(60)))
     pI = (Ic[0] + rI * np.cos(np.radians(-60)), Ic[1] + rI * np.sin(np.radians(-60)))
-    ax.add_patch(FancyArrowPatch(pR, pI, arrowstyle="-|>", mutation_scale=8,
-                 connectionstyle="arc3,rad=0.35", color=INK2, lw=1.3,
-                 zorder=3, shrinkA=1, shrinkB=1))
-    # I -> R  (left side, subtractive '-' terminal on R)
+    ax.add_patch(FancyArrowPatch(pR, pI, arrowstyle="-",
+                 connectionstyle="arc3,rad=0.35", color=ACCENT, lw=1.3,
+                 zorder=3, shrinkA=1, shrinkB=2))
+    ax.add_patch(Ellipse(pI, 2.4, 2.4, facecolor="white", edgecolor=ACCENT,
+                 lw=1.2, zorder=6))
+    ax.text(pI[0], pI[1], "$+$", ha="center", va="center", fontsize=9,
+            color=ACCENT, zorder=7)
+    # I -> R  (inhibitory — INHIB, blob terminal)
     pImin = (Ic[0] + rI * np.cos(np.radians(240)), Ic[1] + rI * np.sin(np.radians(240)))
     pRmin = (Rc[0] + rin * np.cos(np.radians(120)), Rc[1] + rin * np.sin(np.radians(120)))
     ax.add_patch(FancyArrowPatch(pImin, pRmin, arrowstyle="-",
-                 connectionstyle="arc3,rad=0.35", color=INK2, lw=1.3,
+                 connectionstyle="arc3,rad=0.35", color=INHIB, lw=1.3,
                  zorder=3, shrinkA=1, shrinkB=2))
-    ax.add_patch(Ellipse(pRmin, 2.4, 2.4, facecolor="white", edgecolor=INK2,
+    ax.add_patch(Ellipse(pRmin, 2.4, 2.4, facecolor="white", edgecolor=INHIB,
                  lw=1.2, zorder=6))
     ax.text(pRmin[0], pRmin[1], "$-$", ha="center", va="center", fontsize=9,
-            color=INK2, zorder=7)
+            color=INHIB, zorder=7)
 
 
 def draw_circuit_rot(ax, draw_inputs=True):
@@ -70,18 +74,15 @@ def draw_circuit_rot(ax, draw_inputs=True):
     R2 = (xC, 28.0)   # CCW = delayed rotation (fresh)
     I1, IT, I2 = (xC, 93.5), (xC, 67.5), (xC, 41.5)   # interneurons above
 
-    def neuron(c, lab, col):
+    def neuron(c, lab):
         ax.add_patch(Circle(c, rin, facecolor="white", edgecolor=INK, lw=2.0,
                             zorder=4))
         ax.text(c[0], c[1], lab, ha="center", va="center", fontsize=14,
                 color=INK, zorder=5)
-        # colour cue at the soma base
-        ax.add_patch(Ellipse((c[0], c[1] - rin), 5.0, 2.2, facecolor=col,
-                     edgecolor=col, zorder=3, alpha=0.9))
 
-    neuron(R1, "$R_1$", UNCUED)
-    neuron(T,  "$R_T$", ACCENT)
-    neuron(R2, "$R_2$", CUED)
+    neuron(R1, "$R_1$")
+    neuron(T,  "$R_T$")
+    neuron(R2, "$R_2$")
     for Rc, Ic in ((R1, I1), (T, IT), (R2, I2)):
         _adapt_motif_v(ax, Rc, Ic, rin, rI)
 
@@ -106,27 +107,29 @@ def draw_circuit_rot(ax, draw_inputs=True):
 
     # translation: excitatory (+) into the detector's left
     pT = _blob(ax, (cx, cy), 180, ACCENT, R)
-    _project(ax, T, pT, ACCENT, 0.0, rin)
-    ax.text(pT[0] - 1.5, pT[1] + 4.2, "$W^{+}$", fontsize=13, color=ACCENT,
-            ha="center", va="bottom")
-    # rotations: inhibitory (-) into the detector's upper-/lower-left
-    pR1 = _blob(ax, (cx, cy), 150, INHIB, R)
-    _project(ax, R1, pR1, INHIB, -0.12, rin)
-    ax.text(pR1[0] - 1.0, pR1[1] + 3.0, "$W^{-}$", fontsize=13, color=INHIB,
+    _project(ax, T, pT, ACCENT, 0.0, 0)
+    ax.text(pT[0] - 1.5, pT[1] + 3.5, "$W^{+}$", fontsize=14, color=ACCENT,
             ha="right", va="bottom")
-    pR2 = _blob(ax, (cx, cy), 210, INHIB, R)
-    _project(ax, R2, pR2, INHIB, 0.12, rin)
-    ax.text(pR2[0] - 1.0, pR2[1] - 3.0, "$W^{-}$", fontsize=13, color=INHIB,
-            ha="right", va="top")
+    # rotations: inhibitory (-) fanned out to 130°/230° for more separation
+    pR1 = _blob(ax, (cx, cy), 130, INHIB, R)
+    _project(ax, R1, pR1, INHIB, -0.25, 0)
+    lR1 = np.array(pR1) + 7.0 * np.array([np.cos(np.radians(100)), np.sin(np.radians(100))])
+    ax.text(lR1[0], lR1[1], "$W^{-}$", fontsize=14, color=INHIB,
+            ha="center", va="center")
+    pR2 = _blob(ax, (cx, cy), 230, INHIB, R)
+    _project(ax, R2, pR2, INHIB, 0.25, 0)
+    lR2 = np.array(pR2) + 7.0 * np.array([np.cos(np.radians(260)), np.sin(np.radians(260))])
+    ax.text(lR2[0], lR2[1], "$W^{-}$", fontsize=14, color=INHIB,
+            ha="center", va="center")
 
     # ---- stage labels ---------------------------------------------------
-    ax.text(xC, 99.5, "Stage 1", ha="center", va="center", fontsize=10,
-            color=INK2, style="italic")
-    ax.text(cx, cy + R + 4.0, "Stage 2", ha="center", va="center", fontsize=10,
-            color=INK2, style="italic")
+    ax.text(xC, 99.5, "Stage 1: Adaptation", ha="center", va="center",
+            fontsize=13, color=INK2, fontweight="bold")
+    ax.text(cx, cy + R + 14.0, "Stage 2: Competition", ha="center", va="center",
+            fontsize=13, color=INK2, fontweight="bold")
 
     # ---- equations (below) ----------------------------------------------
-    ax.text(22, 17.5, "Stage 1 — adapting channel  ($i = 1, 2, T$)",
+    ax.text(22, 17.5, "Stage 1: Adaptation — adapting channel  ($i = 1, 2, T$)",
             fontsize=10.5, color=INK2, ha="center", va="center")
     s1 = [r"$\tau\,\dot{R}_i = -R_i + N(S_i - w_a I_i)$",
           r"$\tau_a\,\dot{I}_i = -I_i + R_i$",
@@ -134,7 +137,7 @@ def draw_circuit_rot(ax, draw_inputs=True):
     for eq, y in zip(s1, (12.0, 7.0, 1.8)):
         ax.text(0, y, eq, fontsize=12, color=INK, ha="left", va="center")
 
-    ax.text(96, 17.5, "Stage 2 — translation detector",
+    ax.text(96, 17.5, "Stage 2: Competition — translation detector",
             fontsize=10.5, color=INK2, ha="center", va="center")
     s2 = [(r"$E = W^{+} R_T$", "1"),
           (r"$I = W^{-}(R_1 + R_2)$", "2"),
