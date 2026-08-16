@@ -156,8 +156,28 @@ def _translation_path(p0, ms, n=32, direction=(1.0, 0.0)):
     return p0[None, :] + ts * dist * d[None, :]
 
 
+def _rf_trajectory(rf_c, sense, translates):
+    """The dot's path through pre-probe rotation + probe, centred in its RF.
+
+    Used by BOTH figures, so the short trajectory drawn at stimulus scale in A is
+    literally the same path B magnifies. Centring uses the minimum enclosing
+    circle (endpoints as diameter — the L's corner lies on it, Thales), which
+    gives symmetric margin; only the path's position in the RF is a display
+    choice, its shape is exact.
+    """
+    pre = _rotation_path(rf_c, sense, PRE_MS)
+    p_switch = pre[-1]
+    during = (_translation_path(p_switch, TRANS_MS) if translates
+              else _rotation_path(p_switch, sense, TRANS_MS))
+    full = np.vstack([pre, during])
+    shift = np.asarray(rf_c, float) - (full[0] + full[-1]) / 2.0
+    pre, during = pre + shift, during + shift
+    span = float(np.hypot(*(full[-1] - full[0]))) + DOT_DIAM_DEG
+    return pre, during, span
+
+
 # ═════════════════════════════════════════════════ A — the stimulus ══
-def fig_A(out="ps_two_rf_A.png"):
+def fig_A(out="ps_two_rf_A.png", show_traj=False):
     fig, ax = plt.subplots(figsize=(8.6, 6.6))
     ax.set_aspect("equal"); ax.axis("off")
     lim = APERTURE_DEG + 0.5
@@ -189,20 +209,26 @@ def fig_A(out="ps_two_rf_A.png"):
         ax.add_patch(Circle(c, RF_R_DEG, facecolor=SURFACE, edgecolor=INK,
                             lw=1.8, zorder=6))
 
-    # one dot in each, at TRUE angular size, with its local motion direction
-    arrow = rot_arc(PRE_MS + TRANS_MS) * 0.85
-    ax.add_patch(Circle(RF_LEFT, DOT_DIAM_DEG / 2, facecolor=RED,
-                        edgecolor="none", zorder=8))
-    ax.add_patch(FancyArrowPatch((RF_LEFT[0], RF_LEFT[1] - arrow / 2),
-                                 (RF_LEFT[0], RF_LEFT[1] + arrow / 2),
-                                 arrowstyle="-|>", mutation_scale=7,
-                                 color=RED, lw=1.1, zorder=7))
-    ax.add_patch(Circle(RF_RIGHT, DOT_DIAM_DEG / 2, facecolor=GREEN,
-                        edgecolor="none", zorder=8))
-    ax.add_patch(FancyArrowPatch((RF_RIGHT[0], RF_RIGHT[1] + arrow / 2),
-                                 (RF_RIGHT[0], RF_RIGHT[1] - arrow / 2),
-                                 arrowstyle="-|>", mutation_scale=7,
-                                 color=GREEN, lw=1.1, zorder=7))
+    # one dot in each RF, at TRUE angular size.
+    #   show_traj=False -> a static snapshot: just the two dots
+    #   show_traj=True  -> the SAME short path B magnifies, drawn at stimulus scale
+    for rf_c, colour, sense, role in [(RF_LEFT, RED, "CCW", "uncued"),
+                                      (RF_RIGHT, GREEN, "CW", "cued")]:
+        if show_traj:
+            pre, during, _ = _rf_trajectory(rf_c, sense,
+                                            role == TRANSLATING_FIELD)
+            ax.plot(pre[:, 0], pre[:, 1], color=colour, lw=1.3, alpha=0.55,
+                    solid_capstyle="round", zorder=7)
+            ax.plot(during[:, 0], during[:, 1], color=colour, lw=2.0,
+                    solid_capstyle="round", zorder=7)
+            ax.add_patch(FancyArrowPatch(during[-2], during[-1],
+                         arrowstyle="-|>", mutation_scale=8, color=colour,
+                         lw=0, zorder=7))
+            head = pre[0]
+        else:
+            head = rf_c
+        ax.add_patch(Circle(head, DOT_DIAM_DEG / 2, facecolor=colour,
+                            edgecolor="none", zorder=8))
 
     ax.plot(0, 0, marker="+", ms=12, mew=2.2, color=INK, zorder=9)
 
@@ -220,7 +246,9 @@ def fig_A(out="ps_two_rf_A.png"):
         Line2D([0], [0], color=RED, lw=2.2, label="CCW field  (uncued / first-on)")],
         loc="upper right", frameon=False, fontsize=9)
 
-    ax.set_title("A · Two counter-rotating fields, one dot in each of two V1 RFs",
+    sub = ("one dot in each of two V1 RFs — with its short trajectory" if show_traj
+           else "one dot in each of two V1 RFs")
+    ax.set_title(f"A · Two counter-rotating fields, {sub}",
                  fontsize=12, color=INK, pad=8)
     ax.text(0, -lim + 0.16,
             f"V1 RF {RF_DIAM_DEG:.2f}° diameter (σ {SIGMA_DEG:g}°), fixed — not scaled with "
@@ -316,5 +344,6 @@ if __name__ == "__main__":
     print(f"  RF provides                {RF_DIAM_DEG:.4f}  -> margin {RF_DIAM_DEG/need:.2f}x")
     assert need < RF_DIAM_DEG, "whole dot does not fit inside the RF"
     print()
-    fig_A()
+    fig_A("ps_two_rf_A_static.png", show_traj=False)
+    fig_A("ps_two_rf_A_traj.png",   show_traj=True)
     fig_B()
