@@ -50,21 +50,78 @@ EXCL_DEG     = 0.47                 # near-fixation exclusion (matches Figure 2)
 DENSITY      = 5.0                  # dots / deg^2 / field
 N_DOTS       = int(round(DENSITY * np.pi * (APERTURE_DEG**2 - EXCL_DEG**2)))
 
-# ── the two V1 cRFs: adjacent, side by side, right of fixation ──
-CRF_DIAM_DEG = 0.16                 # Dow 1981 at ~1.3 deg eccentricity
-CRF_R_DEG    = CRF_DIAM_DEG / 2.0
-ECC_DEG      = 1.33                 # centre of the PAIR
-RF_LEFT      = (ECC_DEG - CRF_R_DEG, 0.0)
-RF_RIGHT     = (ECC_DEG + CRF_R_DEG, 0.0)
-
 # ── motion ──
 OMEGA_DEG_S  = 81.0                 # angular rotation speed
 PROBE_DEG_S  = 2.26                 # translation (probe) speed
-PRE_MS       = 40.0                 # window shown before the translation
+PRE_MS       = 40.0                 # rotation window shown before the probe
 TRANS_MS     = 40.0                 # translation duration (parameters.T_TRANS)
 TRACE_MS     = 100.0                # trace length for the background field dots
 
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# THE CENTRAL ASSUMPTION, made quantitative.
+#
+# The model requires that a dot's pre-probe rotation AND its probe motion both
+# fall inside ONE V1 cRF. Two dots must fit, and they impose different demands:
+#
+#   translating dot   rotation (PRE_MS) then translation (TRANS_MS), and the two
+#                     are perpendicular -> an L. Its minimum enclosing circle has
+#                     diameter hypot(rot, trans)  (the corner lies on it, Thales).
+#   NON-translating   pure rotation for PRE_MS + TRANS_MS -> a straight run of
+#                     length rot(2T). This is usually the BINDING case.
+#
+# cRF diameter grows with eccentricity (Dow 1981, d = 0.05 + 0.08E) but so does
+# tangential rotation speed (v = omega * E), and the latter grows faster. The
+# probe displacement is eccentricity-INDEPENDENT. So the assumption holds only
+# inside a WINDOW of eccentricity — too near fixation the probe overruns the
+# small cRF, too far out the rotation does. ECC_DEG is placed at the optimum.
+# ═══════════════════════════════════════════════════════════════════════════
+def crf_diameter(E):
+    """Dow 1981 V1 cRF diameter (deg) at eccentricity E (deg)."""
+    return 0.05 + 0.08 * E
+
+
+def rot_arc(E, ms):
+    """Tangential arc length (deg) swept in ``ms`` at eccentricity E."""
+    return np.radians(OMEGA_DEG_S) * E * (ms / 1000.0)
+
+
+def required_translating(E):
+    """Min enclosing circle of the L-shaped rotation->translation path."""
+    return float(np.hypot(rot_arc(E, PRE_MS), PROBE_DEG_S * TRANS_MS / 1000.0))
+
+
+def required_straight(E):
+    """Straight run of the dot that keeps rotating through the probe window."""
+    return rot_arc(E, PRE_MS + TRANS_MS)
+
+
+def fit_margin(E):
+    """cRF diameter divided by the larger of the two demands. >1 means it fits."""
+    return crf_diameter(E) / max(required_translating(E), required_straight(E))
+
+
+def _best_eccentricity(lo=0.10, hi=4.0, n=40000):
+    Es = np.linspace(lo, hi, n)
+    m = np.array([fit_margin(E) for E in Es])
+    return float(Es[int(np.argmax(m))])
+
+
+def fit_window(lo=0.05, hi=6.0, n=200000):
+    """Eccentricity range over which BOTH dots fit inside one cRF."""
+    Es = np.linspace(lo, hi, n)
+    ok = np.array([fit_margin(E) > 1.0 for E in Es])
+    return (float(Es[ok].min()), float(Es[ok].max())) if ok.any() else (None, None)
+
+
+# ── the two V1 cRFs: adjacent, side by side, right of fixation ──
+ECC_DEG      = round(_best_eccentricity(), 2)   # centre of the PAIR, at the optimum
+CRF_DIAM_DEG = crf_diameter(ECC_DEG)            # sized from Dow, not hard-coded
+CRF_R_DEG    = CRF_DIAM_DEG / 2.0
+RF_LEFT      = (ECC_DEG - CRF_R_DEG, 0.0)
+RF_RIGHT     = (ECC_DEG + CRF_R_DEG, 0.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -179,8 +236,8 @@ def fig_A(out="ps_two_rf_A.png"):
     ax.set_title("A · Two counter-rotating fields, two adjacent V1 cRFs",
                  fontsize=12, color=INK, pad=8)
     ax.text(0, -lim + 0.20,
-            f"cRF {CRF_DIAM_DEG:g}° diameter (σ {CRF_R_DEG:g}°) at {ECC_DEG:g}° "
-            f"eccentricity, drawn at true size · {DENSITY:g} dots/deg²/field",
+            f"cRF {CRF_DIAM_DEG:.3f}° diameter at {ECC_DEG:g}° eccentricity "
+            f"(Dow 1981), drawn at true size · {DENSITY:g} dots/deg²/field",
             ha="center", va="bottom", fontsize=8.5, color=INK2)
 
     fig.tight_layout()
@@ -223,13 +280,20 @@ def fig_B(out="ps_two_rf_B.png"):
         during = (_translation_path(p_switch, TRANS_MS) if translates
                   else _rotation_path(p_switch, sense, TRANS_MS))
 
+        # Centre the path's MINIMUM ENCLOSING CIRCLE on the cRF centre. For both
+        # shapes here — a straight run, and two perpendicular arms — that circle
+        # is the one on the endpoints as diameter (the corner lies on it, Thales),
+        # so its centre is simply the midpoint of first and last point. This gives
+        # symmetric margin all round and is what makes the fit visible.
         full = np.vstack([pre, during])
-        centre = np.array([(full[:, 0].min() + full[:, 0].max()) / 2.0,
-                           (full[:, 1].min() + full[:, 1].max()) / 2.0])
+        centre = (full[0] + full[-1]) / 2.0
         shift = np.asarray(rf_c, float) - centre
         pre = pre + shift
         during = during + shift
         p0, p_switch = pre[0], pre[-1]
+
+        span = float(np.hypot(*(full[-1] - full[0])))   # enclosing diameter
+        margin = CRF_DIAM_DEG / span
 
         # before the probe
         ax.plot(pre[:, 0], pre[:, 1], color=colour, lw=2.0, alpha=0.55,
@@ -250,6 +314,12 @@ def fig_B(out="ps_two_rf_B.png"):
         ax.text(rf_c[0], rf_c[1] + CRF_R_DEG + pad * 0.55, note,
                 ha="center", va="bottom", fontsize=9.5,
                 color=colour, fontweight="bold")
+
+        # the fit itself, stated on the figure
+        ax.text(rf_c[0], rf_c[1] - CRF_R_DEG - pad * 0.55,
+                f"path spans {span:.3f}° in a {CRF_DIAM_DEG:.3f}° cRF "
+                f"({margin:.2f}× margin)",
+                ha="center", va="top", fontsize=9, color=INK2)
 
         ax.set_title(f"{panel_lab}\n{sub}", fontsize=11, color=INK, pad=6)
 
@@ -279,11 +349,21 @@ def fig_B(out="ps_two_rf_B.png"):
 
 
 if __name__ == "__main__":
+    lo, hi = fit_window()
+    tang = np.radians(OMEGA_DEG_S) * ECC_DEG
     print(f"N_DOTS per field = {N_DOTS}  (density {DENSITY} dots/deg^2/field)")
-    tang = OMEGA_DEG_S * np.pi / 180 * ECC_DEG
-    print(f"tangential speed at {ECC_DEG} deg = {tang:.3f} deg/s")
-    print(f"  rotation displacement in {TRANS_MS:g} ms = {tang * TRANS_MS/1000:.4f} deg")
-    print(f"  probe    displacement in {TRANS_MS:g} ms = "
-          f"{PROBE_DEG_S * TRANS_MS/1000:.4f} deg   (cRF diam {CRF_DIAM_DEG} deg)")
+    print(f"eccentricity     = {ECC_DEG} deg   (optimum for the fit)")
+    print(f"cRF diameter     = {CRF_DIAM_DEG:.4f} deg  (Dow 1981 at that E)")
+    print(f"tangential speed = {tang:.3f} deg/s\n")
+    print("THE CENTRAL ASSUMPTION — does the whole path fit in one cRF?")
+    print(f"  translating dot (L-path)   needs {required_translating(ECC_DEG):.4f} deg")
+    print(f"  non-translating (straight) needs {required_straight(ECC_DEG):.4f} deg   <- binding")
+    print(f"  cRF provides                     {CRF_DIAM_DEG:.4f} deg"
+          f"   -> margin {fit_margin(ECC_DEG):.2f}x")
+    print(f"\n  holds only for {lo:.3f} < E < {hi:.3f} deg")
+    print( "    lower bound: probe displacement is E-independent, foveal cRFs too small")
+    print( "    upper bound: tangential rotation grows faster than cRF diameter")
+    assert fit_margin(ECC_DEG) > 1.0, "trajectory does not fit inside the cRF"
+    print()
     fig_A()
     fig_B()
