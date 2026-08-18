@@ -15,28 +15,29 @@ RF SIZE — fixed, NOT scaled with eccentricity (GS: for the toy model we do not
 scale), and drawn at the UPPER END of what can still honestly be called a V1
 receptive field, because this is a schematic:
 
-    sigma = 0.26 deg   ->   RF diameter 2*sigma = 0.52 deg   at E = 1 deg
+    sigma = 0.24 deg   ->   RF diameter 2*sigma = 0.48 deg   at E = 1 deg
 
-Two independent human estimates land there: Dumoulin & Wandell (2008) pRF,
-sigma = 0.1 + 0.15*E; and Freeman & Simoncelli (2011) V1 pooling, s = 0.26*E.
-Both give 0.52 deg at E = 1. For scale, at the same eccentricity Dow 1981 cRF is
-0.13, `hcps_rfrule('small')` (= the MT patch the model runs) is 0.24, and 'large'
-is 0.38. The ceiling is ~0.65 (5x cRF, top of the summation-field range); past
-that the figure would be depicting V2 pooling or an fMRI population, not V1.
-See Agents/SwapPilot/WriteUps/v1_rf_sizes.md.
+Just under the ceiling, so the two RF circles carry a visible gap rather than
+touching (RF_GAP_DEG). The ceiling itself is 0.52 deg, where two independent
+human estimates agree: Dumoulin & Wandell (2008) pRF, sigma = 0.1 + 0.15*E; and
+Freeman & Simoncelli (2011) V1 pooling, s = 0.26*E. For scale, at the same
+eccentricity Dow 1981 cRF is 0.13, `hcps_rfrule('small')` (= the MT patch the
+model runs) is 0.24, and 'large' is 0.38. Absolute limit ~0.65 (5x cRF, top of
+the summation-field range); past that the figure would be depicting V2 pooling
+or an fMRI population, not V1. See Agents/SwapPilot/WriteUps/v1_rf_sizes.md.
 
 CONTAINMENT — the model's central assumption, checked rather than assumed. The
 dot's whole extent, not just its centre, must stay inside one RF for the pre-probe
-rotation AND the probe:
+rotation AND the probe. Windows: 100 ms rotation + 40 ms probe.
 
-    non-translating dot   straight run of omega*E*(PRE+PROBE)      = 0.1131 deg
-    translating dot       L-path, hypot(rotation, translation)     = 0.1066 deg
+    non-translating dot   straight run of omega*E*(PRE+PROBE)      = 0.1979 deg
+    translating dot       L-path, hypot(rotation, translation)     = 0.1678 deg
     + dot diameter (Minkowski sum with a disc)                     + 0.03 deg
     ------------------------------------------------------------------------
-    required 0.1431 deg   vs   RF 0.52 deg      ->  margin 3.63x
+    required 0.2279 deg   vs   RF 0.48 deg      ->  margin 2.11x
 
-⚠️ THE DRAWN PAIR IS SELECTED, NOT TYPICAL. At 0.52 deg an RF holds ~1.06 dots
-per field on average, so P(the other surface also intrudes) ~ 65%. A point-set
+⚠️ THE DRAWN PAIR IS SELECTED, NOT TYPICAL. At 0.48 deg an RF holds ~0.91 dots
+per field on average, so P(the other surface also intrudes) ~ 60%. A point-set
 seeing exactly one surface is the exception at this RF size — which is precisely
 why `hcps_twops.m` has to SEARCH for such pairs across layout seeds rather than
 assume them. Any caption must not imply purity is generic.
@@ -75,21 +76,23 @@ DOT_DIAM_DEG = 0.03                 # S&B dot; VRDots = 0.08
 
 # ── the RFs: FIXED size, not scaled with eccentricity ──
 ECC_DEG      = 1.0                  # the MT patch's own eccentricity
-SIGMA_DEG    = 0.26                 # UPPER END of realistic V1 at E=1: Dumoulin pRF
-                                    # (0.1+0.15E) and Freeman&Simoncelli V1 pooling
-                                    # (0.26E) both give 2*sigma = 0.52 deg.
+SIGMA_DEG    = 0.24                 # just under the upper end of realistic V1 at E=1:
+                                    # Dumoulin pRF (0.1+0.15E) and Freeman&Simoncelli
+                                    # V1 pooling (0.26E) both cap at 2*sigma = 0.52.
                                     # 0.19 -> hcps_rfrule('large'); 0.12 -> 'small'
+RF_GAP_DEG   = 0.05                 # clear gap so the two RF circles do not touch
 RF_DIAM_DEG  = 2 * SIGMA_DEG
 RF_R_DEG     = SIGMA_DEG
-RF_LEFT      = (ECC_DEG - RF_R_DEG, 0.0)
-RF_RIGHT     = (ECC_DEG + RF_R_DEG, 0.0)
+_SEP         = RF_DIAM_DEG + RF_GAP_DEG      # centre-to-centre
+RF_LEFT      = (ECC_DEG - _SEP / 2, 0.0)
+RF_RIGHT     = (ECC_DEG + _SEP / 2, 0.0)
 MT_R_DEG     = 0.95                 # the MT RF enclosing both, as in fig_modelI;
                                     # must exceed RF_R_DEG*3 = 0.78 to contain them
 
 # ── motion ──
 OMEGA_DEG_S  = 81.0
 PROBE_DEG_S  = 2.26
-PRE_MS       = 40.0
+PRE_MS       = 100.0                # pre-probe rotation shown (GS, 2026-08-18)
 TRANS_MS     = 40.0
 TRACE_MS     = 100.0                # trace length for the background field dots
 
@@ -142,17 +145,6 @@ def _arc_motion(ax, p, fix, sense, color, lw=1.7, head=8, sweep_deg=None):
     ax.plot(xs, ys, color=color, lw=lw, solid_capstyle="round", zorder=4)
     ax.add_patch(FancyArrowPatch((xs[-2], ys[-2]), (xs[-1], ys[-1]),
                  arrowstyle="-|>", mutation_scale=head, color=color, lw=0, zorder=4))
-
-
-def _big_rotation_arrow(ax, a0, a1, R, color):
-    """The field-level rotation arrow, as in fig_modelI_stimulus."""
-    th = np.radians(np.linspace(a0, a1, 40))
-    ax.plot(R * np.cos(th), R * np.sin(th), color=color, lw=2.6,
-            solid_capstyle="round", zorder=2, alpha=0.9)
-    p0 = np.array([R * np.cos(th[-3]), R * np.sin(th[-3])])
-    p1 = np.array([R * np.cos(th[-1]), R * np.sin(th[-1])])
-    ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-|>", mutation_scale=19,
-                 color=color, lw=0, zorder=2))
 
 
 def _rotation_path(p0, sense, ms, n=64):
@@ -214,10 +206,6 @@ def fig_A(out="ps_two_rf_A.png", show_traj=False):
     for p in r:
         ax.scatter(*p, s=7, color=RED, zorder=3)
         _arc_motion(ax, p, (0, 0), "CCW", RED, lw=1.1, head=6, sweep_deg=sweep)
-
-    # field-level rotation arrows (CCW red on the left, CW green on the right)
-    _big_rotation_arrow(ax, 150, 205, APERTURE_DEG * 0.78, RED)
-    _big_rotation_arrow(ax, 30, -25, APERTURE_DEG * 0.78, GREEN)
 
     # the two V1 RFs, side by side, FIXED size
     for c in (RF_LEFT, RF_RIGHT):
