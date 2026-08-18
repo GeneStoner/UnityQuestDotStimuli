@@ -86,9 +86,7 @@ RF_GAP_DEG   = 0.05                 # clear gap so the two RF circles do not tou
 RF_DIAM_DEG  = 2 * SIGMA_DEG
 RF_R_DEG     = SIGMA_DEG
 _SEP         = RF_DIAM_DEG + RF_GAP_DEG      # centre-to-centre
-MT_R_DEG     = 0.95                 # the MT RF enclosing both, as in fig_modelI.
-                                    # Set by eye to fit the pair — the one quantity
-                                    # in this figure without a literature source.
+MT_MARGIN    = 0.06                 # slack between the pair and the MT RF edge
 
 # ── motion ──
 OMEGA_DEG_S  = 81.0
@@ -99,10 +97,10 @@ TRANS_MS     = 40.0
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 
 # ── the search ──
-SEARCH_SEEDS   = range(1, 200)
+SEARCH_SEEDS   = range(1, 300)
 SEARCH_FRAMES  = 21                 # frames sampled across the whole window
-SEARCH_ECC     = np.arange(0.70, 1.61, 0.05)
-SEARCH_ANG_DEG = np.arange(-40, 41, 5)
+SEARCH_ECC     = np.arange(0.55, 0.81, 0.05)   # kept near-in so a STIMULUS-CENTRED
+SEARCH_ANG_DEG = np.arange(-25, 26, 5)         # MT RF still contains the pair
 
 
 # ═══════════════════════════════════════════════════════════ helpers ══
@@ -163,12 +161,16 @@ def _positions_at(p0, sense, translates, t_s):
     return p
 
 
-def _find_pure_pair(seeds=SEARCH_SEEDS):
+def _find_pure_pair(seeds=SEARCH_SEEDS, min_candidates=25):
     """Search layouts for two adjacent RF-sized regions, each holding exactly one
     dot of ONE surface — the same dot — for every frame of the window, with no
-    intrusion from the other surface. Returns None if no layout qualifies.
+    intrusion from the other surface. Collects qualifying candidates and returns
+    the one whose two dots stay best CENTRED — a pair whose dots skim the RF
+    boundary is a real configuration but a poor illustration. Returns None if no
+    layout qualifies.
     """
     ts = np.linspace(0.0, (PRE_MS + TRANS_MS) / 1000.0, SEARCH_FRAMES)
+    cands = []
     for seed in seeds:
         rng = np.random.default_rng(seed)
         A = _field(N_DOTS, rng)                     # red, CCW, uncued
@@ -191,10 +193,24 @@ def _find_pure_pair(seeds=SEARCH_SEEDS):
                 if not iA or not iB: continue
                 if any((np.hypot(*(pb - Lc).T) < RF_R_DEG).any() for pb in PB): continue
                 if any((np.hypot(*(pa - Rc).T) < RF_R_DEG).any() for pa in PA): continue
-                return dict(seed=seed, A=A, B=B, Lc=Lc, Rc=Rc,
-                            iA=iA.pop(), iB=iB.pop(),
-                            ecc=float(ecc), ang=float(np.degrees(ang)))
-    return None
+                jA, jB = iA.pop(), iB.pop()
+                # Score it: how well CENTRED the two dots stay. A qualifying pair
+                # whose dots skim the RF boundary is a true configuration but a
+                # poor illustration, so keep searching and take the best.
+                mA = min(np.hypot(*(pa[jA] - Lc)) for pa in PA), \
+                     max(np.hypot(*(pa[jA] - Lc)) for pa in PA)
+                mB = max(np.hypot(*(pb[jB] - Rc)) for pb in PB)
+                worst = max(mA[1], mB) + DOT_DIAM_DEG / 2
+                cands.append((RF_R_DEG / worst,
+                              dict(seed=seed, A=A, B=B, Lc=Lc, Rc=Rc,
+                                   iA=jA, iB=jB, ecc=float(ecc),
+                                   ang=float(np.degrees(ang)),
+                                   margin=RF_R_DEG / worst)))
+        if len(cands) >= min_candidates:
+            break
+    if not cands:
+        return None
+    return max(cands, key=lambda c: c[0])[1]
 
 
 # ── run the search once, at import; everything downstream reads its result ──
@@ -205,8 +221,18 @@ if PAIR is None:
 FIELD_A, FIELD_B = PAIR["A"], PAIR["B"]
 RF_LEFT, RF_RIGHT = tuple(PAIR["Lc"]), tuple(PAIR["Rc"])
 IDX_A, IDX_B = PAIR["iA"], PAIR["iB"]
-MT_C = ((RF_LEFT[0] + RF_RIGHT[0]) / 2, (RF_LEFT[1] + RF_RIGHT[1]) / 2)
-ECC_DEG = float(np.hypot(*MT_C))
+ECC_DEG = PAIR["ecc"]
+
+# The MT RF is CENTRED ON THE STIMULUS (GS). The V1 pair therefore sits off-centre
+# inside it, which is fine — an MT RF pools a wide region and the two point-sets
+# need not be at its middle. Its radius is DERIVED: just large enough to contain
+# the found pair. The search is restricted to near-in eccentricities (SEARCH_ECC)
+# precisely so this stays a sensible fraction of the display rather than swallowing
+# it. Note this is still the one quantity here with no literature source — it is
+# set by the geometry it has to contain, not by a measurement of MT.
+MT_C = (0.0, 0.0)
+MT_R_DEG = round(max(np.hypot(*RF_LEFT), np.hypot(*RF_RIGHT))
+                 + RF_R_DEG + MT_MARGIN, 3)
 
 
 # ═══════════════════════════════════════════════════════ containment ══
@@ -224,8 +250,9 @@ def _selected(which):
 
 
 # ═══════════════════════════════════════════════════════════ drawing ══
-def _draw_trajectory(ax, pre, during, colour, lw_pre, lw_during, head, z):
-    ax.plot(pre[:, 0], pre[:, 1], color=colour, lw=lw_pre, alpha=0.55,
+def _draw_trajectory(ax, pre, during, colour, lw_pre, lw_during, head, z,
+                     alpha_pre=0.55):
+    ax.plot(pre[:, 0], pre[:, 1], color=colour, lw=lw_pre, alpha=alpha_pre,
             solid_capstyle="round", zorder=z)
     ax.plot(during[:, 0], during[:, 1], color=colour, lw=lw_during,
             solid_capstyle="round", zorder=z)
@@ -268,13 +295,14 @@ def fig_A(out="ps_two_rf_A.png", show_traj=False):
         if show_traj:
             pre, during = _dot_trajectory(p0, sense, translates)
             _draw_trajectory(ax, pre, during, colour,
-                             lw_pre=1.3, lw_during=2.2, head=8, z=7)
+                             lw_pre=1.9, lw_during=3.0, head=10, z=7,
+                             alpha_pre=0.95)
         ax.add_patch(Circle(p0, DOT_DIAM_DEG / 2, facecolor=colour,
                             edgecolor="none", zorder=8))
 
     ax.plot(0, 0, marker="+", ms=12, mew=2.2, color=INK, zorder=9)
 
-    ax.annotate("Area MT RF", xy=(MT_C[0] + MT_R_DEG * 0.72, MT_C[1] + MT_R_DEG * 0.72),
+    ax.annotate("Area MT RF", xy=(MT_C[0] + MT_R_DEG * 0.71, MT_C[1] + MT_R_DEG * 0.71),
                 xytext=(APERTURE_DEG + 0.45, 1.15), ha="left", va="center",
                 fontsize=10.5, color=INK,
                 arrowprops=dict(arrowstyle="-", color=INK2, lw=1.0, shrinkB=3))
