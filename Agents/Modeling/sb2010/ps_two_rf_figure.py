@@ -94,7 +94,6 @@ OMEGA_DEG_S  = 81.0
 PROBE_DEG_S  = 2.26
 PRE_MS       = 100.0                # pre-probe rotation shown (GS, 2026-08-18)
 TRANS_MS     = 40.0
-TRACE_MS     = 100.0                # trace length for the background field dots
 
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 
@@ -134,19 +133,6 @@ def _clear_of_rfs(pts, pad=0.05):
     return np.array(keep)
 
 
-def _arc_motion(ax, p, fix, sense, color, lw=1.7, head=8, sweep_deg=None):
-    p = np.asarray(p, float); fix = np.asarray(fix, float)
-    rvec = p - fix
-    R = np.hypot(*rvec)
-    th0 = np.degrees(np.arctan2(rvec[1], rvec[0]))
-    s = -1.0 if sense == "CW" else 1.0
-    ths = np.radians(np.linspace(th0, th0 + s * sweep_deg, 16))
-    xs = fix[0] + R * np.cos(ths); ys = fix[1] + R * np.sin(ths)
-    ax.plot(xs, ys, color=color, lw=lw, solid_capstyle="round", zorder=4)
-    ax.add_patch(FancyArrowPatch((xs[-2], ys[-2]), (xs[-1], ys[-1]),
-                 arrowstyle="-|>", mutation_scale=head, color=color, lw=0, zorder=4))
-
-
 def _rotation_path(p0, sense, ms, n=64):
     p0 = np.asarray(p0, float)
     R = np.hypot(*p0); th0 = np.arctan2(p0[1], p0[0])
@@ -163,24 +149,45 @@ def _translation_path(p0, ms, n=32, direction=(1.0, 0.0)):
     return p0[None, :] + ts * dist * d[None, :]
 
 
-def _rf_trajectory(rf_c, sense, translates):
-    """The dot's path through pre-probe rotation + probe, centred in its RF.
+def _dot_trajectory(p0, sense, translates):
+    """Any dot's path: PRE_MS of rigid rotation, then TRANS_MS of either the
+    rightward probe (if its field translates) or continued rotation.
 
-    Used by BOTH figures, so the short trajectory drawn at stimulus scale in A is
-    literally the same path B magnifies. Centring uses the minimum enclosing
-    circle (endpoints as diameter — the L's corner lies on it, Thales), which
-    gives symmetric margin; only the path's position in the RF is a display
-    choice, its shape is exact.
+    One definition for every dot in the figure — the two inside the RFs and the
+    whole surrounding field — so nothing in A can silently use a different
+    convention from anything else.
     """
-    pre = _rotation_path(rf_c, sense, PRE_MS)
+    pre = _rotation_path(p0, sense, PRE_MS)
     p_switch = pre[-1]
     during = (_translation_path(p_switch, TRANS_MS) if translates
               else _rotation_path(p_switch, sense, TRANS_MS))
+    return pre, during
+
+
+def _rf_trajectory(rf_c, sense, translates):
+    """`_dot_trajectory` re-centred on the RF, for the two selected dots.
+
+    Centring uses the minimum enclosing circle (endpoints as diameter — the L's
+    corner lies on it, Thales), which gives symmetric margin; only the path's
+    position in the RF is a display choice, its shape is exact. Background dots
+    are NOT re-centred — they sit where they actually fall.
+    """
+    pre, during = _dot_trajectory(rf_c, sense, translates)
     full = np.vstack([pre, during])
     shift = np.asarray(rf_c, float) - (full[0] + full[-1]) / 2.0
     pre, during = pre + shift, during + shift
     span = float(np.hypot(*(full[-1] - full[0]))) + DOT_DIAM_DEG
     return pre, during, span
+
+
+def _draw_trajectory(ax, pre, during, colour, lw_pre, lw_during, head, z):
+    """Thin pre-probe segment, thick probe segment, arrowhead at the end."""
+    ax.plot(pre[:, 0], pre[:, 1], color=colour, lw=lw_pre, alpha=0.55,
+            solid_capstyle="round", zorder=z)
+    ax.plot(during[:, 0], during[:, 1], color=colour, lw=lw_during,
+            solid_capstyle="round", zorder=z)
+    ax.add_patch(FancyArrowPatch(during[-2], during[-1], arrowstyle="-|>",
+                 mutation_scale=head, color=colour, lw=0, zorder=z))
 
 
 # ═════════════════════════════════════════════════ A — the stimulus ══
@@ -197,36 +204,38 @@ def fig_A(out="ps_two_rf_A.png", show_traj=False):
     ax.add_patch(Circle((ECC_DEG, 0.0), MT_R_DEG, facecolor="#e7e5e1",
                         edgecolor="none", zorder=1))
 
-    sweep = OMEGA_DEG_S * TRACE_MS / 1000.0
+    # THE SURROUNDING FIELD — same trajectory convention as the two in the RFs.
+    #   show_traj=False -> a true static snapshot: dots only, nothing moving
+    #   show_traj=True  -> every dot carries PRE_MS rotation + TRANS_MS probe
+    # So the whole probe event is visible: the CUED field turns rightward
+    # everywhere at once, the UNCUED field just keeps rotating.
     g = _clear_of_rfs(_field(N_DOTS, seed=11))
     r = _clear_of_rfs(_field(N_DOTS, seed=12))
-    for p in g:
-        ax.scatter(*p, s=7, color=GREEN, zorder=3)
-        _arc_motion(ax, p, (0, 0), "CW", GREEN, lw=1.1, head=6, sweep_deg=sweep)
-    for p in r:
-        ax.scatter(*p, s=7, color=RED, zorder=3)
-        _arc_motion(ax, p, (0, 0), "CCW", RED, lw=1.1, head=6, sweep_deg=sweep)
+    for pts, colour, sense, role in [(g, GREEN, "CW", "cued"),
+                                     (r, RED, "CCW", "uncued")]:
+        translates = (role == TRANSLATING_FIELD)
+        for p in pts:
+            if show_traj:
+                pre, during = _dot_trajectory(p, sense, translates)
+                _draw_trajectory(ax, pre, during, colour,
+                                 lw_pre=0.9, lw_during=1.6, head=5, z=3)
+            ax.add_patch(Circle(p, DOT_DIAM_DEG / 2, facecolor=colour,
+                                edgecolor="none", zorder=4))
 
     # the two V1 RFs, side by side, FIXED size
     for c in (RF_LEFT, RF_RIGHT):
         ax.add_patch(Circle(c, RF_R_DEG, facecolor=SURFACE, edgecolor=INK,
                             lw=1.8, zorder=6))
 
-    # one dot in each RF, at TRUE angular size.
-    #   show_traj=False -> a static snapshot: just the two dots
-    #   show_traj=True  -> the SAME short path B magnifies, drawn at stimulus scale
+    # the two selected dots, at TRUE angular size. Same convention as above; the
+    # only difference is that these paths are re-centred in their RF.
     for rf_c, colour, sense, role in [(RF_LEFT, RED, "CCW", "uncued"),
                                       (RF_RIGHT, GREEN, "CW", "cued")]:
         if show_traj:
             pre, during, _ = _rf_trajectory(rf_c, sense,
                                             role == TRANSLATING_FIELD)
-            ax.plot(pre[:, 0], pre[:, 1], color=colour, lw=1.3, alpha=0.55,
-                    solid_capstyle="round", zorder=7)
-            ax.plot(during[:, 0], during[:, 1], color=colour, lw=2.0,
-                    solid_capstyle="round", zorder=7)
-            ax.add_patch(FancyArrowPatch(during[-2], during[-1],
-                         arrowstyle="-|>", mutation_scale=8, color=colour,
-                         lw=0, zorder=7))
+            _draw_trajectory(ax, pre, during, colour,
+                             lw_pre=1.3, lw_during=2.0, head=8, z=7)
             head = pre[0]
         else:
             head = rf_c
@@ -246,7 +255,11 @@ def fig_A(out="ps_two_rf_A.png", show_traj=False):
 
     ax.legend(handles=[
         Line2D([0], [0], color=GREEN, lw=2.2, label="CW field  (cued / delayed)"),
-        Line2D([0], [0], color=RED, lw=2.2, label="CCW field  (uncued / first-on)")],
+        Line2D([0], [0], color=RED, lw=2.2, label="CCW field  (uncued / first-on)")]
+        + ([Line2D([0], [0], color=INK2, lw=1.1, alpha=0.55,
+                   label=f"{PRE_MS:g} ms before the probe"),
+            Line2D([0], [0], color=INK2, lw=2.2,
+                   label=f"{TRANS_MS:g} ms probe window")] if show_traj else []),
         loc="upper right", frameon=False, fontsize=9)
 
     sub = ("one dot in each of two V1 RFs — with its short trajectory" if show_traj
