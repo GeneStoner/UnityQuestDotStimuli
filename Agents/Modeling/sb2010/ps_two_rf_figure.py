@@ -12,13 +12,18 @@ and conventions follow Figure 2 of the website's computational section
      rotation and the probe itself.
 
 RF SIZE — fixed, NOT scaled with eccentricity (GS: for the toy model we do not
-scale). Set to the size the real model already uses at this eccentricity:
+scale), and drawn at the UPPER END of what can still honestly be called a V1
+receptive field, because this is a schematic:
 
-    sigma = 0.12 deg   ->   RF diameter 2*sigma = 0.24 deg
+    sigma = 0.26 deg   ->   RF diameter 2*sigma = 0.52 deg   at E = 1 deg
 
-That is `hcps_rfrule('small')` at E = 1 deg (0.05 + 0.07*1 = 0.12) and within 1%
-of the MT patch's own 0.1212 deg. So the toy is not inventing a receptive field —
-it borrows the working model's, and merely holds it constant across the display.
+Two independent human estimates land there: Dumoulin & Wandell (2008) pRF,
+sigma = 0.1 + 0.15*E; and Freeman & Simoncelli (2011) V1 pooling, s = 0.26*E.
+Both give 0.52 deg at E = 1. For scale, at the same eccentricity Dow 1981 cRF is
+0.13, `hcps_rfrule('small')` (= the MT patch the model runs) is 0.24, and 'large'
+is 0.38. The ceiling is ~0.65 (5x cRF, top of the summation-field range); past
+that the figure would be depicting V2 pooling or an fMRI population, not V1.
+See Agents/SwapPilot/WriteUps/v1_rf_sizes.md.
 
 CONTAINMENT — the model's central assumption, checked rather than assumed. The
 dot's whole extent, not just its centre, must stay inside one RF for the pre-probe
@@ -28,7 +33,13 @@ rotation AND the probe:
     translating dot       L-path, hypot(rotation, translation)     = 0.1066 deg
     + dot diameter (Minkowski sum with a disc)                     + 0.03 deg
     ------------------------------------------------------------------------
-    required 0.1431 deg   vs   RF 0.24 deg      ->  margin 1.68x
+    required 0.1431 deg   vs   RF 0.52 deg      ->  margin 3.63x
+
+⚠️ THE DRAWN PAIR IS SELECTED, NOT TYPICAL. At 0.52 deg an RF holds ~1.06 dots
+per field on average, so P(the other surface also intrudes) ~ 65%. A point-set
+seeing exactly one surface is the exception at this RF size — which is precisely
+why `hcps_twops.m` has to SEARCH for such pairs across layout seeds rather than
+assume them. Any caption must not imply purity is generic.
 
 Turning is CHEAPER than going straight, so the binding case is the dot that keeps
 rotating through the probe. The script asserts the fit, so it cannot regress.
@@ -64,12 +75,16 @@ DOT_DIAM_DEG = 0.03                 # S&B dot; VRDots = 0.08
 
 # ── the RFs: FIXED size, not scaled with eccentricity ──
 ECC_DEG      = 1.0                  # the MT patch's own eccentricity
-SIGMA_DEG    = 0.12                 # hcps_rfrule('small') at E=1; patch runs 0.1212
+SIGMA_DEG    = 0.26                 # UPPER END of realistic V1 at E=1: Dumoulin pRF
+                                    # (0.1+0.15E) and Freeman&Simoncelli V1 pooling
+                                    # (0.26E) both give 2*sigma = 0.52 deg.
+                                    # 0.19 -> hcps_rfrule('large'); 0.12 -> 'small'
 RF_DIAM_DEG  = 2 * SIGMA_DEG
 RF_R_DEG     = SIGMA_DEG
 RF_LEFT      = (ECC_DEG - RF_R_DEG, 0.0)
 RF_RIGHT     = (ECC_DEG + RF_R_DEG, 0.0)
-MT_R_DEG     = 0.62                 # the MT RF enclosing both, as in fig_modelI
+MT_R_DEG     = 0.95                 # the MT RF enclosing both, as in fig_modelI;
+                                    # must exceed RF_R_DEG*3 = 0.78 to contain them
 
 # ── motion ──
 OMEGA_DEG_S  = 81.0
@@ -250,10 +265,16 @@ def fig_A(out="ps_two_rf_A.png", show_traj=False):
            else "one dot in each of two V1 RFs")
     ax.set_title(f"A · Two counter-rotating fields, {sub}",
                  fontsize=12, color=INK, pad=8)
-    ax.text(0, -lim + 0.16,
-            f"V1 RF {RF_DIAM_DEG:.2f}° diameter (σ {SIGMA_DEG:g}°), fixed — not scaled with "
-            f"eccentricity · dots {DOT_DIAM_DEG:g}° · {DENSITY:g} dots/deg²/field",
+    lam = DENSITY * np.pi * RF_R_DEG**2
+    ax.text(0, -lim + 0.30,
+            f"V1 RF {RF_DIAM_DEG:.2f}° diameter (σ {SIGMA_DEG:g}°) at {ECC_DEG:g}° — fixed, not "
+            f"scaled with eccentricity · dots {DOT_DIAM_DEG:g}° · {DENSITY:g} dots/deg²/field",
             ha="center", va="bottom", fontsize=8.5, color=INK2)
+    ax.text(0, -lim + 0.13,
+            f"A point-set seeing one surface only is a SELECTED configuration: at this RF size "
+            f"an RF holds ~{lam:.2f} dots/field, so the other surface intrudes ~{1-np.exp(-lam):.0%} "
+            f"of the time",
+            ha="center", va="bottom", fontsize=8, color=INK2, style="italic")
 
     fig.tight_layout()
     fig.savefig(out, dpi=190, bbox_inches="tight", facecolor="white")
@@ -343,6 +364,10 @@ if __name__ == "__main__":
     print(f"  + dot {DOT_DIAM_DEG:g}              = {need:.4f}")
     print(f"  RF provides                {RF_DIAM_DEG:.4f}  -> margin {RF_DIAM_DEG/need:.2f}x")
     assert need < RF_DIAM_DEG, "whole dot does not fit inside the RF"
+    lam = DENSITY * np.pi * RF_R_DEG**2
+    print(f"\nPURITY (the drawn pair is SELECTED, not typical):")
+    print(f"  dots per field per RF = {lam:.3f}"
+          f"  -> P(other surface intrudes) = {1-np.exp(-lam):.0%}")
     print()
     fig_A("ps_two_rf_A_static.png", show_traj=False)
     fig_A("ps_two_rf_A_traj.png",   show_traj=True)
