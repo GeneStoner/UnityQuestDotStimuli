@@ -66,15 +66,28 @@ RF_R_DEG     = SIGMA_DEG
 _SEP         = RF_DIAM_DEG + RF_GAP_DEG
 
 # ── the MT RF: off to one side of fixation, as in fig_modelI_stimulus ──
-# Size and position are the MODEL'S OWN operating point, not chosen for the page.
-# pointset/logs/HANDOFF_2026-07-27.md: "GS chose a 2 deg square RF at 1 deg
-# eccentricity, which deliberately does NOT obey MT RF ~ eccentricity — a 2 deg RF
-# at 2 deg ecc would be half off the S&B display." The general rule quoted in
-# CORRECTIONS_REGISTER F9 is MT RF diameter ~ eccentricity, which at 1 deg would
-# give only 1 deg; the model uses 2 deg so the patch sits inside the dot annulus.
-# Note that log also says "RF size is expected to be tweaked from here".
-MT_ECC_DEG   = 1.0
-MT_R_DEG     = 1.0                  # 2 deg diameter — tangent to the aperture edge
+# PLACED BY ITS OUTER EDGE (GS): the right border sits ON the aperture border, so
+# MT_ECC = APERTURE - MT_R. Everything then follows from the radius alone.
+#
+# WHY NOT BIGGER. The model treats each rotation as locally a translation, which
+# only holds while every dot in the RF shares roughly one tangential direction.
+# For an RF at eccentricity e with radius R the extreme direction departs from
+# vertical by arcsin(R/e), and the RF's inner edge sits at e - R:
+#
+#     R      ecc    inner edge   max departure from vertical
+#    0.60    1.40      0.80            25 deg
+#    0.65    1.35      0.70            29 deg     <- here
+#    0.70    1.30      0.60            33 deg
+#    1.00    1.00      0.00            90 deg     <- reaches fixation; the
+#                                                    approximation fails outright
+#
+# The model's own 2 deg RF at 1 deg eccentricity (HANDOFF_2026-07-27) is the last
+# row: it swallows the fovea, where local motion is nowhere near vertical, and
+# where the newer experiments — and S&B — exclude dots anyway. 0.65 keeps the
+# inner edge at 0.70 deg, clear of the 0.47 deg exclusion zone, and still leaves
+# room for the V1 pair to move (_PLAY below).
+MT_R_DEG     = 0.65
+MT_ECC_DEG   = APERTURE_DEG - MT_R_DEG
 MT_C         = (MT_ECC_DEG, 0.0)
 
 # ── motion ──
@@ -101,13 +114,12 @@ MT_BALANCE    = 1                   # max |n_green - n_red| inside the MT RF (GS
                                     # roughly equal numbers of each). Exact equality
                                     # (0) is over-constrained once combined with the
                                     # whole-dot purity test and the arc-length floor
-                                    # — no layout in 500 seeds satisfies all four.
-                                    # At 1 the chosen layout happens to come out 9/9
-                                    # anyway.
-MT_MIN_DOTS   = 12                  # the SAME layout feeds Figure 2's MT-RF blow-up,
+                                    # — no layout in 500 seeds satisfied all four at
+                                    # the larger RF. At 1 the chosen layout comes out
+                                    # 4 green / 3 red of 7.
+MT_MIN_DOTS   = 7                   # the SAME layout feeds Figure 2's MT-RF blow-up,
                                     # so reject seeds that leave that panel thin.
-                                    # At the 2 deg MT RF the mean over 399 seeds is
-                                    # 17.8 dots, range 8-29.
+                                    # At this RF the expected count is ~8.
 
 
 # ═══════════════════════════════════════════════════════════ geometry ══
