@@ -520,12 +520,18 @@ def draw_stimulus(ax, show_v1_rfs=False, legend=True):
                     arrowprops=dict(arrowstyle="-", color=INK2, lw=1.0, shrinkB=3))
 
     if legend:
+        # ABOVE the axes, not in its upper-left corner. The aperture is inscribed
+        # in a square axes, so a corner legend runs straight across the rim and
+        # over the dots -- one row above the panel clears the stimulus entirely.
+        # Callers must leave room for it: a title sitting only a few points off
+        # the axes will collide.
         ax.legend(handles=[
             Line2D([0], [0], marker="o", color="none", markerfacecolor=GREEN,
                    markersize=7, label="CW field  (cued / delayed)"),
             Line2D([0], [0], marker="o", color="none", markerfacecolor=RED,
                    markersize=7, label="CCW field  (uncued / first-on)")],
-            loc="upper left", frameon=False, fontsize=9,
+            loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2,
+            columnspacing=1.8, frameon=False, fontsize=9,
             handletextpad=0.4, borderpad=0.2)
 
 

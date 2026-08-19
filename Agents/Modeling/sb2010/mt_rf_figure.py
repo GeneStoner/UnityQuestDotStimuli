@@ -43,8 +43,6 @@ def fig_mt_rf(out="mt_rf_figure.png"):
 
     # ── LEFT: the shared stimulus, with the MT RF ──
     S.draw_stimulus(axL, show_v1_rfs=False)
-    axL.set_title("Two counter-rotating fields + an off-centre MT RF",
-                  fontsize=12, color=INK, pad=8)
 
     # ── RIGHT: that RF magnified, with the real motion inside it ──
     axR.set_aspect("equal"); axR.axis("off")
@@ -80,8 +78,6 @@ def fig_mt_rf(out="mt_rf_figure.png"):
              color=GREEN, fontsize=11, fontweight="bold", ha="left", va="center")
     axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] + 0.16, "CCW ≈ up",
              color=RED, fontsize=11, fontweight="bold", ha="left", va="center")
-    axR.set_title("The same RF, magnified — local motion ≈ translations",
-                  fontsize=12, color=INK, pad=8)
     fig.text(0.5, 0.008,
              f"rotation {OMEGA_DEG_S:g}°/s · arrows show local direction only, not "
              f"displacement (a dot dwells ~{S.dwell_ms(MT_C, MT_R_DEG):.0f} ms in this RF) · "
@@ -94,6 +90,27 @@ def fig_mt_rf(out="mt_rf_figure.png"):
     # slightly different scale in each figure. Both use these exact values.
     fig.subplots_adjust(left=0.015, right=0.985, top=0.865, bottom=0.145,
                         wspace=0.10)
+
+    # Panel labels and headings are fig.text, not set_title, so that A's single
+    # line and B's two lines hang from ONE top edge (va="top") instead of each
+    # floating a fixed pad above its own axes. Positions are read back from the
+    # axes after subplots_adjust rather than guessed.
+    HEAD_Y = 0.965
+    posL, posR = axL.get_position(), axR.get_position()
+    for pos, lab in ((posL, "A"), (posR, "B")):
+        fig.text(pos.x0, HEAD_Y, lab, fontsize=15, fontweight="bold",
+                 color=INK, ha="left", va="top")
+    fig.text(posL.x0 + posL.width / 2, HEAD_Y,
+             "Two counter-rotating fields + an off-centre MT RF",
+             fontsize=12, color=INK, ha="center", va="top")
+    fig.text(posR.x0 + posR.width / 2, HEAD_Y,
+             # No terminal periods: in-figure text is a LABEL, and every title
+             # and annotation across these figures is punctuation-free. Full
+             # stops belong to the caption below, which is prose.
+             "MT RF, magnified\n"
+             "Rotations ≈ vertical translations within the RF",
+             fontsize=12, color=INK, ha="center", va="top", linespacing=1.45)
+
     fig.savefig(out, dpi=170, facecolor="white")
     plt.close(fig)
     print(f"wrote {out}   ({len(inside)} dots in the magnified RF; local "

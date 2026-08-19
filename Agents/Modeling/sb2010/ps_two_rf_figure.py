@@ -70,8 +70,11 @@ def fig_two_rf(out="ps_two_rf_figure.png"):
         1, 3, figsize=(15.2, 6.0), gridspec_kw=dict(width_ratios=[6.4, 4.4, 4.4]))
 
     S.draw_stimulus(axes[0], show_v1_rfs=True)
+    # pad 18, not 8: draw_stimulus now hangs its legend in one row above the
+    # panel, and 8 points puts this title straight through it. 18 also lines the
+    # title's top up with the two-line titles on the blow-up panels.
     axes[0].set_title("The same stimulus, with two V1 RFs inside the MT RF",
-                      fontsize=12, color=INK, pad=8)
+                      fontsize=12, color=INK, pad=18)
 
     _blowup(axes[1], "left", "left V1 RF · red dot",
             "CCW field — first-on (uncued)")
