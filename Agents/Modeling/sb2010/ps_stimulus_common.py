@@ -18,22 +18,27 @@ blow-ups — the MT RF magnified in Figure 2, the two V1 RFs magnified in the V1
 figure. `dot_trajectory` / `draw_trajectory` live here but are called only by
 those panels.
 
-THE V1 PAIR IS FOUND, NOT PLACED
---------------------------------
-`find_pure_pair` moves both dot fields through the whole window and searches
-layout seed x pair-centre offset for two adjacent RF-sized regions where, on every
-sampled frame:
+THE LAYOUT IS CONSTRUCTED, NOT SEARCHED
+---------------------------------------
+`build_layout` places, per field:
 
-    left RF   exactly one dot of field A (red, uncued), the SAME dot throughout,
-              wholly inside; no dot of field B overlaps at all
-    right RF  the same for field B (green, cued)
+    1 selected dot   positioned by `_centred_start` so its WHOLE trajectory —
+                     pre-probe rotation plus probe — lies inside its V1 RF
+    3 filler dots    inside the MT RF but clear of both V1 RFs, equal numbers of
+                     each colour so the MT blow-up is about 50/50
+    32 pepper dots   over the rest of the display
 
-Identity persistence is the part that matters: "one dot per frame" alone would
-allow one dot leaving as another arrives. Offsets are drawn from a disc of radius
-`_PLAY` about `MT_C`, so both V1 RFs sitting inside the MT RF is guaranteed by the
-search space rather than arranged by eye. Nothing is deleted from the display.
+1 + 3 + 32 = 36 = DENSITY x annulus area, so the construction preserves density
+exactly rather than trading it for the arrangement. Every non-selected dot is
+verified to clear both V1 RFs at all sampled frames, so each V1 RF really does
+hold one dot and only one for the whole window.
 
-Run either figure script; this module does the search on import.
+Earlier versions searched thousands of random layouts for one that happened to
+qualify. That worked, but left dot counts in the MT RF, their colour balance and
+how well centred the paths were all hostage to whichever seed came up. Building
+it directly fixes all of them at once.
+
+Run either figure script; this module builds the layout on import.
 """
 
 import numpy as np
@@ -85,7 +90,7 @@ _SEP         = RF_DIAM_DEG + RF_GAP_DEG
 # row: it swallows the fovea, where local motion is nowhere near vertical, and
 # where the newer experiments — and S&B — exclude dots anyway. 0.65 keeps the
 # inner edge at 0.70 deg, clear of the 0.47 deg exclusion zone, and still leaves
-# room for the V1 pair to move (_PLAY below).
+# the two V1 RFs sitting inside it with clearance to spare.
 MT_R_DEG     = 0.65
 MT_ECC_DEG   = APERTURE_DEG - MT_R_DEG
 MT_C         = (MT_ECC_DEG, 0.0)
@@ -97,29 +102,8 @@ PRE_MS       = 100.0                # rotation shown before the probe; hcps_twop
 TRANS_MS     = 40.0                 # parameters.T_TRANS (3 frames @ 75 Hz)
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 
-# ── the search ──
-SEARCH_SEEDS  = range(1, 2500)
+# ── sampling of the window, used when checking dots against the V1 RFs ──
 SEARCH_FRAMES = 21
-SEARCH_STEP   = 0.04
-_PLAY         = MT_R_DEG - _SEP / 2 - RF_R_DEG   # both V1 RFs stay inside the MT RF
-GOOD_ENOUGH   = 1.40   # never reached in practice: search all seeds, take best
-MIN_ARC_DOTS  = 2.0                 # the pre-probe rotation arc must be at least
-                                    # this many dot-widths long, or the blow-up
-                                    # shows a dot with no visible path. Tangential
-                                    # speed goes as eccentricity, so this is a floor
-                                    # on how far out the pair may sit:
-                                    #   0.85 deg -> 1.5 dot-widths (too short)
-                                    #   1.20 deg -> 2.1            (legible)
-MT_BALANCE    = 1                   # max |n_green - n_red| inside the MT RF (GS:
-                                    # roughly equal numbers of each). Exact equality
-                                    # (0) is over-constrained once combined with the
-                                    # whole-dot purity test and the arc-length floor
-                                    # — no layout in 500 seeds satisfied all four at
-                                    # the larger RF. At 1 the chosen layout comes out
-                                    # 4 green / 3 red of 7.
-MT_MIN_DOTS   = 7                   # the SAME layout feeds Figure 2's MT-RF blow-up,
-                                    # so reject seeds that leave that panel thin.
-                                    # At this RF the expected count is ~8.
 
 
 # ═══════════════════════════════════════════════════════════ geometry ══
@@ -174,77 +158,105 @@ def _positions_at(p0, sense, translates, t_s):
     return p
 
 
-def find_pure_pair(seeds=SEARCH_SEEDS, whole_dot=True):
-    """Search for the two-point-set configuration. `whole_dot=True` requires the
-    wanted dot to lie WHOLLY inside its RF and rejects any overlap by the other
-    surface — stricter than testing centres, and the right test now that dots are
-    drawn at a visible size."""
-    r_in = RF_R_DEG - DOT_DIAM_DEG / 2 if whole_dot else RF_R_DEG
-    r_out = RF_R_DEG + DOT_DIAM_DEG / 2 if whole_dot else RF_R_DEG
-    ts = np.linspace(0.0, (PRE_MS + TRANS_MS) / 1000.0, SEARCH_FRAMES)
-    offs = [(dx, dy)
-            for dx in np.arange(-_PLAY, _PLAY + 1e-9, SEARCH_STEP)
-            for dy in np.arange(-_PLAY, _PLAY + 1e-9, SEARCH_STEP)
-            if dx * dx + dy * dy <= _PLAY * _PLAY]
-    trA = (TRANSLATING_FIELD == "uncued")
-    trB = (TRANSLATING_FIELD == "cued")
-    best = None
-    for seed in seeds:
-        rng = np.random.default_rng(seed)
-        A = _field(N_DOTS, rng)                     # red, CCW, uncued
-        B = _field(N_DOTS, rng)                     # green, CW, cued
-        # Cheap rejects first — this layout also has to serve Figure 2's blow-up:
-        #   enough dots in the MT RF to populate that panel, AND
-        #   roughly equal numbers of the two surfaces in it, so the blow-up does
-        #   not read as one field dominating when neither does (GS).
-        nA = int((np.hypot(*(A - np.array(MT_C)).T) < MT_R_DEG).sum())
-        nB = int((np.hypot(*(B - np.array(MT_C)).T) < MT_R_DEG).sum())
-        if nA + nB < MT_MIN_DOTS or abs(nA - nB) > MT_BALANCE:
-            continue
-        PA = [_positions_at(A, "CCW", trA, t) for t in ts]
-        PB = [_positions_at(B, "CW", trB, t) for t in ts]
-        for dx, dy in offs:
-            cx, cy = MT_C[0] + dx, MT_C[1] + dy
-            # far enough out that 100 ms of rotation is a visible arc, not a smudge
-            if np.radians(OMEGA_DEG_S) * np.hypot(cx, cy) * PRE_MS / 1000.0 \
-                    < MIN_ARC_DOTS * DOT_DIAM_DEG:
-                continue
-            Lc = np.array([cx - _SEP / 2, cy]); Rc = np.array([cx + _SEP / 2, cy])
-            inAL = [set(np.where(np.hypot(*(pa - Lc).T) < r_in)[0]) for pa in PA]
-            if any(len(s_) != 1 for s_ in inAL): continue
-            inBR = [set(np.where(np.hypot(*(pb - Rc).T) < r_in)[0]) for pb in PB]
-            if any(len(s_) != 1 for s_ in inBR): continue
-            iA = set.intersection(*inAL); iB = set.intersection(*inBR)
-            if not iA or not iB: continue
-            if any((np.hypot(*(pb - Lc).T) < r_out).any() for pb in PB): continue
-            if any((np.hypot(*(pa - Rc).T) < r_out).any() for pa in PA): continue
-            jA, jB = iA.pop(), iB.pop()
-            worst = max(max(np.hypot(*(pa[jA] - Lc)) for pa in PA),
-                        max(np.hypot(*(pb[jB] - Rc)) for pb in PB)) + DOT_DIAM_DEG / 2
-            margin = RF_R_DEG / worst
-            if best is None or margin > best["margin"]:
-                best = dict(seed=seed, A=A, B=B, Lc=Lc, Rc=Rc, iA=jA, iB=jB,
-                            margin=margin, off=(float(dx), float(dy)),
-                            whole_dot=whole_dot)
-        if best is not None and best["margin"] >= GOOD_ENOUGH:
+# ═══════════════════════════════════════════════════ BUILD THE LAYOUT ══
+# The layout is CONSTRUCTED, not searched (GS: "let's cheat a little"). Earlier
+# versions hunted thousands of random layouts for one that happened to put a
+# single persistent dot in each V1 RF; that worked but made every other property
+# — dot counts in the MT RF, their red/green balance, how well centred the paths
+# were — a hostage to whichever seed happened to qualify. Building it directly
+# fixes all of them at once, and the construction preserves DENSITY exactly:
+#
+#     per field:  1 selected  +  3 filler (in the MT RF)  +  32 pepper  =  36
+#                 = DENSITY x (annulus area), the same as a random field
+#
+# The two V1 RFs are placed symmetrically about the MT RF centre rather than
+# found, so they are inside it by construction.
+RF_LEFT  = (MT_C[0] - _SEP / 2, MT_C[1])
+RF_RIGHT = (MT_C[0] + _SEP / 2, MT_C[1])
+ECC_DEG  = float(np.hypot(*MT_C))
+
+_TS = np.linspace(0.0, (PRE_MS + TRANS_MS) / 1000.0, SEARCH_FRAMES)
+
+
+def _centred_start(rf_c, sense, translates, iters=8):
+    """The start position whose WHOLE trajectory sits centred in `rf_c`.
+
+    We choose where the dot starts so its real path lands centred — as opposed to
+    drawing the path elsewhere and sliding it over, which earlier versions did and
+    which misrepresents where the dot actually is. Iterates because the arc is
+    struck about fixation, so moving the start changes the path slightly; it is
+    nearly straight at this scale, so a few passes converge.
+    """
+    p = np.asarray(rf_c, float).copy()
+    for _ in range(iters):
+        pre, during = dot_trajectory(p, sense, translates)
+        full = np.vstack([pre, during])
+        centre = (full[0] + full[-1]) / 2.0      # min enclosing circle (Thales)
+        p = p + (np.asarray(rf_c, float) - centre)
+    return p
+
+
+def _clears_v1(p0, sense, translates):
+    """True if this dot never overlaps either V1 RF, at any sampled frame. Applied
+    to every non-selected dot, so each V1 RF really does hold one dot and only
+    one throughout — the property the whole figure depends on."""
+    keep = RF_R_DEG + DOT_DIAM_DEG / 2
+    pts = np.asarray(p0, float)[None, :]
+    for t in _TS:
+        q = _positions_at(pts, sense, translates, t)[0]
+        if (np.hypot(q[0] - RF_LEFT[0], q[1] - RF_LEFT[1]) < keep or
+                np.hypot(q[0] - RF_RIGHT[0], q[1] - RF_RIGHT[1]) < keep):
+            return False
+    return True
+
+
+def _sample(n, rng, accept, sense, translates, tries=200000):
+    """Rejection-sample `n` start positions in the annulus satisfying `accept`,
+    each of which also clears both V1 RFs for the whole window."""
+    out = []
+    for _ in range(tries):
+        if len(out) == n:
             break
-    return best
+        r = np.sqrt(rng.uniform(EXCL_DEG**2, (APERTURE_DEG - 0.04)**2))
+        a = rng.uniform(0, 2 * np.pi)
+        p = np.array([r * np.cos(a), r * np.sin(a)])
+        if accept(p) and _clears_v1(p, sense, translates):
+            out.append(p)
+    if len(out) != n:
+        raise RuntimeError(f"could only place {len(out)} of {n} dots")
+    return out
 
 
-# ── one search, at import; both figures read its result ──
-PAIR = find_pure_pair(whole_dot=True)
-_STRICT = PAIR is not None
-if PAIR is None:                        # documented fallback, per the plan
-    PAIR = find_pure_pair(whole_dot=False)
-if PAIR is None:
-    raise RuntimeError("no layout gave a persistent one-dot-each pair; "
-                       "lower DENSITY or widen SEARCH_SEEDS")
+def build_layout(seed=7):
+    """One dot in each V1 RF, an equal number of each colour elsewhere inside the
+    MT RF, then the rest peppered over the stimulus at the same density."""
+    rng = np.random.default_rng(seed)
+    trA = (TRANSLATING_FIELD == "uncued")       # red  = field A = CCW = uncued
+    trB = (TRANSLATING_FIELD == "cued")         # green = field B = CW = cued
 
-FIELD_A, FIELD_B = PAIR["A"], PAIR["B"]
-RF_LEFT, RF_RIGHT = tuple(PAIR["Lc"]), tuple(PAIR["Rc"])
-IDX_A, IDX_B = PAIR["iA"], PAIR["iB"]
-ECC_DEG = float(np.hypot((RF_LEFT[0] + RF_RIGHT[0]) / 2,
-                         (RF_LEFT[1] + RF_RIGHT[1]) / 2))
+    # 1. the two selected dots, positioned so their paths lie inside their RFs
+    a0 = _centred_start(RF_LEFT, "CCW", trA)
+    b0 = _centred_start(RF_RIGHT, "CW", trB)
+
+    # 2. equal numbers of each colour inside the MT RF but outside the V1 RFs
+    mt_area = np.pi * MT_R_DEG**2 - 2 * np.pi * RF_R_DEG**2
+    n_fill = int(round(DENSITY * mt_area))
+    in_mt = lambda p: np.hypot(p[0] - MT_C[0], p[1] - MT_C[1]) < MT_R_DEG - DOT_DIAM_DEG / 2
+    fill_a = _sample(n_fill, rng, in_mt, "CCW", trA)
+    fill_b = _sample(n_fill, rng, in_mt, "CW", trB)
+
+    # 3. the rest of the display, same density
+    n_pep = N_DOTS - 1 - n_fill
+    out_mt = lambda p: np.hypot(p[0] - MT_C[0], p[1] - MT_C[1]) > MT_R_DEG + DOT_DIAM_DEG / 2
+    pep_a = _sample(n_pep, rng, out_mt, "CCW", trA)
+    pep_b = _sample(n_pep, rng, out_mt, "CW", trB)
+
+    A = np.vstack([a0[None, :]] + [np.asarray(fill_a), np.asarray(pep_a)])
+    B = np.vstack([b0[None, :]] + [np.asarray(fill_b), np.asarray(pep_b)])
+    return A, B, 0, 0, n_fill, n_pep
+
+
+FIELD_A, FIELD_B, IDX_A, IDX_B, N_FILL, N_PEPPER = build_layout()
 
 
 def selected(which):
@@ -334,23 +346,34 @@ def excursion(path, rf_c):
 
 
 def report():
-    lam = DENSITY * np.pi * RF_R_DEG**2
+    from collections import Counter
+    ins = dots_in(MT_C, MT_R_DEG)
+    c = Counter(col for _, col, _, _ in ins)
+    arc = np.radians(OMEGA_DEG_S) * ECC_DEG * PRE_MS / 1000.0
     print(f"density        {DENSITY} dots/deg^2/field ({N_DOTS} per field)"
           f"   [experiment 5.0]")
     print(f"dot            {DOT_DIAM_DEG} deg  [VRDots; S&B is 0.03]")
     print(f"V1 RF          {RF_DIAM_DEG:.2f} deg diameter, fixed")
-    print(f"MT RF          centre {MT_C}, radius {MT_R_DEG}")
-    print(f"PAIR           seed {PAIR['seed']}, centre {ECC_DEG:.3f} deg from "
-          f"fixation, offset {PAIR['off']} of an allowed {_PLAY:.2f}")
-    crit = ("whole dot inside, no overlap by the other surface" if _STRICT
-            else "CENTRES only — the strict whole-dot test found nothing")
-    print(f"               criterion: {crit}")
+    print(f"MT RF          r {MT_R_DEG} at ecc {MT_ECC_DEG:.2f}; outer edge "
+          f"{MT_ECC_DEG + MT_R_DEG:.2f} = aperture {APERTURE_DEG}, inner edge "
+          f"{MT_ECC_DEG - MT_R_DEG:.2f}")
+    print(f"               max departure of local motion from vertical: "
+          f"{np.degrees(np.arcsin(MT_R_DEG / MT_ECC_DEG)):.0f} deg")
+    print(f"\nLAYOUT CONSTRUCTED, not searched:")
+    print(f"  per field    1 selected + {N_FILL} filler (in the MT RF) + "
+          f"{N_PEPPER} pepper = {1 + N_FILL + N_PEPPER}  (density target {N_DOTS})")
+    print(f"  in the MT RF {len(ins)} dots -> green {c[GREEN]}, red {c[RED]}")
+    print(f"  V1 RFs       placed symmetrically about the MT RF centre, so inside "
+          f"it by construction")
+    print(f"  every other dot is verified to clear BOTH V1 RFs at all "
+          f"{SEARCH_FRAMES} sampled frames")
+    print(f"\nCONTAINMENT of the two selected dots (edge, not centre):")
     for which in ("left", "right"):
         p0, _, sense, tr, rf_c = selected(which)
         pre, during = dot_trajectory(p0, sense, tr)
         exc = excursion(np.vstack([pre, during]), rf_c)
-        print(f"  {which:5s} dot edge reaches {exc:.4f} of RF radius "
+        e = np.hypot(*rf_c)
+        print(f"  {which:5s} ecc {e:.3f}  edge reaches {exc:.4f} of RF radius "
               f"{RF_R_DEG:.4f}  -> margin {RF_R_DEG/exc:.2f}x")
         assert exc < RF_R_DEG, f"{which} dot leaves its RF"
-    print(f"context        {lam:.2f} dots/field per RF -> other surface intrudes "
-          f"{1-np.exp(-lam):.0%} of the time; this pair is rare")
+    print(f"  pre-probe arc {arc/DOT_DIAM_DEG:.1f} dot-widths at the pair centre")
