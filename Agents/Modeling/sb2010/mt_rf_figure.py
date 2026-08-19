@@ -29,13 +29,12 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, FancyArrowPatch
 from matplotlib.lines import Line2D
 
 import ps_stimulus_common as S
 from ps_stimulus_common import (INK, INK2, GREEN, RED, SURFACE,
-                                MT_C, MT_R_DEG, DOT_DIAM_DEG,
-                                PRE_MS, TRANS_MS, OMEGA_DEG_S, PROBE_DEG_S)
+                                MT_C, MT_R_DEG, DOT_DIAM_DEG, OMEGA_DEG_S)
 
 
 def fig_mt_rf(out="mt_rf_figure.png"):
@@ -55,37 +54,37 @@ def fig_mt_rf(out="mt_rf_figure.png"):
     axR.add_patch(Circle(MT_C, MT_R_DEG, facecolor=SURFACE, edgecolor=INK,
                          lw=2.0, ls=(0, (5, 3)), zorder=1))
 
-    # Every dot carries its OWN probe direction. The translating field is 50%
-    # coherent, exactly as the experiment: half its dots take the heading, half
-    # fan across eight directions at the same speed. Drawing them all moving
-    # together would overstate the probe as a rigid shift of the surface.
+    # DIRECTION ONLY — no time extent. A dot dwells ~711 ms in this RF and the
+    # trial runs ~1590 ms, so the population turns over ~2.2x: any short window
+    # drawn here would be one arbitrary slice of what MT actually integrates.
+    # The competition model reads the direction of the input over the whole trial,
+    # so that is what this panel shows. The probe belongs to the V1 figure, where
+    # the window matches the dwell (211-316 ms).
+    #
+    # Each arrow is the TRUE local tangent at that dot, not a drawn vertical: the
+    # arrows come out near-vertical but visibly fanned, and that fan IS the
+    # approximation error that sets the RF size (see MT_R_DEG in the common module).
+    ARROW_DEG = 0.15                       # ~2 dot-widths; an indicator, not a path
     inside = S.dots_in(MT_C, MT_R_DEG)
+    devs = []
     for p, colour, sense, translates, pdir, coh in inside:
-        pre, during = S.dot_trajectory(p, sense, translates, pdir)
-        S.draw_trajectory(axR, pre, during, colour,
-                          lw_pre=2.0, lw_during=3.2, head=14, z=4)
+        d = S.local_direction(p, sense)
+        axR.add_patch(FancyArrowPatch(p, np.asarray(p) + d * ARROW_DEG,
+                                      arrowstyle="-|>", mutation_scale=15,
+                                      color=colour, lw=2.6, zorder=4))
         axR.add_patch(Circle(p, DOT_DIAM_DEG / 2, facecolor=colour,
                              edgecolor="none", zorder=6))
-    n_coh = sum(1 for d in inside if d[3] and d[5])
-    n_noi = sum(1 for d in inside if d[3] and not d[5])
+        devs.append(abs(np.degrees(np.arctan2(d[0], abs(d[1])))))   # from vertical
 
     axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] - 0.16, "CW ≈ down",
              color=GREEN, fontsize=11, fontweight="bold", ha="left", va="center")
     axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] + 0.16, "CCW ≈ up",
              color=RED, fontsize=11, fontweight="bold", ha="left", va="center")
-    axR.set_title(f"The same RF, magnified — local motion ≈ translations\n"
-                  f"probe is {S.COHERENCE:.0%} coherent: {n_coh} of the "
-                  f"{n_coh + n_noi} green dots take the heading, {n_noi} fan out",
+    axR.set_title("The same RF, magnified — local motion ≈ translations",
                   fontsize=12, color=INK, pad=8)
-    axR.legend(handles=[
-        Line2D([0], [0], color=INK2, lw=2.0, alpha=0.55,
-               label=f"{PRE_MS:g} ms before the probe"),
-        Line2D([0], [0], color=INK2, lw=3.2, label=f"{TRANS_MS:g} ms probe window")],
-        loc="lower center", ncol=2, frameon=False, fontsize=9,
-        bbox_to_anchor=(0.5, -0.06))
-
     fig.text(0.5, 0.008,
-             f"rotation {OMEGA_DEG_S:g}°/s · probe {PROBE_DEG_S:g}°/s for {TRANS_MS:g} ms, {S.COHERENCE:.0%} coherent · "
+             f"rotation {OMEGA_DEG_S:g}°/s · arrows show local direction only, not "
+             f"displacement (a dot dwells ~{S.dwell_ms(MT_C, MT_R_DEG):.0f} ms in this RF) · "
              f"MT RF {2*MT_R_DEG:.1f}° diameter at {MT_C[0]:g}° eccentricity · "
              f"dots {DOT_DIAM_DEG:g}° · {S.DENSITY:g} dots/deg²/field",
              ha="center", va="bottom", fontsize=8.5, color=INK2)
@@ -97,7 +96,8 @@ def fig_mt_rf(out="mt_rf_figure.png"):
                         wspace=0.10)
     fig.savefig(out, dpi=170, facecolor="white")
     plt.close(fig)
-    print(f"wrote {out}   ({len(inside)} dots in the magnified RF)")
+    print(f"wrote {out}   ({len(inside)} dots in the magnified RF; local "
+          f"direction departs from vertical by up to {max(devs):.0f}°)")
 
 
 if __name__ == "__main__":

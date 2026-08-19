@@ -55,9 +55,12 @@ def _blowup(ax, which, panel_lab, sub):
             va="bottom", fontsize=9.5, color=colour, fontweight="bold")
 
     exc = S.excursion(np.vstack([pre, during]), rf_c)
+    note2 = (f"\nprobe is {S.COHERENCE:.0%} coherent — this dot is one of the coherent\n"
+             f"half; the rest fan over 8 directions at the same speed"
+             if translates else "")
     ax.text(rf_c[0], rf_c[1] - RF_R_DEG - pad * 0.45,
             f"dot edge stays within {exc:.3f}° of centre\nRF radius {RF_R_DEG:.2f}° "
-            f"({RF_R_DEG/exc:.2f}× margin)",
+            f"({RF_R_DEG/exc:.2f}× margin){note2}",
             ha="center", va="top", fontsize=8.5, color=INK2)
     ax.set_title(f"{panel_lab}\n{sub}", fontsize=10.5, color=INK, pad=6)
 

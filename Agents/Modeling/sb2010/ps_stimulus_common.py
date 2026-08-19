@@ -29,7 +29,14 @@ THE LAYOUT IS CONSTRUCTED, NOT SEARCHED
     32 pepper dots   over the rest of the display
 
 1 + 3 + 32 = 36 = DENSITY x annulus area, so the construction preserves density
-exactly rather than trading it for the arrangement. Every non-selected dot is
+exactly rather than trading it for the arrangement.
+
+The equal red/green count in the MT RF is FORCED, deliberately. A single-trial
+snapshot would typically differ by 2.25 dots (28%), and averaging over the trial's
+~2.2 population turnovers only brings that to 1.51 (19%) — a sqrt(2.2) improvement,
+not a wash-out. The real symmetry comes from the model's 24-layout average. So the
+balanced case IS the effective input MT integrates, and the snapshot imbalance is
+sampling noise the model averages away. Do not "correct" this to a random draw. Every non-selected dot is
 verified to clear both V1 RFs at all sampled frames, so each V1 RF really does
 hold one dot and only one for the whole window.
 
@@ -170,6 +177,32 @@ def dot_trajectory(p0, sense, translates, probe_dir=None):
     else:
         during = _rotation_path(pre[-1], sense, TRANS_MS)
     return pre, during
+
+
+def local_direction(p, sense):
+    """Unit tangential direction of rigid rotation at position `p`.
+
+    Perpendicular to the radius from fixation, sign set by CW/CCW. Near-vertical
+    for a point off to one side of fixation, which is the approximation the whole
+    competition model rests on — but only NEAR-vertical, departing by up to
+    arcsin(R/ecc) across an RF, which is what sets MT_R_DEG.
+    """
+    p = np.asarray(p, float)
+    t = np.array([-p[1], p[0]]) / np.hypot(*p)      # CCW tangent
+    return t if sense == "CCW" else -t
+
+
+def dwell_ms(centre, radius):
+    """How long a dot spends inside a circular RF, under rigid rotation.
+
+    The RF subtends 2*arcsin(radius/ecc) of polar angle from fixation, and dots
+    sweep that at OMEGA_DEG_S. This is the timescale that decides what a panel may
+    honestly show: a window much shorter than the dwell is one arbitrary slice of
+    the RF's input, since the population turns over.
+    """
+    ecc = np.hypot(*centre)
+    span = 2 * np.degrees(np.arcsin(min(radius / ecc, 1.0)))
+    return span / OMEGA_DEG_S * 1000.0
 
 
 def _positions_at(p0, sense, translates, t_s):
