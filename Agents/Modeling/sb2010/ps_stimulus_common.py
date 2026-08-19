@@ -210,21 +210,42 @@ def _clears_v1(p0, sense, translates):
     return True
 
 
-def _sample(n, rng, accept, sense, translates, tries=200000):
-    """Rejection-sample `n` start positions in the annulus satisfying `accept`,
-    each of which also clears both V1 RFs for the whole window."""
-    out = []
-    for _ in range(tries):
-        if len(out) == n:
-            break
-        r = np.sqrt(rng.uniform(EXCL_DEG**2, (APERTURE_DEG - 0.04)**2))
-        a = rng.uniform(0, 2 * np.pi)
-        p = np.array([r * np.cos(a), r * np.sin(a)])
-        if accept(p) and _clears_v1(p, sense, translates):
-            out.append(p)
-    if len(out) != n:
-        raise RuntimeError(f"could only place {len(out)} of {n} dots")
-    return out
+def _sample_spread(n_each, rng, accept, senses, k=14, tries=4000):
+    """Blue-noise sampling: place 2 x `n_each` dots (alternating colour) so the
+    UNION of the two fields is evenly spread, while each position is still drawn
+    at random.
+
+    Independent uniform sampling clumps — that is correct for a real stimulus and
+    wrong for an illustration, where a chance run of dots on one side reads as a
+    property of the display rather than of the draw. For each new dot we take `k`
+    random candidates and keep whichever lies farthest from everything already
+    placed (Mitchell's best-candidate). Spacing against BOTH fields, not each
+    separately, is what keeps the union even rather than only each colour.
+
+    `k` sets how far from uniform it stays: k=1 is plain random, large k tends to
+    a lattice. 14 is enough to remove visible clumping while still looking drawn.
+    """
+    placed = []
+    out = {"A": [], "B": []}
+    for i in range(2 * n_each):
+        which = "A" if i % 2 == 0 else "B"
+        sense, translates = senses[which]
+        best_p, best_d = None, -1.0
+        for _ in range(k):
+            for _ in range(tries):
+                r = np.sqrt(rng.uniform(EXCL_DEG**2, (APERTURE_DEG - 0.04)**2))
+                a = rng.uniform(0, 2 * np.pi)
+                p = np.array([r * np.cos(a), r * np.sin(a)])
+                if accept(p) and _clears_v1(p, sense, translates):
+                    break
+            else:
+                raise RuntimeError("could not place a dot in this region")
+            d = (min(np.hypot(*(p - q)) for q in placed) if placed else np.inf)
+            if d > best_d:
+                best_d, best_p = d, p
+        placed.append(best_p)
+        out[which].append(best_p)
+    return out["A"], out["B"]
 
 
 def build_layout(seed=7):
@@ -242,14 +263,13 @@ def build_layout(seed=7):
     mt_area = np.pi * MT_R_DEG**2 - 2 * np.pi * RF_R_DEG**2
     n_fill = int(round(DENSITY * mt_area))
     in_mt = lambda p: np.hypot(p[0] - MT_C[0], p[1] - MT_C[1]) < MT_R_DEG - DOT_DIAM_DEG / 2
-    fill_a = _sample(n_fill, rng, in_mt, "CCW", trA)
-    fill_b = _sample(n_fill, rng, in_mt, "CW", trB)
+    senses = {"A": ("CCW", trA), "B": ("CW", trB)}
+    fill_a, fill_b = _sample_spread(n_fill, rng, in_mt, senses)
 
     # 3. the rest of the display, same density
     n_pep = N_DOTS - 1 - n_fill
     out_mt = lambda p: np.hypot(p[0] - MT_C[0], p[1] - MT_C[1]) > MT_R_DEG + DOT_DIAM_DEG / 2
-    pep_a = _sample(n_pep, rng, out_mt, "CCW", trA)
-    pep_b = _sample(n_pep, rng, out_mt, "CW", trB)
+    pep_a, pep_b = _sample_spread(n_pep, rng, out_mt, senses)
 
     A = np.vstack([a0[None, :]] + [np.asarray(fill_a), np.asarray(pep_a)])
     B = np.vstack([b0[None, :]] + [np.asarray(fill_b), np.asarray(pep_b)])
