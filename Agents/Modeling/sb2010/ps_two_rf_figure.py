@@ -86,7 +86,14 @@ RF_GAP_DEG   = 0.05                 # clear gap so the two RF circles do not tou
 RF_DIAM_DEG  = 2 * SIGMA_DEG
 RF_R_DEG     = SIGMA_DEG
 _SEP         = RF_DIAM_DEG + RF_GAP_DEG      # centre-to-centre
-MT_MARGIN    = 0.06                 # slack between the pair and the MT RF edge
+
+# ── the MT RF: OFF TO ONE SIDE of fixation, as in fig_modelI_stimulus ──
+MT_ECC_DEG   = 1.05                 # centre, right of fixation
+MT_R_DEG     = 0.70                 # 35% of the aperture radius, matching the
+                                    # proportions of fig_modelI. Chosen for the
+                                    # schematic; the one quantity here without a
+                                    # literature source.
+MT_C         = (MT_ECC_DEG, 0.0)
 
 # ── motion ──
 OMEGA_DEG_S  = 81.0
@@ -97,10 +104,13 @@ TRANS_MS     = 40.0
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 
 # ── the search ──
-SEARCH_SEEDS   = range(1, 300)
+SEARCH_SEEDS   = range(1, 400)
 SEARCH_FRAMES  = 21                 # frames sampled across the whole window
-SEARCH_ECC     = np.arange(0.55, 0.81, 0.05)   # kept near-in so a STIMULUS-CENTRED
-SEARCH_ANG_DEG = np.arange(-25, 26, 5)         # MT RF still contains the pair
+SEARCH_STEP    = 0.04               # grid over allowed pair-centre offsets, deg
+# The pair centre may stray this far from MT_C and still have BOTH V1 RFs fully
+# inside the MT RF — so containment is enforced by the search space itself.
+_PLAY          = MT_R_DEG - _SEP / 2 - RF_R_DEG
+GOOD_ENOUGH    = 1.55               # stop early once a pair this well centred turns up
 
 
 # ═══════════════════════════════════════════════════════════ helpers ══
@@ -161,7 +171,7 @@ def _positions_at(p0, sense, translates, t_s):
     return p
 
 
-def _find_pure_pair(seeds=SEARCH_SEEDS, min_candidates=25):
+def _find_pure_pair(seeds=SEARCH_SEEDS):
     """Search layouts for two adjacent RF-sized regions, each holding exactly one
     dot of ONE surface — the same dot — for every frame of the window, with no
     intrusion from the other surface. Collects qualifying candidates and returns
@@ -170,7 +180,14 @@ def _find_pure_pair(seeds=SEARCH_SEEDS, min_candidates=25):
     layout qualifies.
     """
     ts = np.linspace(0.0, (PRE_MS + TRANS_MS) / 1000.0, SEARCH_FRAMES)
-    cands = []
+    # candidate pair centres: a grid inside the disc of radius _PLAY about MT_C.
+    # Every offset in it keeps BOTH V1 RFs wholly inside the MT RF, so that
+    # containment is guaranteed by construction rather than checked afterwards.
+    offs = [(dx, dy)
+            for dx in np.arange(-_PLAY, _PLAY + 1e-9, SEARCH_STEP)
+            for dy in np.arange(-_PLAY, _PLAY + 1e-9, SEARCH_STEP)
+            if dx * dx + dy * dy <= _PLAY * _PLAY]
+    best = None
     for seed in seeds:
         rng = np.random.default_rng(seed)
         A = _field(N_DOTS, rng)                     # red, CCW, uncued
@@ -179,38 +196,32 @@ def _find_pure_pair(seeds=SEARCH_SEEDS, min_candidates=25):
         trB = (TRANSLATING_FIELD == "cued")
         PA = [_positions_at(A, "CCW", trA, t) for t in ts]
         PB = [_positions_at(B, "CW", trB, t) for t in ts]
-        for ecc in SEARCH_ECC:
-            for ang in np.radians(SEARCH_ANG_DEG):
-                cx, cy = ecc * np.cos(ang), ecc * np.sin(ang)
-                Lc = np.array([cx - _SEP / 2, cy])
-                Rc = np.array([cx + _SEP / 2, cy])
-                inAL = [set(np.where(np.hypot(*(pa - Lc).T) < RF_R_DEG)[0]) for pa in PA]
-                inBR = [set(np.where(np.hypot(*(pb - Rc).T) < RF_R_DEG)[0]) for pb in PB]
-                if any(len(s_) != 1 for s_ in inAL): continue
-                if any(len(s_) != 1 for s_ in inBR): continue
-                iA = set.intersection(*inAL)        # SAME dot on every frame
-                iB = set.intersection(*inBR)
-                if not iA or not iB: continue
-                if any((np.hypot(*(pb - Lc).T) < RF_R_DEG).any() for pb in PB): continue
-                if any((np.hypot(*(pa - Rc).T) < RF_R_DEG).any() for pa in PA): continue
-                jA, jB = iA.pop(), iB.pop()
-                # Score it: how well CENTRED the two dots stay. A qualifying pair
-                # whose dots skim the RF boundary is a true configuration but a
-                # poor illustration, so keep searching and take the best.
-                mA = min(np.hypot(*(pa[jA] - Lc)) for pa in PA), \
-                     max(np.hypot(*(pa[jA] - Lc)) for pa in PA)
-                mB = max(np.hypot(*(pb[jB] - Rc)) for pb in PB)
-                worst = max(mA[1], mB) + DOT_DIAM_DEG / 2
-                cands.append((RF_R_DEG / worst,
-                              dict(seed=seed, A=A, B=B, Lc=Lc, Rc=Rc,
-                                   iA=jA, iB=jB, ecc=float(ecc),
-                                   ang=float(np.degrees(ang)),
-                                   margin=RF_R_DEG / worst)))
-        if len(cands) >= min_candidates:
+        for dx, dy in offs:
+            cx, cy = MT_C[0] + dx, MT_C[1] + dy
+            Lc = np.array([cx - _SEP / 2, cy])
+            Rc = np.array([cx + _SEP / 2, cy])
+            inAL = [set(np.where(np.hypot(*(pa - Lc).T) < RF_R_DEG)[0]) for pa in PA]
+            if any(len(s_) != 1 for s_ in inAL): continue
+            inBR = [set(np.where(np.hypot(*(pb - Rc).T) < RF_R_DEG)[0]) for pb in PB]
+            if any(len(s_) != 1 for s_ in inBR): continue
+            iA = set.intersection(*inAL)            # SAME dot on every frame
+            iB = set.intersection(*inBR)
+            if not iA or not iB: continue
+            if any((np.hypot(*(pb - Lc).T) < RF_R_DEG).any() for pb in PB): continue
+            if any((np.hypot(*(pa - Rc).T) < RF_R_DEG).any() for pa in PA): continue
+            jA, jB = iA.pop(), iB.pop()
+            # Score: how well CENTRED the two dots stay. A qualifying pair whose
+            # dot skims the RF boundary is a true configuration but a poor
+            # illustration, so keep looking and take the best.
+            worst = max(max(np.hypot(*(pa[jA] - Lc)) for pa in PA),
+                        max(np.hypot(*(pb[jB] - Rc)) for pb in PB)) + DOT_DIAM_DEG / 2
+            margin = RF_R_DEG / worst
+            if best is None or margin > best["margin"]:
+                best = dict(seed=seed, A=A, B=B, Lc=Lc, Rc=Rc, iA=jA, iB=jB,
+                            margin=margin, off=(float(dx), float(dy)))
+        if best is not None and best["margin"] >= GOOD_ENOUGH:
             break
-    if not cands:
-        return None
-    return max(cands, key=lambda c: c[0])[1]
+    return best
 
 
 # ── run the search once, at import; everything downstream reads its result ──
@@ -221,18 +232,8 @@ if PAIR is None:
 FIELD_A, FIELD_B = PAIR["A"], PAIR["B"]
 RF_LEFT, RF_RIGHT = tuple(PAIR["Lc"]), tuple(PAIR["Rc"])
 IDX_A, IDX_B = PAIR["iA"], PAIR["iB"]
-ECC_DEG = PAIR["ecc"]
-
-# The MT RF is CENTRED ON THE STIMULUS (GS). The V1 pair therefore sits off-centre
-# inside it, which is fine — an MT RF pools a wide region and the two point-sets
-# need not be at its middle. Its radius is DERIVED: just large enough to contain
-# the found pair. The search is restricted to near-in eccentricities (SEARCH_ECC)
-# precisely so this stays a sensible fraction of the display rather than swallowing
-# it. Note this is still the one quantity here with no literature source — it is
-# set by the geometry it has to contain, not by a measurement of MT.
-MT_C = (0.0, 0.0)
-MT_R_DEG = round(max(np.hypot(*RF_LEFT), np.hypot(*RF_RIGHT))
-                 + RF_R_DEG + MT_MARGIN, 3)
+ECC_DEG = float(np.hypot((RF_LEFT[0] + RF_RIGHT[0]) / 2,
+                         (RF_LEFT[1] + RF_RIGHT[1]) / 2))
 
 
 # ═══════════════════════════════════════════════════════ containment ══
@@ -404,7 +405,7 @@ if __name__ == "__main__":
     print(f"  layout seed  {PAIR['seed']}")
     print(f"  centres      L {RF_LEFT[0]:+.3f},{RF_LEFT[1]:+.3f}   "
           f"R {RF_RIGHT[0]:+.3f},{RF_RIGHT[1]:+.3f}")
-    print(f"  eccentricity {ECC_DEG:.3f} deg, polar angle {PAIR['ang']:+.0f} deg")
+    print(f"  eccentricity {ECC_DEG:.3f} deg")
     print(f"  dots         field A #{IDX_A} (red, left), field B #{IDX_B} (green, right)")
     print(f"  guarantee    same dot in each RF on all {SEARCH_FRAMES} sampled frames,"
           f" no intruder from the other surface")
