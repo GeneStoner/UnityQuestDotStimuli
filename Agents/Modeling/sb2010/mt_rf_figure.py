@@ -1,18 +1,26 @@
 """
-Original schematic (our own stimulus — not a reproduction of any published
-figure): the two transparent counter-rotating dot fields, with a large MT
-receptive field placed off to one side of fixation.  The point: for an
-off-centre RF, each rigid rotation is *locally* well approximated by a
-translation, so the two rotations (and the brief test translation) can all be
-treated as motion directions on one axis.  V1 supplies that local direction
-signal (the *input*, invariant to the feature swaps); the model's own stages
-live in MT — the direction-selective channels that adapt, then the pattern /
-MST unit that detects translation.  This lets us reason with a directional MT
-drive without yet invoking MST / rotation-selective neurons.
+Figure 2 of the computational section — the stimulus, and an MT receptive field.
 
-Geometry: the RF sits directly to the RIGHT of fixation, so the CW field's
-local motion is DOWN and the CCW field's is UP — matching the drive figure
-(DIR_CW = -90 deg = down, DIR_CCW = 90 deg = up).
+Original schematic (our own stimulus, not a reproduction of any published figure):
+two transparent counter-rotating dot fields, with a large MT receptive field off to
+one side of fixation. The point: for an off-centre RF each rigid rotation is
+*locally* well approximated by a translation, so the two rotations and the brief
+test translation can all be treated as directions on one axis. V1 supplies that
+local direction signal — the input, invariant to the feature swaps — while the
+model's own stages live in MT.
+
+Geometry: the RF sits to the RIGHT of fixation, so the CW field's local motion is
+DOWN and the CCW field's is UP.
+
+PAIRS WITH `ps_two_rf_figure.py`. Both take their stimulus from
+`ps_stimulus_common.draw_stimulus`, and the dot layout is computed once there, so
+this figure and the V1-RF figure show *the same picture* — the only difference
+being that the other one adds two V1 RF circles. Change the stimulus here and it
+changes there; that is deliberate.
+
+  LEFT   the stimulus and the MT RF. Dots only — no motion is drawn.
+  RIGHT  that RF magnified, with the real trajectory of every dot inside it:
+         100 ms of rotation, then the 40 ms probe.
 
 Run:  /usr/bin/python3 mt_rf_figure.py
 """
@@ -21,190 +29,70 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle, FancyArrowPatch
+from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
 
-from web_figures import INK, INK2, BORDER, ACCENT, CUED, UNCUED, SURFACE, GRID
-
-GREEN, RED = CUED, UNCUED          # field colours (match the rest of the set)
-APERTURE = 3.0                     # = 2.0 deg radius (4 deg stimulus, S&B 2010)
-RF_C, RF_R = (2.0, 0.0), 0.9       # MT RF: directly right of fixation, eccentric
-                                   # enough to exclude the near-fixation dots
-                                   # (whose local motion is not up/down)
-OMEGA = 81.0                       # rotation speed, deg/s (Stoner & Blanc 2010)
-TRACE_MS = 100.0                   # duration each dot-trace represents
-SWEEP = OMEGA * TRACE_MS / 1000.0  # constant angular sweep (deg) ~ 12.15
-
-# Dot density: S&B used 5 dots/deg^2 per field.  Here 1 deg = 1.5 units, so
-# 1 deg^2 = 2.25 units^2 -> ~55 dots in the annulus at that density.
-N_DOTS = 55
-
-
-def _field(n, seed, rmin=0.7, rmax=None):
-    """Uniform-random dot positions in an annulus (area-uniform sampling)."""
-    if rmax is None:
-        rmax = APERTURE - 0.08
-    rng = np.random.default_rng(seed)
-    angles = rng.uniform(0, 2 * np.pi, n)
-    rs = np.sqrt(rng.uniform(rmin ** 2, rmax ** 2, n))
-    return np.column_stack([rs * np.cos(angles), rs * np.sin(angles)])
-
-
-def _arc_in_circle(zp, fix_zoom, sense, sweep_deg, rz, margin=0.10):
-    """True iff the full arc about fix_zoom stays within rz of origin."""
-    zp = np.asarray(zp, float); fz = np.asarray(fix_zoom, float)
-    rvec = zp - fz
-    R = np.hypot(*rvec)
-    th0 = np.degrees(np.arctan2(rvec[1], rvec[0]))
-    s = -1.0 if sense == "CW" else 1.0
-    ths = np.radians(np.linspace(th0, th0 + s * sweep_deg, 24))
-    arc = fz[:, None] + R * np.array([np.cos(ths), np.sin(ths)])
-    return bool(np.all(np.hypot(arc[0], arc[1]) < rz - margin))
-
-
-def _spread_select(pts, min_dist, rng_seed=0):
-    """Greedy Poisson-disk selection: return a well-separated subset."""
-    rng = np.random.default_rng(rng_seed)
-    order = rng.permutation(len(pts))
-    selected = []
-    for i in order:
-        p = pts[i]
-        if all(np.hypot(*(p - s)) > min_dist for s in selected):
-            selected.append(p)
-    return selected
-
-
-def _rotation_arrow(ax, a0_deg, a1_deg, color, R=3.45):
-    th = np.radians(np.linspace(a0_deg, a1_deg, 30))
-    ax.plot(R * np.cos(th), R * np.sin(th), color=color, lw=2.4,
-            solid_capstyle="round")
-    # arrowhead at the a1 end
-    p1 = np.array([R * np.cos(th[-1]), R * np.sin(th[-1])])
-    p0 = np.array([R * np.cos(th[-3]), R * np.sin(th[-3])])
-    ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-|>", mutation_scale=16,
-                 color=color, lw=0, zorder=5))
-
-
-def _arc_motion(ax, p, fix, sense, color, lw=1.7, head=8,
-                sweep_deg=None, length=None):
-    """Draw a short arrow that is a TRUE arc of the circle of rigid rotation
-    about ``fix`` passing through dot ``p``.  sense='CW'/'CCW'.  Pass
-    ``sweep_deg`` for a fixed DURATION (constant angle -> length scales with
-    radius, as real rigid rotation does); or ``length`` for a fixed arc length
-    (used only for the idealized zoom)."""
-    p = np.asarray(p, float); fix = np.asarray(fix, float)
-    rvec = p - fix
-    R = np.hypot(*rvec)
-    th0 = np.degrees(np.arctan2(rvec[1], rvec[0]))
-    s = -1.0 if sense == "CW" else 1.0          # CW = decreasing angle
-    if sweep_deg is None:
-        sweep_deg = np.degrees(length / R)
-    ths = np.radians(np.linspace(th0, th0 + s * sweep_deg, 16))
-    xs = fix[0] + R * np.cos(ths)
-    ys = fix[1] + R * np.sin(ths)
-    ax.plot(xs, ys, color=color, lw=lw, solid_capstyle="round", zorder=4)
-    ax.add_patch(FancyArrowPatch((xs[-2], ys[-2]), (xs[-1], ys[-1]),
-                 arrowstyle="-|>", mutation_scale=head, color=color, lw=0,
-                 zorder=4))
+import ps_stimulus_common as S
+from ps_stimulus_common import (INK, INK2, GREEN, RED, SURFACE,
+                                MT_C, MT_R_DEG, DOT_DIAM_DEG,
+                                PRE_MS, TRANS_MS, OMEGA_DEG_S, PROBE_DEG_S)
 
 
 def fig_mt_rf(out="mt_rf_figure.png"):
     fig, (axL, axR) = plt.subplots(
-        1, 2, figsize=(11.5, 5.6), gridspec_kw=dict(width_ratios=[1.15, 1.0]))
+        1, 2, figsize=(12.0, 6.0), gridspec_kw=dict(width_ratios=[6.4, 5.6]))
 
-    # ============ LEFT: the stimulus + the MT RF ======================
-    axL.set_aspect("equal"); axL.axis("off")
-    axL.set_xlim(-4.0, 4.0); axL.set_ylim(-4.0, 4.0)
-
-    axL.add_patch(Circle((0, 0), APERTURE, facecolor="#fafafa",
-                  edgecolor=BORDER, lw=1.4, zorder=0))
-
-    # the MT receptive field, highlighted
-    axL.add_patch(Circle(RF_C, RF_R, facecolor="#eef2f1", edgecolor=INK,
-                  lw=2.0, ls=(0, (5, 3)), zorder=1))
-
-    # fixation
-    axL.plot(0, 0, marker="+", ms=11, mew=2.0, color=INK, zorder=5)
-
-    # every dot is drawn as a TRACE: a short arc of its rigid-rotation path
-    # about fixation, tipped with an arrowhead for direction.  Green = CW
-    # field, red = CCW field.  Uniform-random placement in the annulus.
-    g = _field(N_DOTS, seed=11)
-    r = _field(N_DOTS, seed=12)
-    for p in g:
-        axL.scatter(*p, s=9, color=GREEN, zorder=3)
-        _arc_motion(axL, p, (0, 0), "CW", GREEN, lw=1.4, head=7, sweep_deg=SWEEP)
-    for p in r:
-        axL.scatter(*p, s=9, color=RED, zorder=3)
-        _arc_motion(axL, p, (0, 0), "CCW", RED, lw=1.4, head=7, sweep_deg=SWEEP)
-
-    axL.text(RF_C[0], RF_C[1] - RF_R - 0.35, "MT receptive field",
-             ha="center", va="top", fontsize=10.5, color=INK)
-    axL.legend(handles=[
-        Line2D([0], [0], color=GREEN, lw=2.2, label="CW field"),
-        Line2D([0], [0], color=RED, lw=2.2, label="CCW field")],
-        loc="upper right", frameon=False, fontsize=10)
-
+    # ── LEFT: the shared stimulus, with the MT RF ──
+    S.draw_stimulus(axL, show_v1_rfs=False)
     axL.set_title("Two counter-rotating fields + an off-centre MT RF",
-                  fontsize=11.5, color=INK, pad=6)
+                  fontsize=12, color=INK, pad=8)
 
-    # ============ RIGHT: the SAME RF, exactly magnified ===============
-    # Not an idealized patch — the identical dots and identical rotation arcs
-    # from inside the RF on the left, scaled up about the (magnified) real
-    # fixation so the motions shown are exactly those in the stimulus.
+    # ── RIGHT: that RF magnified, with the real motion inside it ──
     axR.set_aspect("equal"); axR.axis("off")
-    M = 1.45
-    rz = RF_R * M
-    fix_zoom = (-np.array(RF_C)) * M            # real fixation, magnified in
-    axR.set_xlim(-rz - 0.3, rz + 1.2); axR.set_ylim(-rz - 0.7, rz + 0.4)
-    axR.add_patch(Circle((0, 0), rz, facecolor=SURFACE, edgecolor=INK,
-                  lw=2.0, ls=(0, (5, 3)), zorder=1))
+    pad = MT_R_DEG * 0.16
+    axR.set_xlim(MT_C[0] - MT_R_DEG - pad, MT_C[0] + MT_R_DEG + pad * 2.6)
+    axR.set_ylim(MT_C[1] - MT_R_DEG - pad, MT_C[1] + MT_R_DEG + pad)
+    axR.add_patch(Circle(MT_C, MT_R_DEG, facecolor=SURFACE, edgecolor=INK,
+                         lw=2.0, ls=(0, (5, 3)), zorder=1))
 
-    # Zoom candidates: sample a dense pool directly within the RF, check that
-    # each arc stays fully inside the zoom circle, then spread-select.
-    def _rf_pool(n, seed):
-        rng = np.random.default_rng(seed)
-        pts = []
-        while len(pts) < n:
-            p = rng.uniform(-RF_R, RF_R, 2) + np.array(RF_C)
-            if np.hypot(p[0] - RF_C[0], p[1] - RF_C[1]) < RF_R - 0.06:
-                pts.append(p)
-        return pts
+    inside = S.dots_in(MT_C, MT_R_DEG)
+    for p, colour, sense, translates in inside:
+        pre, during = S.dot_trajectory(p, sense, translates)
+        S.draw_trajectory(axR, pre, during, colour,
+                          lw_pre=2.0, lw_during=3.2, head=14, z=4)
+        axR.add_patch(Circle(p, DOT_DIAM_DEG / 2, facecolor=colour,
+                             edgecolor="none", zorder=6))
 
-    def _zoom_candidates(pool, sense):
-        out = []
-        for p in pool:
-            zp = (np.asarray(p) - RF_C) * M
-            if _arc_in_circle(zp, fix_zoom, sense, SWEEP, rz, margin=0.06):
-                out.append(zp)
-        return out
-
-    g_cands = _zoom_candidates(_rf_pool(120, seed=21), "CW")
-    r_cands = _zoom_candidates(_rf_pool(120, seed=22), "CCW")
-    g_zoom = _spread_select(g_cands, min_dist=0.82, rng_seed=7)[:5]
-    r_zoom = _spread_select(r_cands, min_dist=0.82, rng_seed=8)[:5]
-
-    for zp in g_zoom:
-        axR.scatter(*zp, s=22, color=GREEN, zorder=3)
-        _arc_motion(axR, zp, fix_zoom, "CW", GREEN, lw=2.4, head=11,
-                    sweep_deg=SWEEP)
-    for zp in r_zoom:
-        axR.scatter(*zp, s=22, color=RED, zorder=3)
-        _arc_motion(axR, zp, fix_zoom, "CCW", RED, lw=2.4, head=11,
-                    sweep_deg=SWEEP)
-
-    axR.text(rz + 0.12, -0.42, "CW ≈ down", color=GREEN, fontsize=11,
-             fontweight="bold", ha="left", va="center")
-    axR.text(rz + 0.12, 0.42, "CCW ≈ up", color=RED, fontsize=11,
-             fontweight="bold", ha="left", va="center")
+    axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] - 0.16, "CW ≈ down",
+             color=GREEN, fontsize=11, fontweight="bold", ha="left", va="center")
+    axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] + 0.16, "CCW ≈ up",
+             color=RED, fontsize=11, fontweight="bold", ha="left", va="center")
     axR.set_title("The same RF, magnified — local motion ≈ translations",
-                  fontsize=11.5, color=INK, pad=6)
+                  fontsize=12, color=INK, pad=8)
+    axR.legend(handles=[
+        Line2D([0], [0], color=INK2, lw=2.0, alpha=0.55,
+               label=f"{PRE_MS:g} ms before the probe"),
+        Line2D([0], [0], color=INK2, lw=3.2, label=f"{TRANS_MS:g} ms probe window")],
+        loc="lower center", ncol=2, frameon=False, fontsize=9,
+        bbox_to_anchor=(0.5, -0.06))
 
-    fig.tight_layout()
-    fig.savefig(out, dpi=170, bbox_inches="tight", facecolor="white")
+    fig.text(0.5, 0.008,
+             f"rotation {OMEGA_DEG_S:g}°/s · probe {PROBE_DEG_S:g}°/s rightward · "
+             f"MT RF {2*MT_R_DEG:.1f}° diameter at {MT_C[0]:g}° eccentricity · "
+             f"dots {DOT_DIAM_DEG:g}° · {S.DENSITY:g} dots/deg²/field",
+             ha="center", va="bottom", fontsize=8.5, color=INK2)
+
+    # Margins are pinned rather than left to tight_layout, which reacts to
+    # title and legend content and would render the stimulus panel at a
+    # slightly different scale in each figure. Both use these exact values.
+    fig.subplots_adjust(left=0.015, right=0.985, top=0.865, bottom=0.145,
+                        wspace=0.10)
+    fig.savefig(out, dpi=170, facecolor="white")
     plt.close(fig)
-    print(f"wrote {out}")
+    print(f"wrote {out}   ({len(inside)} dots in the magnified RF)")
 
 
 if __name__ == "__main__":
+    S.report()
+    print()
     fig_mt_rf()
