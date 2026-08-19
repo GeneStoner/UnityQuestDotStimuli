@@ -4,7 +4,10 @@ port of attentionModel.m — the figure that replaces the hand-rolled
 translation_response.png on the website.
 
 R(θ = 0°, t): the normalized population response at the translation direction,
-over the whole trial and zoomed on the 40 ms translation window.  σ = 1 to
+over the whole trial.  The zoom panel on the 40 ms window was dropped (GS,
+2026-08-19): it magnified the same two traces and the separation is already
+plain in the full-trial view, with the peak values reported in the footer.
+σ = 1 to
 match the activity-maps cascade (rh_activity_maps.py).  A fixed attentional
 gain on the cued direction, with no adaptation, yields the cued advantage.
 
@@ -37,10 +40,8 @@ def main():
     pc, pu = float(Rc[win].max()), float(Ru[win].max())
     bias = (pc / pu - 1.0) * 100.0
 
-    fig, axes = plt.subplots(2, 1, figsize=(11.0, 7.8))
+    fig, ax = plt.subplots(1, 1, figsize=(11.0, 4.6))
 
-    # A — full trial
-    ax = axes[0]
     ax.plot(t, Rc, color=GREEN, lw=2.0,
             label="CUED   (delayed/cued field translates)")
     ax.plot(t, Ru, color=RED, lw=2.0, ls="--",
@@ -56,21 +57,9 @@ def main():
     ax.set_xlim(0, t[-1])
     ax.set_xlabel("Time (ms)", fontsize=11)
     ax.set_ylabel(r"$R(\theta=0°,\, t)$   (translation detector)", fontsize=11)
-    ax.set_title("A.  Translation-detector response over the full trial duration",
+    ax.set_title("Translation-detector response over the full trial duration",
                  loc="left", fontsize=11.5, fontweight="bold")
     ax.legend(fontsize=10, loc="upper left")
-
-    # B — zoom on the translation window
-    ax = axes[1]
-    ax.plot(t, Rc, color=GREEN, lw=2.4, label="CUED")
-    ax.plot(t, Ru, color=RED, lw=2.4, ls="--", label="UNCUED")
-    ax.axvspan(T_TRANS_START, T_TRANS_END, color="gray", alpha=0.18, zorder=0)
-    ax.set_xlim(T_TRANS_START - 60, T_TRANS_END + 100)
-    ax.set_xlabel("Time (ms)", fontsize=11)
-    ax.set_ylabel(r"$R(\theta=0°,\, t)$", fontsize=11)
-    ax.set_title("B.  Zoom on the 40-ms translation window",
-                 loc="left", fontsize=11.5, fontweight="bold")
-    ax.legend(fontsize=10, loc="upper right")
 
     fig.text(0.5, 0.005,
              f"Peak R(0°):  CUED = {pc:.3f},   UNCUED = {pu:.3f}      "
