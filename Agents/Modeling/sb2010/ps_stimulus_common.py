@@ -116,10 +116,10 @@ TRANS_MS     = 100.0                # probe duration. Real experiments span 40 m
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 
 # ── the rotation-sense arcs, drawn INSIDE the aperture ──
-# The convention is Stoner & Blanc (2010) Fig. 1A's, matched from the paper: two
-# near-semicircular arcs INSIDE the aperture at ~0.78 of its radius, each running
-# from just off the top down its own side, with big filled heads meeting at the
-# bottom. Red takes the left, green the right, and the heads point at each other.
+# GEOMETRY is Stoner & Blanc (2010) Fig. 1A's, matched from the paper: two
+# near-semicircular arcs INSIDE the aperture, each running
+# from just off the top down its own side, with the heads meeting at the bottom.
+# Red takes the left, green the right, and the heads point at each other.
 #
 # The senses are the true ones for the side each arc sits on -- at the left
 # counter-clockwise is locally down, at the right clockwise is locally down -- so
@@ -136,17 +136,26 @@ TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 # onto the other's side and the two arcs visibly overlap at the top. The
 # assertion below pins the mirror relation so it cannot regress silently.
 #
-# The green arc has to cross both the shaded MT RF and, in the V1 figure, the
-# right V1 RF: it sweeps down the right side, the V1 RFs sit on the horizontal
-# axis spanning 0.845-1.855 deg, and the gap between them is 0.05 deg, so no
-# radius threads through. The arcs are therefore drawn BENEATH the dots and the
-# RF outlines (zorder 3, under dots at 4 and V1 circles at 6) -- which is S&B's
-# own layering, and leaves every outline and dot unbroken.
-ROT_ARC_R    = APERTURE_DEG * 0.78
+# RADIUS is 0.63 of the aperture, Fig. 8A's proportion -- tucked well inside,
+# clear of the rim, so the arcs sit under the RFs rather than framing them.
+#
+# The green arc has to cross both the shaded MT RF and, in the V1 figure, one of
+# the V1 RFs: it sweeps down the right side, the V1 pair sits on the horizontal
+# axis spanning 0.845-1.855 deg with a 0.05 deg gap between them, so no radius
+# threads through. At 0.63 (1.26 deg) it crosses the LEFT one; at 0.78 it crossed
+# the right. Either way the arcs are drawn BENEATH the dots and the RF outlines
+# (zorder 3, under dots at 4 and V1 circles at 6) -- S&B's own layering -- so
+# every outline and dot stays unbroken.
+ROT_ARC_R    = APERTURE_DEG * 0.63
 ROT_ARC_PAD  = 0.14                 # axis margin; the arcs are inside, so this
                                     # only has to clear the aperture rim
-ROT_ARC_LW   = 3.2
-ROT_ARC_HEAD = 26                   # S&B's heads are broad triangles
+# WEIGHT comes from Fig. 8A, not Fig. 1A. Fig. 1A has no RFs in it, so its arcs
+# carry the panel and are drawn bold; Fig. 8A is the RF schematic these two
+# figures actually descend from -- same MT disc, same two V1 RFs, same leaders --
+# and there the arcs are hairline with small heads so the RFs stay the subject.
+# The arcs say which way each field turns and then get out of the way.
+ROT_ARC_LW   = 1.6
+ROT_ARC_HEAD = 12
 CCW_ARC      = (105.0, 255.0, ROT_ARC_R)    # red, down the LEFT, head at bottom
 CW_ARC       = (75.0, -75.0, ROT_ARC_R)     # green, down the RIGHT, head at bottom
 
