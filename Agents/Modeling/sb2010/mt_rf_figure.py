@@ -55,19 +55,27 @@ def fig_mt_rf(out="mt_rf_figure.png"):
     axR.add_patch(Circle(MT_C, MT_R_DEG, facecolor=SURFACE, edgecolor=INK,
                          lw=2.0, ls=(0, (5, 3)), zorder=1))
 
+    # Every dot carries its OWN probe direction. The translating field is 50%
+    # coherent, exactly as the experiment: half its dots take the heading, half
+    # fan across eight directions at the same speed. Drawing them all moving
+    # together would overstate the probe as a rigid shift of the surface.
     inside = S.dots_in(MT_C, MT_R_DEG)
-    for p, colour, sense, translates in inside:
-        pre, during = S.dot_trajectory(p, sense, translates)
+    for p, colour, sense, translates, pdir, coh in inside:
+        pre, during = S.dot_trajectory(p, sense, translates, pdir)
         S.draw_trajectory(axR, pre, during, colour,
                           lw_pre=2.0, lw_during=3.2, head=14, z=4)
         axR.add_patch(Circle(p, DOT_DIAM_DEG / 2, facecolor=colour,
                              edgecolor="none", zorder=6))
+    n_coh = sum(1 for d in inside if d[3] and d[5])
+    n_noi = sum(1 for d in inside if d[3] and not d[5])
 
     axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] - 0.16, "CW ≈ down",
              color=GREEN, fontsize=11, fontweight="bold", ha="left", va="center")
     axR.text(MT_C[0] + MT_R_DEG + pad * 0.4, MT_C[1] + 0.16, "CCW ≈ up",
              color=RED, fontsize=11, fontweight="bold", ha="left", va="center")
-    axR.set_title("The same RF, magnified — local motion ≈ translations",
+    axR.set_title(f"The same RF, magnified — local motion ≈ translations\n"
+                  f"probe is {S.COHERENCE:.0%} coherent: {n_coh} of the "
+                  f"{n_coh + n_noi} green dots take the heading, {n_noi} fan out",
                   fontsize=12, color=INK, pad=8)
     axR.legend(handles=[
         Line2D([0], [0], color=INK2, lw=2.0, alpha=0.55,
@@ -77,7 +85,7 @@ def fig_mt_rf(out="mt_rf_figure.png"):
         bbox_to_anchor=(0.5, -0.06))
 
     fig.text(0.5, 0.008,
-             f"rotation {OMEGA_DEG_S:g}°/s · probe {PROBE_DEG_S:g}°/s rightward · "
+             f"rotation {OMEGA_DEG_S:g}°/s · probe {PROBE_DEG_S:g}°/s for {TRANS_MS:g} ms, {S.COHERENCE:.0%} coherent · "
              f"MT RF {2*MT_R_DEG:.1f}° diameter at {MT_C[0]:g}° eccentricity · "
              f"dots {DOT_DIAM_DEG:g}° · {S.DENSITY:g} dots/deg²/field",
              ha="center", va="bottom", fontsize=8.5, color=INK2)

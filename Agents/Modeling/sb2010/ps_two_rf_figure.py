@@ -34,7 +34,7 @@ from ps_stimulus_common import (INK, INK2, SURFACE, RF_R_DEG, RF_DIAM_DEG,
 
 
 def _blowup(ax, which, panel_lab, sub):
-    p0, colour, sense, translates, rf_c = S.selected(which)
+    p0, colour, sense, translates, rf_c, pdir = S.selected(which)
     ax.set_aspect("equal"); ax.axis("off")
     pad = RF_R_DEG * 0.34
     ax.set_xlim(rf_c[0] - RF_R_DEG - pad, rf_c[0] + RF_R_DEG + pad)
@@ -42,7 +42,7 @@ def _blowup(ax, which, panel_lab, sub):
     ax.add_patch(Circle(rf_c, RF_R_DEG, facecolor=SURFACE, edgecolor=INK,
                         lw=2.0, zorder=1))
 
-    pre, during = S.dot_trajectory(p0, sense, translates)
+    pre, during = S.dot_trajectory(p0, sense, translates, pdir)
     S.draw_trajectory(ax, pre, during, colour, 2.0, 3.4, 16, z=4)
     ax.add_patch(Circle(p0, DOT_DIAM_DEG / 2, facecolor=colour,
                         edgecolor="none", zorder=6))

@@ -99,8 +99,26 @@ MT_C         = (MT_ECC_DEG, 0.0)
 OMEGA_DEG_S  = 81.0                 # Stoner & Blanc 2010
 PROBE_DEG_S  = 2.26                 # hcpsDefaults.probeDegPerSec
 PRE_MS       = 100.0                # rotation shown before the probe; hcps_twops default
-TRANS_MS     = 40.0                 # parameters.T_TRANS (3 frames @ 75 Hz)
+TRANS_MS     = 100.0                # probe duration. Real experiments span 40 ms
+                                    # (S&B, 3 frames @ 75 Hz) to 133 ms (Catak);
+                                    # VRDots runs 44 or 80. 100 sits inside that
+                                    # range and makes the probe leg of the path
+                                    # legible: 0.226 deg = 2.8 dot-widths, against
+                                    # 0.090 = 1.1 at 40 ms.
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
+
+# ── coherence of the probe: 50%, exactly as the experiment does it ──
+# StimulusBuilder.StepTranslationBalanced steps the NOISE half by
+# dirs[k % 8] * stepMeters — the same speed as the coherent half, round-robin over
+# these eight directions. TrialBlockRunner.StepTranslation gives the COHERENT half
+# one rigid displacement along the trial's heading. So the probe is a 50%-coherence
+# event, not a rigid shift of the whole surface.
+COHERENCE     = 0.5
+HEADING       = np.array([1.0, 0.0])          # rightward; the trial's heading is
+                                              # one of 8 (chance = 12.5%)
+_DIRS8 = np.array([(1, 0), (1, 1), (0, 1), (-1, 1),
+                   (-1, 0), (-1, -1), (0, -1), (1, -1)], float)
+_DIRS8 = _DIRS8 / np.linalg.norm(_DIRS8, axis=1, keepdims=True)
 
 # ── sampling of the window, used when checking dots against the V1 RFs ──
 SEARCH_FRAMES = 21
@@ -138,13 +156,19 @@ def _translation_path(p0, ms, n=32, direction=(1.0, 0.0)):
     return p0[None, :] + ts * dist * d[None, :]
 
 
-def dot_trajectory(p0, sense, translates):
-    """PRE_MS of rigid rotation, then TRANS_MS of either the rightward probe (if
-    the dot's field translates) or continued rotation. One definition for every
-    dot; paths are never re-positioned."""
+def dot_trajectory(p0, sense, translates, probe_dir=None):
+    """PRE_MS of rigid rotation, then TRANS_MS of either the probe (if the dot's
+    field translates) or continued rotation.
+
+    `probe_dir` is the dot's own probe direction — the heading for a coherent dot,
+    one of `_DIRS8` for a noise dot. Defaults to the heading.
+    """
     pre = _rotation_path(p0, sense, PRE_MS)
-    during = (_translation_path(pre[-1], TRANS_MS) if translates
-              else _rotation_path(pre[-1], sense, TRANS_MS))
+    if translates:
+        d = HEADING if probe_dir is None else probe_dir
+        during = _translation_path(pre[-1], TRANS_MS, direction=d)
+    else:
+        during = _rotation_path(pre[-1], sense, TRANS_MS)
     return pre, during
 
 
@@ -206,17 +230,49 @@ def _centred_start(rf_c, sense, translates, iters=8):
 
 
 def _clears_v1(p0, sense, translates):
-    """True if this dot never overlaps either V1 RF, at any sampled frame. Applied
-    to every non-selected dot, so each V1 RF really does hold one dot and only
-    one throughout — the property the whole figure depends on."""
+    """True if this dot never overlaps either V1 RF at any point of the window.
+
+    Applied to every non-selected dot, so each V1 RF really does hold one dot and
+    only one throughout. For a translating dot the test is taken over ALL EIGHT
+    probe directions, not just the heading: coherence is assigned by index after
+    placement, so a dot must clear the RFs whichever direction it ends up with.
+    """
     keep = RF_R_DEG + DOT_DIAM_DEG / 2
-    pts = np.asarray(p0, float)[None, :]
-    for t in _TS:
-        q = _positions_at(pts, sense, translates, t)[0]
-        if (np.hypot(q[0] - RF_LEFT[0], q[1] - RF_LEFT[1]) < keep or
-                np.hypot(q[0] - RF_RIGHT[0], q[1] - RF_RIGHT[1]) < keep):
-            return False
-    return True
+    L = np.asarray(RF_LEFT); R = np.asarray(RF_RIGHT)
+
+    def hits(path):
+        for q in path[::3]:
+            if np.hypot(*(q - L)) < keep or np.hypot(*(q - R)) < keep:
+                return True
+        return False
+
+    pre = _rotation_path(p0, sense, PRE_MS)
+    if hits(pre):
+        return False
+    if translates:
+        return not any(hits(_translation_path(pre[-1], TRANS_MS, direction=d))
+                       for d in _DIRS8)
+    return not hits(_rotation_path(pre[-1], sense, TRANS_MS))
+
+
+def _probe_dirs(n):
+    """Per-dot probe direction for a translating field: alternate coherent / noise
+    so index 0 (the selected dot, which must be coherent) and the MT-RF filler dots
+    both get a mix, and cycle the noise dots through all eight directions.
+
+    Blocking them instead — first half coherent, second half noise — would put every
+    filler dot in the same class, and the MT blow-up would show no fan at all.
+    """
+    dirs = np.zeros((n, 2)); coh = np.zeros(n, bool)
+    j = 0
+    for i in range(n):
+        if i % 2 == 0:                       # index 0 -> coherent, as required
+            coh[i] = True
+            dirs[i] = HEADING
+        else:
+            dirs[i] = _DIRS8[j % len(_DIRS8)]
+            j += 1
+    return dirs, coh
 
 
 def _sample_spread(n_each, rng, accept, senses, k=None, tries=4000):
@@ -288,23 +344,35 @@ def build_layout(seed=7):
 
 FIELD_A, FIELD_B, IDX_A, IDX_B, N_FILL, N_PEPPER = build_layout()
 
+# Probe direction per dot, for whichever field translates. The selected dot is
+# index 0 and comes out coherent, as it must — it is the one whose path the V1
+# blow-up shows staying inside its RF.
+PDIR_A, COH_A = _probe_dirs(len(FIELD_A))
+PDIR_B, COH_B = _probe_dirs(len(FIELD_B))
+
 
 def selected(which):
-    """(start position, colour, sense, translates, RF centre) for a chosen dot."""
+    """(start, colour, sense, translates, RF centre, probe direction) for a chosen
+    dot. Both are coherent — index 0 of `_probe_dirs` always is."""
     if which == "left":
-        return (FIELD_A[IDX_A], RED, "CCW", TRANSLATING_FIELD == "uncued", RF_LEFT)
-    return (FIELD_B[IDX_B], GREEN, "CW", TRANSLATING_FIELD == "cued", RF_RIGHT)
+        return (FIELD_A[IDX_A], RED, "CCW", TRANSLATING_FIELD == "uncued",
+                RF_LEFT, PDIR_A[IDX_A])
+    return (FIELD_B[IDX_B], GREEN, "CW", TRANSLATING_FIELD == "cued",
+            RF_RIGHT, PDIR_B[IDX_B])
 
 
 def dots_in(centre, radius):
-    """Every dot whose START position lies in a region — used by the blow-ups."""
+    """Every dot whose START position lies in a region, with its own probe
+    direction — used by the blow-ups. Returns
+    (position, colour, sense, translates, probe_dir, coherent)."""
     out = []
-    for pts, colour, sense, role in [(FIELD_B, GREEN, "CW", "cued"),
-                                     (FIELD_A, RED, "CCW", "uncued")]:
+    for pts, dirs, coh, colour, sense, role in [
+            (FIELD_B, PDIR_B, COH_B, GREEN, "CW", "cued"),
+            (FIELD_A, PDIR_A, COH_A, RED, "CCW", "uncued")]:
         translates = (role == TRANSLATING_FIELD)
-        for p in pts:
+        for i, p in enumerate(pts):
             if np.hypot(p[0] - centre[0], p[1] - centre[1]) < radius:
-                out.append((p, colour, sense, translates))
+                out.append((p, colour, sense, translates, dirs[i], bool(coh[i])))
     return out
 
 
@@ -378,7 +446,7 @@ def excursion(path, rf_c):
 def report():
     from collections import Counter
     ins = dots_in(MT_C, MT_R_DEG)
-    c = Counter(col for _, col, _, _ in ins)
+    c = Counter(col for _, col, _, _, _, _ in ins)
     arc = np.radians(OMEGA_DEG_S) * ECC_DEG * PRE_MS / 1000.0
     print(f"density        {DENSITY} dots/deg^2/field ({N_DOTS} per field)"
           f"   [experiment 5.0]")
@@ -392,15 +460,19 @@ def report():
     print(f"\nLAYOUT CONSTRUCTED, not searched:")
     print(f"  per field    1 selected + {N_FILL} filler (in the MT RF) + "
           f"{N_PEPPER} pepper = {1 + N_FILL + N_PEPPER}  (density target {N_DOTS})")
+    n_coh = sum(1 for d in ins if d[3] and d[5])
+    n_noi = sum(1 for d in ins if d[3] and not d[5])
     print(f"  in the MT RF {len(ins)} dots -> green {c[GREEN]}, red {c[RED]}")
+    print(f"  probe        {COHERENCE:.0%} coherent: of the translating dots in the "
+          f"MT RF, {n_coh} take the heading and {n_noi} fan over 8 directions")
     print(f"  V1 RFs       placed symmetrically about the MT RF centre, so inside "
           f"it by construction")
     print(f"  every other dot is verified to clear BOTH V1 RFs at all "
           f"{SEARCH_FRAMES} sampled frames")
     print(f"\nCONTAINMENT of the two selected dots (edge, not centre):")
     for which in ("left", "right"):
-        p0, _, sense, tr, rf_c = selected(which)
-        pre, during = dot_trajectory(p0, sense, tr)
+        p0, _, sense, tr, rf_c, pd = selected(which)
+        pre, during = dot_trajectory(p0, sense, tr, pd)
         exc = excursion(np.vstack([pre, during]), rf_c)
         e = np.hypot(*rf_c)
         print(f"  {which:5s} ecc {e:.3f}  edge reaches {exc:.4f} of RF radius "
