@@ -50,6 +50,7 @@ Run either figure script; this module builds the layout on import.
 
 import numpy as np
 from matplotlib.patches import Circle, FancyArrowPatch
+from matplotlib.path import Path
 from matplotlib.lines import Line2D
 
 from web_figures import INK, INK2, BORDER, ACCENT, CUED, UNCUED, SURFACE
@@ -113,6 +114,46 @@ TRANS_MS     = 100.0                # probe duration. Real experiments span 40 m
                                     # legible: 0.226 deg = 2.8 dot-widths, against
                                     # 0.090 = 1.1 at 40 ms.
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
+
+# ── the rotation-sense arcs, drawn INSIDE the aperture ──
+# The convention is Stoner & Blanc (2010) Fig. 1A's, matched from the paper: two
+# near-semicircular arcs INSIDE the aperture at ~0.78 of its radius, each running
+# from just off the top down its own side, with big filled heads meeting at the
+# bottom. Red takes the left, green the right, and the heads point at each other.
+#
+# The senses are the true ones for the side each arc sits on -- at the left
+# counter-clockwise is locally down, at the right clockwise is locally down -- so
+# both sweep toward the bottom, which is why the heads converge there.
+#
+# The two arcs are exact MIRROR IMAGES about the vertical midline, with an equal
+# 30 deg gap at the top between the tails and at the bottom between the heads, so
+# neither pair touches. Each span is written start -> end, so the SIGN of
+# (end - start) is the sense.
+#
+# Mind which end is which: the red arc runs down the LEFT, so its tail is the
+# angle LEFT of vertical (105) and the green arc's tail is the one right of it
+# (75). Getting that backwards does not merely shift them -- each tail crosses
+# onto the other's side and the two arcs visibly overlap at the top. The
+# assertion below pins the mirror relation so it cannot regress silently.
+#
+# The green arc has to cross both the shaded MT RF and, in the V1 figure, the
+# right V1 RF: it sweeps down the right side, the V1 RFs sit on the horizontal
+# axis spanning 0.845-1.855 deg, and the gap between them is 0.05 deg, so no
+# radius threads through. The arcs are therefore drawn BENEATH the dots and the
+# RF outlines (zorder 3, under dots at 4 and V1 circles at 6) -- which is S&B's
+# own layering, and leaves every outline and dot unbroken.
+ROT_ARC_R    = APERTURE_DEG * 0.78
+ROT_ARC_PAD  = 0.14                 # axis margin; the arcs are inside, so this
+                                    # only has to clear the aperture rim
+ROT_ARC_LW   = 3.2
+ROT_ARC_HEAD = 26                   # S&B's heads are broad triangles
+CCW_ARC      = (105.0, 255.0, ROT_ARC_R)    # red, down the LEFT, head at bottom
+CW_ARC       = (75.0, -75.0, ROT_ARC_R)     # green, down the RIGHT, head at bottom
+
+# mirror about the vertical midline: theta -> 180 - theta
+assert all(abs((180.0 - a) - b) < 1e-9 for a, b in zip(CCW_ARC[:2], CW_ARC[:2])), \
+    "rotation arcs are not mirror images about the midline"
+assert CCW_ARC[2] == CW_ARC[2], "rotation arcs are at different radii"
 
 # ── coherence of the probe: 50%, exactly as the experiment does it ──
 # StimulusBuilder.StepTranslationBalanced steps the NOISE half by
@@ -421,13 +462,28 @@ def draw_trajectory(ax, pre, during, colour, lw_pre, lw_during, head, z,
                  mutation_scale=head, color=colour, lw=0, zorder=z))
 
 
+def _rotation_arc(ax, t0, t1, radius, colour, lw=None, z=3):
+    """A big arc arrow outside the aperture giving one field's rotation sense.
+
+    Sweeps t0 -> t1 in degrees with the head at the t1 end, so the sign of
+    (t1 - t0) IS the sense: increasing is counter-clockwise, decreasing is
+    clockwise. Nothing here reads the dots; it is pure annotation.
+    """
+    t = np.radians(np.linspace(t0, t1, 128))
+    pts = np.column_stack([radius * np.cos(t), radius * np.sin(t)])
+    ax.add_patch(FancyArrowPatch(
+        path=Path(pts), arrowstyle="-|>", mutation_scale=ROT_ARC_HEAD,
+        color=colour, lw=ROT_ARC_LW if lw is None else lw, shrinkA=0, shrinkB=0,
+        joinstyle="round", capstyle="round", zorder=z))
+
+
 def draw_stimulus(ax, show_v1_rfs=False, legend=True):
     """THE shared stimulus panel. Dots only — no motion is drawn here.
 
     `show_v1_rfs` is the ONLY thing that differs between the two figures.
     """
     ax.set_aspect("equal"); ax.axis("off")
-    lim = APERTURE_DEG + 0.14
+    lim = APERTURE_DEG + ROT_ARC_PAD
     ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
 
     ax.add_patch(Circle((0, 0), APERTURE_DEG, facecolor="#fafafa",
@@ -444,6 +500,9 @@ def draw_stimulus(ax, show_v1_rfs=False, legend=True):
         for c in (RF_LEFT, RF_RIGHT):
             ax.add_patch(Circle(c, RF_R_DEG, facecolor="none", edgecolor=INK,
                                 lw=2.0, zorder=6))
+
+    _rotation_arc(ax, *CCW_ARC, RED)
+    _rotation_arc(ax, *CW_ARC, GREEN)
 
     ax.plot(0, 0, marker="+", ms=12, mew=2.2, color=INK, zorder=9)
 
