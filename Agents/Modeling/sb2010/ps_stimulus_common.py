@@ -105,6 +105,15 @@ TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 # ── sampling of the window, used when checking dots against the V1 RFs ──
 SEARCH_FRAMES = 21
 
+# How evenly the dots outside the RFs are spread. Best-candidate sampling draws
+# SPREAD_K random candidates per dot and keeps the one farthest from those already
+# placed. 1 = plain uniform random, which visibly clumps; large values tend to a
+# lattice. Measured over the 64 dots outside the MT RF:
+#     k=1   spacing CV 0.64   left/right 45/19   (area predicts 36/28)
+#     k=6   spacing CV 0.36   left/right 38/26
+#     k=14  spacing CV 0.16   left/right 34/30   -- too regular to read as drawn
+SPREAD_K      = 6
+
 
 # ═══════════════════════════════════════════════════════════ geometry ══
 def _field(n, rng):
@@ -210,7 +219,7 @@ def _clears_v1(p0, sense, translates):
     return True
 
 
-def _sample_spread(n_each, rng, accept, senses, k=14, tries=4000):
+def _sample_spread(n_each, rng, accept, senses, k=None, tries=4000):
     """Blue-noise sampling: place 2 x `n_each` dots (alternating colour) so the
     UNION of the two fields is evenly spread, while each position is still drawn
     at random.
@@ -225,6 +234,7 @@ def _sample_spread(n_each, rng, accept, senses, k=14, tries=4000):
     `k` sets how far from uniform it stays: k=1 is plain random, large k tends to
     a lattice. 14 is enough to remove visible clumping while still looking drawn.
     """
+    k = SPREAD_K if k is None else k
     placed = []
     out = {"A": [], "B": []}
     for i in range(2 * n_each):
