@@ -66,8 +66,15 @@ RF_R_DEG     = SIGMA_DEG
 _SEP         = RF_DIAM_DEG + RF_GAP_DEG
 
 # ── the MT RF: off to one side of fixation, as in fig_modelI_stimulus ──
-MT_ECC_DEG   = 1.05
-MT_R_DEG     = 0.70                 # 35% of the aperture radius, matching fig_modelI
+# Size and position are the MODEL'S OWN operating point, not chosen for the page.
+# pointset/logs/HANDOFF_2026-07-27.md: "GS chose a 2 deg square RF at 1 deg
+# eccentricity, which deliberately does NOT obey MT RF ~ eccentricity — a 2 deg RF
+# at 2 deg ecc would be half off the S&B display." The general rule quoted in
+# CORRECTIONS_REGISTER F9 is MT RF diameter ~ eccentricity, which at 1 deg would
+# give only 1 deg; the model uses 2 deg so the patch sits inside the dot annulus.
+# Note that log also says "RF size is expected to be tweaked from here".
+MT_ECC_DEG   = 1.0
+MT_R_DEG     = 1.0                  # 2 deg diameter — tangent to the aperture edge
 MT_C         = (MT_ECC_DEG, 0.0)
 
 # ── motion ──
@@ -78,18 +85,29 @@ TRANS_MS     = 40.0                 # parameters.T_TRANS (3 frames @ 75 Hz)
 TRANSLATING_FIELD = "cued"          # "cued" (green) or "uncued" (red)
 
 # ── the search ──
-SEARCH_SEEDS  = range(1, 600)
+SEARCH_SEEDS  = range(1, 2500)
 SEARCH_FRAMES = 21
 SEARCH_STEP   = 0.04
 _PLAY         = MT_R_DEG - _SEP / 2 - RF_R_DEG   # both V1 RFs stay inside the MT RF
-GOOD_ENOUGH   = 1.30
-MT_MIN_DOTS   = 7                   # the SAME layout feeds Figure 2's MT-RF blow-up,
-                                    # so reject seeds that leave that panel empty.
-                                    # This trades against how well centred the V1
-                                    # pair is; measured over 599 seeds:
-                                    #   min 0 -> best margin 1.40x, but 3 dots
-                                    #   min 7 -> 1.31x with 7 dots   <- the knee
-                                    #   min 8 -> 1.10x with 9 dots
+GOOD_ENOUGH   = 1.40   # never reached in practice: search all seeds, take best
+MIN_ARC_DOTS  = 2.0                 # the pre-probe rotation arc must be at least
+                                    # this many dot-widths long, or the blow-up
+                                    # shows a dot with no visible path. Tangential
+                                    # speed goes as eccentricity, so this is a floor
+                                    # on how far out the pair may sit:
+                                    #   0.85 deg -> 1.5 dot-widths (too short)
+                                    #   1.20 deg -> 2.1            (legible)
+MT_BALANCE    = 1                   # max |n_green - n_red| inside the MT RF (GS:
+                                    # roughly equal numbers of each). Exact equality
+                                    # (0) is over-constrained once combined with the
+                                    # whole-dot purity test and the arc-length floor
+                                    # — no layout in 500 seeds satisfies all four.
+                                    # At 1 the chosen layout happens to come out 9/9
+                                    # anyway.
+MT_MIN_DOTS   = 12                  # the SAME layout feeds Figure 2's MT-RF blow-up,
+                                    # so reject seeds that leave that panel thin.
+                                    # At the 2 deg MT RF the mean over 399 seeds is
+                                    # 17.8 dots, range 8-29.
 
 
 # ═══════════════════════════════════════════════════════════ geometry ══
@@ -163,15 +181,22 @@ def find_pure_pair(seeds=SEARCH_SEEDS, whole_dot=True):
         rng = np.random.default_rng(seed)
         A = _field(N_DOTS, rng)                     # red, CCW, uncued
         B = _field(N_DOTS, rng)                     # green, CW, cued
-        # cheap reject first: this layout also has to populate Figure 2's blow-up
-        n_mt = int((np.hypot(*(np.vstack([A, B]) - np.array(MT_C)).T)
-                    < MT_R_DEG).sum())
-        if n_mt < MT_MIN_DOTS:
+        # Cheap rejects first — this layout also has to serve Figure 2's blow-up:
+        #   enough dots in the MT RF to populate that panel, AND
+        #   roughly equal numbers of the two surfaces in it, so the blow-up does
+        #   not read as one field dominating when neither does (GS).
+        nA = int((np.hypot(*(A - np.array(MT_C)).T) < MT_R_DEG).sum())
+        nB = int((np.hypot(*(B - np.array(MT_C)).T) < MT_R_DEG).sum())
+        if nA + nB < MT_MIN_DOTS or abs(nA - nB) > MT_BALANCE:
             continue
         PA = [_positions_at(A, "CCW", trA, t) for t in ts]
         PB = [_positions_at(B, "CW", trB, t) for t in ts]
         for dx, dy in offs:
             cx, cy = MT_C[0] + dx, MT_C[1] + dy
+            # far enough out that 100 ms of rotation is a visible arc, not a smudge
+            if np.radians(OMEGA_DEG_S) * np.hypot(cx, cy) * PRE_MS / 1000.0 \
+                    < MIN_ARC_DOTS * DOT_DIAM_DEG:
+                continue
             Lc = np.array([cx - _SEP / 2, cy]); Rc = np.array([cx + _SEP / 2, cy])
             inAL = [set(np.where(np.hypot(*(pa - Lc).T) < r_in)[0]) for pa in PA]
             if any(len(s_) != 1 for s_ in inAL): continue
