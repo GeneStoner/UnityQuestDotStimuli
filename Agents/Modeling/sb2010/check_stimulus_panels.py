@@ -59,57 +59,85 @@ def aperture_bbox(path):
     return im, diam, cx, cy
 
 
-def main():
-    a_im, a_d, a_cx, a_cy = aperture_bbox("mt_rf_figure.png")
-    b_im, b_d, b_cx, b_cy = aperture_bbox("ps_two_rf_figure.png")
+FIGURES = ["mt_rf_figure.png", "ps_two_rf_figure.png", "ps_two_hc_figure.png"]
 
-    print(f"aperture diameter   mt_rf {a_d:.1f} px   ps_two_rf {b_d:.1f} px"
-          f"   ratio {a_d / b_d:.4f}")
+# Which figures call draw_stimulus(show_v1_rfs=True). Two figures that agree on
+# this flag must be pixel-IDENTICAL in the stimulus panel; two that disagree may
+# differ only by the V1 circles, their leader and their label -- all of which sit
+# right of the aperture centre.
+WITH_V1 = {"ps_two_rf_figure.png", "ps_two_hc_figure.png"}
+
+
+def _crop(im, cx, cy, hx, hy):
+    x0, y0 = int(round(cx)) - hx, int(round(cy)) - hy
+    return im[max(y0, 0):y0 + 2 * hy, max(x0, 0):x0 + 2 * hx]
+
+
+def compare(a, b, panels):
+    """One pairwise check. Returns 0 on pass, 1 on fail."""
+    a_im, a_d, a_cx, a_cy = panels[a]
+    b_im, b_d, b_cx, b_cy = panels[b]
+    same_flag = (a in WITH_V1) == (b in WITH_V1)
+    kind = "IDENTICAL" if same_flag else "V1 circles only"
+    print(f"\n── {a}  vs  {b}   (expect: {kind})")
+
     if abs(a_d / b_d - 1) > 0.005:
-        print("  !! SCALE MISMATCH -- the two panels are not the same size")
+        print(f"  !! SCALE MISMATCH  {a_d:.1f} vs {b_d:.1f} px"
+              f"  ratio {a_d / b_d:.4f}")
         return 1
 
-    # crop a common window around the aperture, generous enough to take in the
-    # arcs on the left and the RF labels on the right
     # Wide horizontally -- the "Area MT RF" and "Area V1 RFs" labels sit well
     # outside the rim -- but only just past the rim vertically: the panel titles
-    # and the figure footers sit above and below and differ between the two
-    # figures by design. Keep py small; it is measured in units of the aperture
-    # diameter, which changes whenever the axis padding does.
+    # and the figure footers sit above and below and differ by design. py is in
+    # units of the aperture diameter, which changes whenever axis padding does.
     px, py = int(round(a_d * 0.42)), int(round(a_d * 0.03))
     hx, hy = int(a_d / 2) + px, int(a_d / 2) + py
-    def crop(im, cx, cy):
-        x0, y0 = int(round(cx)) - hx, int(round(cy)) - hy
-        return im[max(y0, 0):y0 + 2 * hy, max(x0, 0):x0 + 2 * hx]
-    A, B = crop(a_im, a_cx, a_cy), crop(b_im, b_cx, b_cy)
-    h = min(A.shape[0], B.shape[0]); w = min(A.shape[1], B.shape[1])
+    A, B = _crop(a_im, a_cx, a_cy, hx, hy), _crop(b_im, b_cx, b_cy, hx, hy)
+    h, w = min(A.shape[0], B.shape[0]), min(A.shape[1], B.shape[1])
     A, B = A[:h, :w], B[:h, :w]
 
     diff = np.abs(A - B) > 40
     lab, n = ndimage.label(diff)
     sizes = ndimage.sum(diff, lab, range(1, n + 1))
-    big = [(int(s), ndimage.center_of_mass(diff, lab, i + 1))
-           for i, s in enumerate(sizes) if s >= MIN_BLOB]
-    big.sort(reverse=True)
+    big = sorted(((int(s), ndimage.center_of_mass(diff, lab, i + 1))
+                  for i, s in enumerate(sizes) if s >= MIN_BLOB), reverse=True)
+    print(f"   aperture {a_d:.0f} px both · crop {w}x{h} · differing pixels "
+          f"{int(diff.sum())} · blobs >= {MIN_BLOB}px: {len(big)}")
 
-    print(f"crop {w}x{h}px   differing pixels {int(diff.sum())}"
-          f"   blobs >= {MIN_BLOB}px: {len(big)}")
-    for s, (cy, cx) in big:
-        print(f"    {s:6d} px  at  x {cx:6.0f}  y {cy:6.0f}")
-    # Verdict. Everything that may legitimately differ -- the two V1 RF
-    # circles, their leader, their label -- lives to the RIGHT of the aperture
-    # centre. A blob on the left half means the shared drawing diverged: the
-    # rotation arcs, the legend, or the dots themselves.
+    if same_flag:
+        # Both draw the same thing: ANY blob is a divergence.
+        if big:
+            print(f"   FAIL: {len(big)} blob(s) where the panels must be identical:")
+            for s_, (cy_, cx_) in big[:8]:
+                print(f"      {s_:6d} px  at  x {cx_:6.0f}  y {cy_:6.0f}")
+            return 1
+        print("   PASS: the two stimulus panels are pixel-identical.")
+        return 0
+
     stray = [(s_, c) for s_, c in big if c[1] < hx]
     if stray:
-        print("\nFAIL: %d difference blob(s) on the LEFT, where the two panels"
-              " must agree:" % len(stray))
+        print(f"   FAIL: {len(stray)} blob(s) on the LEFT, where the panels must agree:")
         for s_, (cy_, cx_) in stray:
-            print(f"    {s_:6d} px  at  x {cx_:6.0f}  y {cy_:6.0f}")
+            print(f"      {s_:6d} px  at  x {cx_:6.0f}  y {cy_:6.0f}")
         return 1
-    print("\nPASS: every difference is the V1 RF circles, their leader and"
+    print("   PASS: every difference is the V1 RF circles, their leader and"
           " their label, all right of centre.")
     return 0
+
+
+def main():
+    panels = {}
+    for fn in FIGURES:
+        im, d, cx, cy = aperture_bbox(fn)
+        panels[fn] = (im, d, cx, cy)
+        print(f"{fn:26s} aperture {d:.1f} px")
+
+    rc = 0
+    for i in range(len(FIGURES)):
+        for j in range(i + 1, len(FIGURES)):
+            rc |= compare(FIGURES[i], FIGURES[j], panels)
+    print("\n" + ("ALL PASS" if rc == 0 else "FAILURES ABOVE"))
+    return rc
 
 
 if __name__ == "__main__":
