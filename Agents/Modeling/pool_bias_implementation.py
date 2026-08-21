@@ -154,13 +154,22 @@ def build(out="pool_bias_implementation.pdf"):
             synapse type is the one [1] documents, branch specificity included.""")
         p.gap(0.008)
         img = plt.imread(FIG)
-        h = (R - L) * (img.shape[0] / img.shape[1]) * (PAGE[0] / PAGE[1])
-        ax = p.fig.add_axes([L, p.y - h - 0.010, R - L, h]); ax.imshow(img); ax.axis("off")
+        w = R - L
+        h = w * (img.shape[0] / img.shape[1]) * (PAGE[0] / PAGE[1])
+        # ⚠️ CLAMP. The IVD figure grew from 2740x1755 to 2380x2102 when it was re-laid out
+        # (2026-08-21), i.e. from 40% to 55% of the page. At full width that leaves NEGATIVE
+        # room for the caption below it. Scale to fit and centre; do not just widen the margins.
+        HMAX = 0.44
+        if h > HMAX:
+            w *= HMAX / h; h = HMAX
+        ax = p.fig.add_axes([0.5 - w/2, p.y - h - 0.010, w, h]); ax.imshow(img); ax.axis("off")
         p.gap(h + 0.026)
         p.body("""Figure: fig_modelIVD_profile.png, from ToyModel/fig_bias_profile.py IVD.
-            The gain column is flat -- attention is absent from it -- and the tuned feedback axon
-            instead runs down the pool cell's dendritic field, its bouton on each branch scaled
-            by the model's own bias profile.""", size=9)
+            No attention reaches the gain at all: the gain is the single cooperative scalar C,
+            which is why it arrives on the spine as a bare line and gets no panel. The tuned
+            feedback axon instead runs down the pool cell's dendritic field, its bouton on each
+            branch scaled by the model's own bias profile, so the branch hands (1+a)R to the
+            trunk and the V1 cells are never touched.""", size=9)
 
         p.close()
 
