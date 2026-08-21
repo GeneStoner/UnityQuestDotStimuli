@@ -194,6 +194,58 @@ def build(out="pool_bias_implementation.pdf"):
 
         # ═══════════════════════════════════════════════ page 5
         p = Page(pdf, running="Implementing the pool bias")
+        p.h2("Two further findings, and they change the ranking")
+
+        p.h2("Tuned wiring is not required — and that cuts both ways", GOOD)
+        ref(p, "[5]", [
+            "Near-random connections support top-down feature-based attentional modulations",
+            "in early sensory cortex. PLOS Computational Biology, 2025.",
+            "journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1013396"])
+        p.body("""Tuning-matched projections are NOT necessary for feature-specific modulation.
+            Near-random feedback suffices, because \"the randomness of the feedback connections
+            ensures that incidental feedback signals largely cancel out\" -- spurious cross-talk
+            destructively interferes while the useful signal survives. The authors add that \"a
+            delicate balance between randomness and structure\" best reproduces the spatial
+            globality of feature-based attention, and that TOO MUCH structure is actively
+            harmful, producing spurious representations in unstimulated regions.""", indent=0.02)
+        p.body("""This dissolves the addressing problem -- how would a tuned axon find the
+            theta-preferring cells? -- and with it what looked like Model III's main cost, sorting
+            968 V1 cells by tuning. But it cuts AGAINST dendritic gating. Near-random connectivity
+            is a good account of \"across many cells, statistically the right ones get more\" and a
+            poor account of \"within one cell, the right branch\". Sub-cellular addressing is
+            precisely what randomness cannot supply.""", indent=0.02)
+        p.gap(0.004)
+        table(p, ["", "under near-random feedback"],
+              [["*Model III", "+HELPED — documented synapse type, and no addressing needed"],
+               ["*Model IV, match-cell bank", "helped — a tuned population selects statistically"],
+               ["*Model IV, dendritic gating", "-WEAKENED — needs the one thing randomness cannot give"]],
+              colx=[L + 0.02, L + 0.30])
+        p.body("""So the recommendation on page 3 is downgraded. If Model IV is to be built, a
+            small tuned population is more compatible with unstructured feedback than
+            branch-level gating is: the extra cells buy robustness to random wiring. Model III
+            needs neither.""", indent=0.02)
+
+        p.h2("A direct prefrontal projection does carry attentional gain", GOOD)
+        ref(p, "[6]", [
+            "Hüer, Saxena & Treue. Pathway-selective optogenetics reveals the functional anatomy",
+            "of top-down attentional modulation in the macaque visual cortex. PNAS 121(3), 2024."])
+        p.body("""Optogenetic inhibition of the FEF-to-MT axons, in MT, cut attentional
+            modulation by about a third (median 19.4% to 13.6%) with NO significant effect on
+            firing rates overall -- and push-pull: attend-in fell 2.1%, attend-out rose 3.4%. A
+            direct prefrontal-to-visual projection therefore carries a substantial part of
+            attentional modulation and does so without changing the driven response, which is the
+            signature both our models assume of a pure gain term.""", indent=0.02)
+        p.body("""Two cautions. It is a SPATIAL attention task: the FEF-to-MT projection is
+            \"assumed to be retinotopically organized\" and the paper does not test whether the
+            input is tuned to the neurons' direction preference. So it does not supply the
+            feature-tuned bias either. And the pathway selectivity is the EXPERIMENTER'S, achieved
+            by expressing opsins in the axonal membrane -- it is not evidence that the brain
+            modulates selected terminals endogenously, and must not be read as support for the
+            axo-axonic route.""", indent=0.02)
+        p.close()
+
+        # ═══════════════════════════════════════════════ page 6
+        p = Page(pdf, running="Implementing the pool bias")
         p.h2("What this costs, and what it does not settle")
         p.body("""The dendritic version costs exactly what Model III costs -- 17 neurons per
             point-set, 2057 on the locked grid -- so the choice between the two routes is no
@@ -239,7 +291,11 @@ def build(out="pool_bias_implementation.pdf"):
             ("[3]", "Pre- and postsynaptic activation of GABA-B receptors modulates principal cell"),
             ("  ", "excitation in the piriform cortex, 2018."),
             ("[4]", "Wilson, Whitney, Scholl & Fitzpatrick. Orientation selectivity and the functional"),
-            ("  ", "clustering of synaptic inputs in primary visual cortex. Nature Neuroscience, 2016.")]:
+            ("  ", "clustering of synaptic inputs in primary visual cortex. Nature Neuroscience, 2016."),
+            ("[5]", "Near-random connections support top-down feature-based attentional modulations"),
+            ("  ", "in early sensory cortex. PLOS Computational Biology, 2025."),
+            ("[6]", "Hüer, Saxena & Treue. Pathway-selective optogenetics reveals the functional"),
+            ("  ", "anatomy of top-down attentional modulation in the macaque visual cortex. PNAS, 2024.")]:
             p.fig.text(L, p.y, tag, fontsize=9, color=POOLC, va="top", fontweight="bold")
             p.fig.text(L + 0.048, p.y, txt, fontsize=9, color=INK2, va="top")
             p.gap(0.0168)
@@ -249,7 +305,7 @@ def build(out="pool_bias_implementation.pdf"):
             anything not attributed here is model measurement, not literature.""", size=9)
         p.close()
 
-    print(f"wrote {out}  (5 pages)")
+    print(f"wrote {out}  (6 pages)")
 
 
 if __name__ == "__main__":
