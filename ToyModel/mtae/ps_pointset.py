@@ -1,6 +1,11 @@
 """
 POINT-SET model on the faithful cued-translation stimulus: 2 V1 hypercolumns -> 1 MT hypercolumn.
 
+NOT the HC/PS point-set model (pointset/hcps_grid.m). This has no colour hypercolumn, so it cannot
+speak to where the attentional bias enters -- the Model III / Model IV question, which turns on what
+the bias does to an attribute that was never cued. Its FB term is like-to-like MT->V1 STIMULUS
+feedback, not a top-down bias; do not read it as the bias term (Agents/Modeling/bias_locus.pdf p.1).
+
 This is GS's spatially-extended point-set model COLLAPSED to its segregated idealization (= ps_seg):
 because at the V1 cRF scale (~0.16 deg) the S&B stimulus has ~0.1-0.2 dots/cRF/field, each active
 V1 hypercolumn is dominated by ONE surface. So the two transparent surfaces are represented by TWO
@@ -22,8 +27,13 @@ Read-out: MT translation detector = M[UP] - M[DOWN] over the test window.
 Cue for the cued surface B (delayed) -- two COMPETING accounts (never stacked, per S&B vs R&H):
   cue='adapt'  : feature-specific adaptation. B's onset is delayed so its direction cells are less
                  adapted -> stronger during the base period -> bigger E_B.
-  cue='attend' : object-based attentional bias on hypercolumn B (all its directions), the canonical
-                 point-set Bias term. Robustly makes E_B > E_A.
+  cue='attend' : FEATURE-based directional bias on B's base direction (RIGHT), applied to BOTH
+                 hypercolumns -- see biasVec below. It favours B only because B is the field whose
+                 drive peaks at RIGHT, so the surface selectivity is EMERGENT, not addressed. This
+                 is NOT the point-set Bias term, and this docstring claimed the opposite until
+                 2026-08-20; the code has always been feature-based. Because the bias follows the
+                 DIRECTION, it transfers to A under the motion swap -- which is exactly why the
+                 coop-OFF headline below reverses.
 
 Headline the model makes: with cooperation OFF the cueing is feature-based and REVERSES under the
 motion swap; with slow within-HC cooperation ON it is object-based and SURVIVES the swap. The slow

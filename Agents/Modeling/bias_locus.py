@@ -1,9 +1,14 @@
 """
-Where the attentional bias enters — two variants of the HC / PS model.
+Where the attentional bias enters — Model III vs Model IV of the HC / PS model.
 
-Builds `bias_locus.pdf`: a short technical note stating the two versions of the
-hypercolumn / point-set model that differ ONLY in where the top-down bias is
-applied, with the equations for each and the measurement that separates them.
+Builds `bias_locus.pdf`. REWRITTEN 2026-08-20 (second pass). The first pass posed
+this as an open question with two unnamed "variants" and closed by saying we did
+not know which one our code ran. Both halves of that were wrong: the two routes
+are the existing Model III / Model IV, they are implemented behind one boolean in
+two engines, and the locked operating point runs Model IV. The equations in the
+first pass also differed from the code in four places. All of it is corrected
+here against hcps_grid.m and toy_color.m, and the numbers come from
+pointset/hcps_bias_locus_check.m and pointset/hcps_bias_locus_ablate.m.
 
 No LaTeX, pandoc, reportlab or headless browser on this machine, so the document
 is typeset with matplotlib's PDF backend and mathtext. That constrains the maths
@@ -85,200 +90,263 @@ class Page:
         plt.close(self.fig)
 
 
-# ── the wiring comparison ────────────────────────────────────────────────────
+# ── helpers ──────────────────────────────────────────────────────────────────
 
-def _variant(ax, x0, bias_to_pool, n, subtitle):
-    """One point-set, with the bias arriving either at a channel or at the pool.
-
-    The pool sits at the TOP so that NEITHER bias arrow has to cross a
-    hypercolumn on its way in: variant 1 drops onto a motion channel, variant 2
-    drops onto the pool, and the only thing that differs between the two panels
-    is where that red arrow lands. An earlier layout put the pool at the bottom
-    and variant 1's arrow speared straight through the colour HC, which read as
-    the bias touching colour -- the exact opposite of the claim.
-    """
-    W, H = 44.0, 40.0
-    ax.add_patch(Rectangle((x0, 6), W, H, fill=False, edgecolor=POOL, lw=1.6,
-                           zorder=1))
-    ax.text(x0 + W / 2, 68.0, f"Variant {n}", ha="center", va="bottom",
-            fontsize=12.5, fontweight="bold", color=INK)
-    ax.text(x0 + W / 2, 63.5, subtitle, ha="center", va="bottom",
-            fontsize=9.5, color=MUTED)
-    ax.text(x0 + 2.5, 44.0, "point-set  $p$", fontsize=8.5, color=POOL, va="top")
-
-    cw, gap = 3.4, 0.9
-    rows = ((26.0, MOTION, "motion HC"), (14.0, COLOUR, "colour HC"))
-    for yy, col, lab in rows:
-        ax.text(x0 + 3.0, yy + 4.8, lab, fontsize=8.5, color=col, va="bottom")
-        for k in range(8):
-            hot = (not bias_to_pool) and lab.startswith("motion") and k == 5
-            ax.add_patch(Rectangle((x0 + 3.0 + k * (cw + gap), yy), cw, 4.0,
-                                   facecolor=BIAS if hot else "#f2f1ee",
-                                   edgecolor=col, lw=0.8, zorder=3))
-
-    ex, ey = x0 + W - 9.0, 40.0
-    ax.add_patch(Circle((ex, ey), 4.6, facecolor="white", edgecolor=POOL,
-                        lw=1.8, zorder=4))
-    ax.text(ex, ey, "$E$", ha="center", va="center", fontsize=11, color=POOL,
-            zorder=5)
-
-    # the pool returns ONE gain to every channel of both hypercolumns
-    for yy, _, _ in rows:
-        ax.add_patch(FancyArrowPatch((ex - 2.0, ey - 4.4), (x0 + 38.0, yy + 2.0),
-                                     arrowstyle="-|>", mutation_scale=9,
-                                     color=POOL, lw=1.0, alpha=0.85,
-                                     connectionstyle="arc3,rad=-0.30", zorder=2))
-    ax.text(x0 + W / 2, 9.5, "$G = 1+\\lambda E$  to every channel", fontsize=9,
-            color=POOL, ha="center")
-
-    tip = ((ex, ey + 5.2) if bias_to_pool
-           else (x0 + 3.0 + 5 * (cw + gap) + cw / 2, 30.4))
-    tail = (tip[0], 56.0)
-    ax.add_patch(FancyArrowPatch(tail, tip, arrowstyle="-|>", mutation_scale=13,
-                                 color=BIAS, lw=2.0, zorder=6))
-    ax.text(tail[0], 57.5, "$A$", ha="center", va="bottom", fontsize=12,
-            color=BIAS, fontweight="bold")
+CIRCUITRY = ("/Users/genestoner/Library/Mobile Documents/com~apple~CloudDocs/Documents/"
+             "MATLAB/TurkeyResearchII/LatestTurkey/ToyModel/fig_model%s_circuitry.png")
 
 
-def wiring_figure(page):
-    ax = page.fig.add_axes([L, page.y - 0.310, R - L, 0.300])
-    ax.set_xlim(0, 108); ax.set_ylim(0, 74)
-    ax.set_aspect("equal"); ax.axis("off")
-    _variant(ax, 4, False, 1, "bias on the CHANNEL")
-    _variant(ax, 60, True, 2, "bias into the POOL")
-    page.gap(0.325)
+def figure_page(pdf, which, title, caption):
+    """A full-width circuitry drawing, one model per page."""
+    p = Page(pdf, running="Where the attentional bias enters")
+    p.h2(title, DRIVE if which == "III" else POOLC)
+    p.body(caption)
+    img = plt.imread(CIRCUITRY % which)
+    h = (R - L) * (img.shape[0] / img.shape[1]) * (PAGE[0] / PAGE[1])
+    ax = p.fig.add_axes([L, p.y - h - 0.010, R - L, h])
+    ax.imshow(img); ax.axis("off")
+    p.gap(h + 0.024)
+    return p
+
+
+def table(page, headers, rows, colx, size=9.5, hsize=9.0):
+    """A plain left-aligned table; colx are figure-coordinate x positions."""
+    for x, htxt in zip(colx, headers):
+        page.fig.text(x, page.y, htxt, fontsize=hsize, color=MUTED, va="top",
+                      fontweight="bold")
+    page.gap(0.017)
+    page.fig.add_artist(plt.Line2D([L, R], [page.y + 0.004, page.y + 0.004],
+                                   color=RULE, lw=0.8))
+    page.gap(0.004)
+    for row in rows:
+        for x, cell in zip(colx, row):
+            bold = cell.startswith("*")
+            page.fig.text(x, page.y, cell.lstrip("*"), fontsize=size,
+                          color=INK if bold else INK2, va="top",
+                          fontweight="bold" if bold else "normal")
+        page.gap(0.0175)
+    page.gap(0.008)
+
+
+DRIVE, POOLC = "#b86b26", "#33578c"
 
 
 # ── the document ─────────────────────────────────────────────────────────────
 
 def build(out="bias_locus.pdf"):
     with PdfPages(out) as pdf:
-        # ---- page 1
+        # ═══════════════════════════════════════════════════════ page 1
         p = Page(pdf)
         p.h1("Where the attentional bias enters")
-        p.fig.text(L, p.y, "Two variants of the hypercolumn / point-set model",
+        p.fig.text(L, p.y, "Model III and Model IV of the hypercolumn / point-set model",
                    fontsize=12, color=INK2, va="top")
         p.gap(0.030)
-        p.fig.text(L, p.y, "2026-08-20", fontsize=9, color=MUTED, va="top")
+        p.fig.text(L, p.y, "2026-08-20  ·  second pass, rewritten against the code",
+                   fontsize=9, color=MUTED, va="top")
         p.gap(0.030)
         p.rule()
 
-        p.body("""Two versions of the basic hypercolumn / point-set model are on the
-            table. They share their architecture completely — a point-set holding a
-            motion hypercolumn and a colour hypercolumn, a single cooperative pool per
-            point-set that is shared across attributes, and divisive normalization that
-            is within attribute and flat across channels. They differ in exactly one
-            respect: where the top-down attentional bias is applied.""")
-        p.body("""That single difference decides whether attending to one feature
-            enhances the other attributes of the same surface by the SAME amount, or by
-            a strictly smaller one. It is therefore the difference the data can see.""")
+        p.h2("The answer, first")
+        p.body("""Two versions of the model differ in exactly one respect: where the
+            top-down attentional bias is applied. They are not new and they are not
+            unnamed. They are Model III (bias on the drive) and Model IV (bias into the
+            pool), built and compared on 2026-07-19, and they are implemented behind a
+            single boolean, prm.biasInPool.""")
+        p.body("""Exactly two engines implement both routes: toy_color.m (two surfaces)
+            and pointset/hcps_grid.m (the 121-point-set grid). Every other file that
+            mentions the flag is a driver that sets it. The locked operating point sets
+            it TRUE — hcps_op.m line 148 — so every published HC/PS number, and every
+            figure on the website, is Model IV.""")
+        p.body("""The first pass of this note closed by saying the two were not cleanly
+            separated in our code and that ps_pointset.py might be running Model III.
+            That was a misreading. ps_pointset.py is a different model — motion only,
+            two V1 hypercolumns, no colour hypercolumn, global normalization — and its
+            FB term is like-to-like MT->V1 stimulus feedback, not the top-down bias.""")
 
         p.h2("Common scaffolding")
         p.body("""Index a point-set by p, an attribute by a (motion or colour), and a
             channel within an attribute by theta — eight directions, eight hues.""")
-        p.eq("$D^{a}_{\\theta}(p,t)$        feedforward stimulus drive to a channel",
+        p.eq("$u^{a}_{\\theta}(p,t)$        feedforward stimulus drive to a channel",
              size=11)
-        p.eq("$A^{a}_{\\theta}$        top-down bias:  $1+\\beta$ on the attended "
-             "channel, $1$ elsewhere", size=11)
-        p.eq("$E(p,t)$        cooperative pool — ONE per point-set, shared across "
+        p.eq("$a_{\\theta}$        top-down bias: a graded von Mises bump, $0$ to "
+             "biasAmp", size=11)
+        p.eq("$S(p,t)$        cooperative pool — ONE per point-set, shared across "
              "attributes", size=11)
-        p.eq("$G(p,t) = 1 + \\lambda\\, E(p,t)$        the cooperative gain", size=11)
+        p.eq("$G(p,t) = 1 + \mathrm{CoopL}\, S(p,t)$        the cooperative gain",
+             size=11)
         p.gap(0.006)
-        p.body("""Both variants then normalize and rectify identically. Writing the
-            numerator of a channel as P:""")
-        p.eq("$N^{a}(p,t) \\; = \\; \\sum_{p'} w(p,p') \\, \\sum_{\\theta} "
-             "P^{a}_{\\theta}(p',t)$",
-             "within attribute, across space", dy=0.055)
-        p.eq("$R^{a}_{\\theta}(p,t) \\; = \\; \\dfrac{[\\,P^{a}_{\\theta}(p,t)\\,]^{2}}"
-             "{\\sigma^{2} + N^{a}(p,t)}$", dy=0.062)
-        p.body("""The denominator being FLAT across channels — one per point-set per
-            attribute — is load-bearing. Were normalization per-channel, each channel's
-            denominator would track its own numerator and the shared gain would divide
-            straight back out.""")
+        p.body("""Both routes then normalize identically. The drive is raised to the
+            power n BEFORE it is pooled, over channels and then over space:""")
+        p.eq("$R^{a}_{\\theta}(p) \; = \; \dfrac{R_{max}\,[\,D^{a}_{\\theta}(p)\,]^{n}}"
+             "{\sigma^{n} + w \sum_{p'} W_{n}(p,p') \sum_{\\theta'} "
+             "[\,D^{a}_{\\theta'}(p')\,]^{n}}$", dy=0.070)
+        p.body("""The denominator is FLAT across channels — one per point-set per
+            attribute — because normKapDir and normKapHue are 0, which makes the featural
+            kernel all-ones. That is a parameter, not a structural property. It is also
+            WITHIN attribute (featureNorm true), so motion and colour have separate
+            denominators. Page 6 shows that this last choice is what makes Model IV's
+            headline prediction contingent rather than structural.""")
         p.close()
 
-        # ---- page 2
+        # ═══════════════════════════════════════════════════════ page 2
         p = Page(pdf, running="Where the attentional bias enters")
-        p.h2("The one structural difference")
-        p.body("""Everything above is common. The variants differ only in which arrow
-            the bias A travels along:""")
-        wiring_figure(p)
+        p.h2("The two routes, in the code's own algebra")
+        p.body("""Verbatim from hcps_grid.m lines 222-240 and toy_color.m lines 67-75,
+            which agree with each other.""")
+
+        p.h2("Model III — bias on the drive", DRIVE)
+        p.body("""The bias joins the cooperative term inside a single gain factor on the
+            feedforward drive. The pool integrates the cells' plain responses.""")
+        p.eq("$D^{a}_{\\theta} \; = \; u^{a}_{\\theta} \, "
+             "(\, 1 + a_{\\theta} + \mathrm{CoopL}\, S \,)$")
+        p.eq("$\\tau_{S}\, \dot S \; = \; -S \; + \; \sum_{\\theta} R^{m}_{\\theta} "
+             "\; + \; \sum_{\\theta} R^{c}_{\\theta}$", dy=0.052)
+
+        p.h2("Model IV — bias into the pool", POOLC)
+        p.body("""The drive carries no bias at all. The bias re-weights what the pool
+            neuron sees, and the pool returns one scalar gain to every channel of both
+            hypercolumns.""")
+        p.eq("$D^{a}_{\\theta} \; = \; u^{a}_{\\theta} \, "
+             "(\, 1 + \mathrm{CoopL}\, S \,)$")
+        p.eq("$\\tau_{S}\, \dot S \; = \; -S \; + \; \sum_{\\theta} "
+             "(\,1 + a_{\\theta}\,) R^{m}_{\\theta} \; + \; \sum_{\\theta} "
+             "R^{c}_{\\theta}$", dy=0.052)
+
         p.rule()
-
-        p.h2("Variant 1 — bias on the channel", BIAS)
-        p.body("""The bias multiplies the stimulus drive of the attended channel
-            directly. That channel is then enhanced twice — once by the bias, and again
-            by the pool gain it helped create — while every other channel in the
-            point-set is enhanced only by the pool gain.""")
-        p.eq("$P^{a}_{\\theta} \\; = \\; D^{a}_{\\theta} \\cdot A^{a}_{\\theta} "
-             "\\cdot G$")
-        p.eq("$\\tau_{E}\\, dE/dt \\; = \\; -E \\; + \\; S\\left( \\sum_{a} "
-             "\\sum_{\\theta} P^{a}_{\\theta} \\right)$",
-             "$S$ = saturating nonlinearity", dy=0.052)
-
-        p.h2("Variant 2 — bias into the pool", BIAS)
-        p.body("""The bias appears only in what drives the pool. It therefore selects
-            which point-sets acquire a strong pool, but once the pool has settled it
-            returns one gain, applied identically to every channel the point-set
-            holds.""")
-        p.eq("$P^{a}_{\\theta} \\; = \\; D^{a}_{\\theta} \\cdot G$")
-        p.eq("$\\tau_{E}\\, dE/dt \\; = \\; -E \\; + \\; S\\left( \\sum_{a} "
-             "\\sum_{\\theta} A^{a}_{\\theta} \\, D^{a}_{\\theta} \\right)$", dy=0.052)
+        p.h2("Four corrections to the first pass")
+        table(p, ["", "first pass said", "the code does"],
+              [["*1", "$D \cdot A \cdot G$, multiplicative", "$u\,(1+a+\mathrm{CoopL}S)$ — ADDITIVE inside one gain"],
+               ["*2", "pool integrates $A \cdot D$, the drive", "pool integrates $(1+a)R$, the RESPONSE"],
+               ["*3", "a saturating $S()$ on the pool input", "pool input is linear; poolAct sits on its OUTPUT"],
+               ["*4", "$A$ is $1{+}\\beta$ on one channel", "$a_{\\theta}$ is a graded von Mises bump over all eight"]],
+              colx=[L, L + 0.045, L + 0.315], size=9.5)
+        p.body("""Correction 1 matters: the multiplicative form carries a cross-term
+            a·CoopL·S that the code does not have, so the first pass's clean "factor A"
+            prediction does not follow from what we run. Correction 2 matters for the
+            wiring: weighting R rather than D puts Model IV's synapse downstream of the
+            divisive normalization, not upstream.""")
         p.close()
 
-        # ---- page 3
+        # ═══════════════════════════════════════════════════════ pages 3-4
+        figure_page(pdf, "III",
+                    "Model III as circuitry — bias on the drive",
+                    """One point-set: a motion hypercolumn and a colour hypercolumn
+                    sharing one cooperative pool neuron. Every operation in the equations
+                    above is drawn as a node. The tuned top-down axon terminates on each
+                    motion cell's own summing node, upstream of the cooperative gain, so
+                    the attended channel's own response is raised.""").close()
+        figure_page(pdf, "IV",
+                    "Model IV as circuitry — bias into the pool",
+                    """The same drawing, with one thing moved. The identical tuned axon
+                    now terminates on each motion cell's afferent to the pool, downstream
+                    of the division. The V1 cells themselves are unbiased; only what the
+                    pool neuron sees is weighted. Compared with page 3, the hypercolumns,
+                    the pool, the normalizer and the afferents are pixel-identical.""").close()
+
+        # ═══════════════════════════════════════════════════════ page 5
         p = Page(pdf, running="Where the attentional bias enters")
-        p.h2("What each predicts")
-        p.body("""Compare a point-set carrying the attended feature (cued, gain
-            $G_c$) against one that does not (uncued, gain $G_u$). Because the
-            normalization denominator is flat across channels, the gain does not cancel,
-            and the response ratio for a channel is:""")
-        p.gap(0.008)
-        p.fig.text(L + 0.03, p.y, "Variant 1", fontsize=10.5, fontweight="bold",
-                   color=BIAS, va="top")
+        p.h2("What each predicts, and what it measures")
+        p.body("""Under Model IV every channel of a point-set is multiplied by the same
+            scalar G, so for any channel the cued/uncued ratio is (G_c/G_u)^n divided by
+            the ratio of the denominators, and the per-channel drive cancels. If the
+            motion and colour denominators move together, the attention index is then
+            IDENTICAL for motion and for colour. Under Model III the attended channel
+            additionally carries a_theta, so colour can only gain second-hand, through
+            the pool.""")
+        p.body("""Measured with pointset/hcps_bias_locus_check.m, 8 seeds, reading
+            primary (motion DOWN), colour (V4 GREEN) and translation (motion RIGHT).
+            Model III and Model IV are shown at MATCHED primary AI in the toy, where
+            biasAmp can be bisected; on the grid both run at the locked biasAmp 16, so
+            compare the colour/primary RATIO rather than the raw colour number.""")
+
+        p.gap(0.006)
+        p.fig.text(L, p.y, "toy_color.m — 2 surfaces, one shared normalizer "
+                   "(featureNorm false)", fontsize=10, color=INK, va="top",
+                   fontweight="bold")
         p.gap(0.026)
-        p.eq("attended channel:   $R_{c}/R_{u} \\; \\propto \\; "
-             "\\left( A \\, G_{c}/G_{u} \\right)^{2}$", size=12, dy=0.036)
-        p.eq("every other channel:   $R_{c}/R_{u} \\; \\propto \\; "
-             "\\left( G_{c}/G_{u} \\right)^{2}$", size=12, dy=0.036)
-        p.body("""Transfer to colour, and to the translation that arrives later, is
-            carried entirely by the pool term. It is real, but strictly smaller than the
-            primary attended feature's enhancement, by the factor A.""", indent=0.03)
+        table(p, ["route", "biasAmp", "primary", "colour", "translation"],
+              [["*Model III  on drive", "1.00", "+0.6081", "+0.1022", "+0.2321"],
+               ["*Model IV   in pool", "9.63", "+0.6081", "*+0.6081", "+0.4886"]],
+              colx=[L, L + 0.20, L + 0.31, L + 0.44, L + 0.57])
+        p.body("""Model IV's primary and colour agree to 1.1e-16 — machine epsilon.
+            Model III's colour is 16.8% of its primary: a real transfer, but a small
+            one.""", indent=0.02, size=9.5)
+
         p.gap(0.010)
-        p.fig.text(L + 0.03, p.y, "Variant 2", fontsize=10.5, fontweight="bold",
-                   color=BIAS, va="top")
+        p.fig.text(L, p.y, "hcps_grid.m — 121 point-sets at the LOCKED operating point "
+                   "(featureNorm true)", fontsize=10, color=INK, va="top",
+                   fontweight="bold")
         p.gap(0.026)
-        p.eq("every channel:   $R_{c}/R_{u} \\; \\propto \\; "
-             "\\left( G_{c}/G_{u} \\right)^{2}$", size=12, dy=0.036)
-        p.body("""Identical for the attended direction, for colour, and for the
-            translation. Selection is anchored to the point-set, not to the feature.""",
-               indent=0.03)
-
-        p.rule()
-        p.h2("The measurement that separates them")
-        p.body("""Take the ratio of the colour index to the primary index within a
-            cued point-set. Variant 2 predicts the two coincide; Variant 1 predicts
-            colour sits below primary by a factor set by beta. No free parameter can
-            move Variant 2 off equality — the equality is structural, which is what
-            makes the comparison worth running.""")
-
-        p.rule()
-        p.h2("Open — to settle before either is reported")
-        p.body("""The two variants are not yet cleanly separated in our own code, and
-            the question is which one we are actually running.""")
-        p.body("""The site's schematic (components/HCPSFlow.tsx) states that the bias
-            "enters the pool, not the channels, which is why it cannot stay confined to
-            the attribute that was cued". That is Variant 2, explicitly.""", indent=0.02)
-        p.body("""But ps_pointset.py's engine reads
-            PSP = K x FB(like-to-like MT->V1) x Coop(1 + CoopL x E) / Norm.
-            A like-to-like feedback term is channel-specific, which puts it in the
-            position of A in Variant 1.""", indent=0.02)
-        p.body("""Whether those are the same model described twice, or two different
-            models, has not been checked. It determines which set of equations above
-            describes the results we have.""", indent=0.02)
+        table(p, ["route", "primary", "colour", "translation", "colour/primary"],
+              [["*Model III  on drive", "+0.9875", "+0.0389", "+0.8141", "3.9%"],
+               ["*Model IV   in pool", "+0.1996", "*+0.1996", "+0.2058", "*100.0%"]],
+              colx=[L, L + 0.20, L + 0.33, L + 0.46, L + 0.60])
+        p.body("""So the separation is not subtle. Model III sends 4% of its motion
+            enhancement to colour; Model IV sends all of it. logs/PARAMETERS.md line 61
+            says Model III gives "motion enhancement with no colour transfer" — that is
+            right to within noise on the grid with a shared normalizer (colour AI
+            -0.0005), an understatement at the locked point (3.9%), and wrong at the toy
+            scale (16.8%). The qualitative claim holds everywhere; the magnitude is
+            regime-dependent and should be quoted with its regime.""", indent=0.02,
+               size=9.5)
+        p.body("""One regime is unusable and is reported here so it is not tried again:
+            with normW = 0 the toy has no denominator, runs away (max response 1e115) and
+            saturates every index to +/-1. Pure facilitation needs the normalizer to stay
+            bounded — the Model I to Model II lesson.""", indent=0.02, size=9.5)
         p.close()
 
-    print(f"wrote {out}  (3 pages)")
+        # ═══════════════════════════════════════════════════════ page 6
+        p = Page(pdf, running="Where the attentional bias enters")
+        p.h2("The equality is contingent, not structural")
+        p.body("""The first pass claimed that no free parameter can move Model IV off
+            primary = colour, and that this is what makes the comparison worth running.
+            The website's viewer caption makes the same claim, saying the two indices
+            "land on top of each other to three decimals, and that equality IS the
+            transfer". At the locked operating point that claim is false as stated.""")
+        p.body("""Model IV's equality is exact only when the motion and colour
+            denominators move together. With featureNorm FALSE they are literally the
+            same variable (hcps_grid.m lines 251-252), so the equality is structural and
+            no parameter touches it. With featureNorm TRUE — the locked default — they
+            are separate pools, and the equality survives only because the two drive
+            profiles happen to have the same shape: ffNorm rescales both to the same
+            total, and kappa equals kappaHue equals 2, so their sums of powers coincide.""")
+        p.body("""Tested by detuning the hue width alone, everything else held at the
+            locked point (pointset/hcps_bias_locus_ablate.m):""")
+        p.gap(0.004)
+        table(p, ["kappaHue", "primary", "colour", "|primary - colour|",
+                  "profile mismatch"],
+              [["*2.00  (= kappa)", "+0.199648", "+0.199648", "*2.78e-17", "8.6e-16"],
+               ["2.50", "+0.199570", "+0.198723", "8.47e-04", "2.1e-01"],
+               ["4.00", "+0.199214", "+0.196691", "2.52e-03", "8.9e-01"],
+               ["8.00", "+0.198586", "+0.194135", "4.45e-03", "2.6e+00"]],
+              colx=[L, L + 0.19, L + 0.32, L + 0.45, L + 0.66])
+        p.body("""The proposed cause and the effect move together: the equality leaves
+            machine epsilon exactly when the drive profiles stop matching, and a 25%
+            detune costs four orders of magnitude. So kappaHue IS a free parameter that
+            moves Model IV off equality. The prediction is still sharp and still worth
+            testing — 100% transfer against 4% is not a close call — but it should be
+            stated as resting on matched tuning widths, and the viewer caption should be
+            corrected.""")
+
+        p.rule()
+        p.h2("Where each route is implemented")
+        table(p, ["file", "what it is"],
+              [["*toy_color.m  67-75", "2 surfaces; origin of the III / IV distinction"],
+               ["*hcps_grid.m  222-240", "the 121-point-set grid engine; what the site runs"],
+               ["hcps_grid_adapt.m", "same two-site switch (fbSite) for MT->V1 feedback"],
+               ["ps_pointset.py", "a DIFFERENT model: motion only, no colour HC"]],
+              colx=[L, L + 0.27])
+        p.body("""Two drivers already sweep both routes — hcps_bias_route_atop.m and
+            hcps_grid_biasout.m — but both run at stale operating points and neither has
+            a stored result anywhere in the repo. Do not cite them.""", size=9.5)
+        p.body("""Still open: ps_pointset.py's docstring claims an object-based bias on
+            hypercolumn B, while its code applies a feature-based bias to both
+            hypercolumns. And lib/hcpsDefaults.ts on the website still exports ffFloor
+            1e-06 and hash d0ea82, which hcps_op.m superseded on 2026-07-28.""",
+               size=9.5)
+        p.close()
+
+    print(f"wrote {out}  (6 pages)")
 
 
 if __name__ == "__main__":
