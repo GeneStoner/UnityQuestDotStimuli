@@ -286,12 +286,55 @@ on evidence."* **The fix WAS built the same day** (`hcps_grid.m:38-43`; the tile
 Emax = 50). **The confirming sweep was never re-run** — no commit since 2026-07-25 mentions one.
 We now sit at 3.025, which on the unbounded sweep was skew 53.
 
-**The sweep**: hold everything fixed, vary ONLY `normSigRF` over {0.5, 1, 1.65, 3.025, 4.5, 6},
-16–24 layouts each. Report per value: AI no-swap and swap with SE, d′ ratio, **skew** (the
-evenness of pool charge across point-sets — 1 = even, 50 = a handful running away), and n_eff.
-Same harness as `hcps_taue_sweep.m`.
+**⭐ WIDENED 2026-08-26 (GS): make it 2-D, and measure skew.**
+
+⛔ **An audit found that `skew` has NEVER been computed on the tiled model — not once.** Every
+stability script that knows how (`hcps_check_runaway`, `hcps_hotspot_diag`, `hcps_poolsweep`,
+`hcps_poolconfirm`, `hcps_walkback`) runs the OLD LATTICE. The only tiled-model stability evidence
+is `hcps_taue_sweep`'s pool `n_eff` — 274 of 1473 at τE 20 ms against 479 at 150 ms, concentrated
+but nowhere near collapse. That is real, but it is **one 1-D slice through a 5-D space, using a
+proxy for the metric the 07-25 log decided was the right one.** We have a point and one line
+through it, not a stable *zone*.
+
+**The metrics** (definitions lifted from `hcps_check_runaway.m:19-23`, so old and new numbers stay
+comparable):
+
+| | definition | healthy |
+|---|---|---|
+| **SKEW** | `max(E)/median(E)` across point-sets at a settled frame | **1–3** |
+| **GROWTH** | `max(E)` last frame / `max(E)` at frame 12 — still climbing? | ≈1 |
+| n_eff | `(ΣE)²/ΣE²` — effective number of point-sets carrying the pool | ≫1 |
+| STATIC | `corr(E(t), E(t+6))` | ⚠️ NOT clean — 07-25 corrected itself; a legitimate static envelope from edge geometry contributes. **Skew is the meaningful metric.** |
+
+**The design.**
+
+- **Axis 1** `normSigRF` ∈ {0.5, 1, 1.65, 3.025, 4.5, 6}
+- **Axis 2** `CoopL` ∈ {0, 0.1, 0.2, 0.3, 0.4} — 0.20 is the operating point; **CoopL = 0 is the
+  control that must give AI exactly 0** (no pool, no route), a free correctness anchor
+- **Third condition, as a LINE not a full axis**: `Emax` ∈ {50, Inf} swept along `CoopL = 0.2`
+  only. `Emax = Inf` reproduces the pre-fix model exactly (`hcps_grid.m:41-42`), so that one row
+  IS the decoupling test, at 6 cells rather than 30.
+- 16 layouts per cell ⇒ ~576 model runs; the τE sweep was 112, so budget accordingly.
+
+**Report per cell**: AI no-swap and swap with SE, d′ ratio, SKEW, GROWTH, n_eff.
+
+⚠️ **Compute SKEW twice — globally AND on the well-contained core (rings 9–11).** Edge truncation
+is severe on this geometry (§1.6: 96% containment mid-annulus, 44% at ring 19), so E is
+systematically depressed at the edges and a perfectly healthy tiled model could read as skewed for
+purely geometric reasons. The core figure is the honest one; the global figure is the one
+comparable to the old-lattice numbers.
+
+⭐ **Port, do not rewrite.** `hcps_hotspot_diag.m` Part B already runs a 2-D `normMult × sigNR`
+sweep reporting skew/static/AI/AI-cold-95%. It just points at `ps_stimulus` / `ps_extract` /
+`hcps_grid`. Repointing it at `hcps_vrstim` → `hcps_tile` → `hcps_v1grid` is cheaper than starting
+from scratch and keeps the metric definitions identical.
 
 **What the outcomes mean.**
+**The decoupling test, as a prediction.** On the old lattice skew and AI rose together
+(1.0/+0.003 → 119/+0.377). If `Emax = 50` did its job, the `CoopL = 0.2` line should show
+**Emax = Inf → skew climbing with `normSigRF`**, reproducing 07-25, and **Emax = 50 → skew flat**
+while AI still varies.
+
 - **Skew now flat while AI still varies** → Emax did its job, the two are decoupled, and pool
   width becomes a parameter we can set on the literature rather than on effect size. `3.025`
   stops being a worry.
