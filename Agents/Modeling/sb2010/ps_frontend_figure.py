@@ -91,11 +91,16 @@ NB1 = tune(np.pi/4, KAPPA_HUE)/tune(0.0, KAPPA_HUE)      # +-45 deg neighbours
 NB2 = tune(np.pi/2, KAPPA_HUE)/tune(0.0, KAPPA_HUE)      # +-90 deg
 FLOOR_FRAC = NB2
 
-XL, YL = 21.0, 11.2
-fig = plt.figure(figsize=(XL*0.62, YL*0.62)); ax = fig.add_axes([0,0,1,1])
-ax.set_xlim(0,XL); ax.set_ylim(0,YL); ax.axis("off")
+# ⚠️ YBOT CROPS, IT DOES NOT MOVE ANYTHING. The lowest content on the canvas is the colour box at
+# y = 1.225, so a canvas starting at 0 left a bottom margin more than twice the 0.55 the figure
+# keeps at its sides -- a dead band under the whole width. Raising the floor to YBOT trims it
+# without touching a single one of the layout coordinates below, which are all absolute.
+XL, YL, YBOT = 21.0, 11.2, 0.62
+fig = plt.figure(figsize=(XL*0.62, (YL-YBOT)*0.62)); ax = fig.add_axes([0,0,1,1])
+ax.set_xlim(0,XL); ax.set_ylim(YBOT,YL); ax.axis("off")
 def nx(x): return x/XL
-def ny(y): return y/YL
+def ny(y): return (y-YBOT)/(YL-YBOT)          # a POSITION on the canvas
+def nh(h): return h/(YL-YBOT)                 # a HEIGHT -- no offset. Do not use ny() for one.
 def box(x,y,w,h,ec,fc="white",lw=1.3,z=2):
     ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle="round,pad=0.02,rounding_size=0.10",
                  ec=ec,fc=fc,lw=lw,zorder=z))
@@ -155,7 +160,7 @@ X1, X2, X3, X4, X5 = 0.55, 4.70, 8.40, 12.65, 16.95
 
 # ---------------- 1 the receptive field, magnified ----------------
 ax.text(X1,HDR,"1   the receptive field",fontsize=10.5,weight="bold",color=INK)
-axr = fig.add_axes([nx(X1+0.15),ny(4.30),nx(3.10),ny(3.10)]); axr.set_aspect("equal")
+axr = fig.add_axes([nx(X1+0.15),ny(4.30),nx(3.10),nh(3.10)]); axr.set_aspect("equal")
 axr.set_xlim(-1.55,1.55); axr.set_ylim(-1.55,1.55); axr.axis("off")
 gg=np.linspace(-1.55,1.55,200); GX,GY=np.meshgrid(gg,gg)
 axr.imshow(np.exp(-(GX**2+GY**2)/(2*(RF_R_DEG/SIG_DEG*0.5)**2)),
@@ -174,31 +179,37 @@ axr.text(dx,dy-0.13,"  $W_g$ = %.2f"%WG,ha="left",va="top",fontsize=8.4,color=DC
 # ⭐ It is also self-checking. The circle is drawn at FWHM/2, so the curve MUST pass through 0.5
 # exactly where the circle's edge is; if it ever does not, the disc and the weighting have drifted
 # apart.
-axp = fig.add_axes([nx(X1+0.62),ny(2.75),nx(2.15),ny(1.25)])
-xx = np.linspace(0,1.65,300)
-wg = np.exp(-(xx*RF_R_DEG)**2/(2*SIG_DEG**2))
+# ⭐ GS 2026-08-28: "i think its better to show the full profile -- and show it scaled so that the
+# fall off is correctly portrayed." So the half-profile in centre/edge units is gone. This axes is
+# now placed at the SAME x-position and the SAME width as the disc above it (X1+0.15, 3.10 wide)
+# over the SAME span (+-1.55 RF radii, here written in degrees), so the two are drawn to ONE
+# spatial scale: drop a plumb line from the circle's edge and it lands on the 0.5 crossing.
+axp = fig.add_axes([nx(X1+0.15),ny(2.55),nx(3.10),nh(1.45)])
+XHALF = 1.55*RF_R_DEG                                  # degrees, = the disc panel's half-span
+xx = np.linspace(-XHALF,XHALF,401)
+wg = np.exp(-xx**2/(2*SIG_DEG**2))
 axp.plot(xx,wg,color=INK,lw=2.0,zorder=3)
 axp.fill_between(xx,wg,color=INK,alpha=0.10,zorder=2)
-axp.plot([1,1],[0,0.5],':',color=MUTE,lw=1.0,zorder=2)
-axp.plot([0,1],[0.5,0.5],':',color=MUTE,lw=1.0,zorder=2)
-d_ = OFF/RF_R_DEG
-axp.plot([d_,d_],[0,WG],'-',color=DCOL,lw=1.0,alpha=0.7,zorder=3)
-axp.plot(d_,WG,'o',ms=6,color=DCOL,zorder=5)
-axp.set_xlim(0,1.65); axp.set_ylim(0,1.12)
+for s_ in (-1,1): axp.plot([s_*RF_R_DEG]*2,[0,0.5],':',color=MUTE,lw=1.0,zorder=2)
+axp.plot([-RF_R_DEG,RF_R_DEG],[0.5,0.5],':',color=MUTE,lw=1.0,zorder=2)
+axp.plot([OFF,OFF],[0,WG],'-',color=DCOL,lw=1.0,alpha=0.7,zorder=3)
+axp.plot(OFF,WG,'o',ms=6,color=DCOL,zorder=5)
+axp.set_xlim(-XHALF,XHALF); axp.set_ylim(0,1.12)
 axp.set_yticks([0.5,1.0]); axp.set_yticklabels(["0.5","1"])
-axp.set_xticks([0,1]); axp.set_xticklabels(["centre","edge"])
+axp.set_xticks([-RF_R_DEG,0,RF_R_DEG])
+axp.set_xticklabels([u"−%.2f°"%RF_R_DEG,"0","+%.2f°"%RF_R_DEG])
 axp.tick_params(labelsize=7.2)
 for sp in ("top","right"): axp.spines[sp].set_visible(False)
 axp.set_title("spatial weight $W_g$",fontsize=8.4)
 
 # ---------------- 2 the tuned weights ----------------
 ax.text(X2,HDR,"2   two tuned weights",fontsize=10.5,weight="bold",color=INK)
-axv=fig.add_axes([nx(X2),ny(YM-0.35),nx(2.30),ny(1.40)])
+axv=fig.add_axes([nx(X2),ny(YM-0.35),nx(2.30),nh(1.40)])
 ghosted(axv,KAPPA,DIRV,STIM,"direction tuning")
 axv.set_xticks([0,90,180,270,360]); axv.set_xlabel("preferred direction (deg)",fontsize=7.6)
 axv.plot(np.degrees(DIRV)%360,0,'^',color=DCOL,ms=8,clip_on=False,zorder=6)
 
-axh=fig.add_axes([nx(X2),ny(YC-0.35),nx(2.30),ny(1.40)])
+axh=fig.add_axes([nx(X2),ny(YC-0.35),nx(2.30),nh(1.40)])
 ghosted(axh,KAPPA_HUE,HUE_DOT,GREEN,"hue tuning")
 axh.set_xticks([0,180]); axh.set_xticklabels(["RED","GREEN"])
 for lab,c in zip(axh.get_xticklabels(),[RED,GREEN]): lab.set_color(c); lab.set_weight("bold")
@@ -206,13 +217,18 @@ axh.plot(180,0,'^',color=GREEN,ms=8,clip_on=False,zorder=6)
 
 # ---------------- 3 raw drive ----------------
 ax.text(X3,HDR,"3   the raw drive",fontsize=10.5,weight="bold",color=INK)
-ax.text(X3,HDR-0.34,"$ff$ = the drive to one channel",fontsize=8.2,color=MUTE,style="italic")
+# ⭐ THE SYMBOLS ARE THE LITERATURE'S, NOT THE CODE'S. GS 2026-08-28 asked for "variable names
+# commonly associated with this type of normalization", so the drawn equations use Carandini &
+# Heeger's D / gamma / sigma and the CODE names are given once, here and in panel 4, as the
+# mapping. Drawing `ff` and `ffScale` made a reader who knows the form fail to recognise it.
+ax.text(X3,HDR-0.34,"$D$ = the drive to one channel ($ff$ in code)",
+        fontsize=8.2,color=MUTE,style="italic")
 ax.text(X3,YM+BH/2+0.24,"MOTION",fontsize=9.8,weight="bold",color=INK)
 ax.text(X3,YC+BH/2+0.24,"COLOUR",fontsize=9.8,weight="bold",color=INK)
 SC = 1.75/max(ffM_raw.max(),ffC_raw.max())
 for (yc_,vals,col,lab) in ((YM,ffM_raw,STIM,"M"),(YC,ffC_raw,STIM,"C")):
     box(X3,yc_-BH/2,BW,BH,col,"white",1.4)
-    ax.text(X3+BW/2,yc_+BH/2-0.36,r"$ff^{%s}_{i,k}=W_g\cdot tune$"%lab,fontsize=10.5,
+    ax.text(X3+BW/2,yc_+BH/2-0.36,r"$D^{%s}_{i,k}=W_g\cdot tune$"%lab,fontsize=10.5,
             color=INK,ha="center")
     bars(X3+0.66,yc_-BH/2+0.22,vals,col,SC,ticks=True,huelab=(lab=="C"))
 
@@ -223,8 +239,25 @@ ax.text(X4,HDR,"4   ffNorm, per stream",fontsize=10.5,weight="bold",color=INK)
 # ⚠️ `ffScale` = 3 is a BARE LITERAL in `hcps_op.m`'s parameter struct with no derivation on
 # record, and the project's own note says `ffNorm = true` "was never argued". So the label states
 # its EFFECT -- the total each hypercolumn is rescaled to -- and claims no reason for the value.
-ax.text(X4,HDR-0.34,"each hypercolumn's 8 channels, divided by their own sum",
-        fontsize=8.2,color=MUTE,style="italic")
+# ⭐ NAMED FOR WHAT IT IS. GS 2026-08-28: "maybe use variable names commonly associated with this
+# type of normalization if appropriate in this context." It IS the canonical divisive-normalization
+# form -- Carandini & Heeger 2012 write R_j = gamma * D_j^n / (sigma^n + sum_k D_k^n), and this is
+# that with n = 1: `ff` is D, `ffScale` is the gain gamma, and `ffFloor` is the semi-saturation
+# constant sigma. Saying so costs one line and tells a reader who knows the literature that the
+# FORM needs no defence -- only the VALUE of sigma does.
+# ⚠️ The MATLAB is deliberately NOT renamed. Model A is validated and frozen, `ff` is honest
+# (it is the feedforward drive, per `ps_extract`), and a rename across it buys no science. Note
+# though that the CIRCUIT normalizer one stage later already uses the literature names in the same
+# parameter struct -- `Rmax`, `sigNR`, `nV1` -- so the two stages run one form under two schemes.
+# ⚠️ va="top" IS REQUIRED here. matplotlib anchors a multi-line string on its LAST baseline, so
+# adding the second line pushed the first one UP into the header row and straight through
+# "4  ffNorm, per stream" and "5  the models". Hanging it from the top makes it grow downward.
+# ⚠️ TWO LINES IS THE CEILING. A third clears the motion box top (y = 8.775) by less than its
+# own descender. "each hypercolumn's 8 channels, divided by their own sum" was the line dropped
+# to make room: the equation's own sum_k says it, and the panel header already says "per stream".
+ax.text(X4,HDR-0.22,"$R$ = the normalized drive the models receive\n"
+        "divisive normalization, Naka-Rushton with $n$ = 1",
+        fontsize=8.2,color=MUTE,style="italic",va="top",linespacing=1.45)
 SN = 2.05/max(ffM_nrm.max(),ffC_nrm.max())
 for (yc_,vals,col) in ((YM,ffM_nrm,STIM),(YC,ffC_nrm,STIM)):
     box(X4,yc_-BH/2,BW,BH,col,"#fafafa",1.6)
@@ -232,26 +265,56 @@ for (yc_,vals,col) in ((YM,ffM_nrm,STIM),(YC,ffC_nrm,STIM)):
     # as to why it was set to 3". Naming them makes them visible AS constants -- and `ffFloor` in
     # particular is a knob, not a detail: it is what decides whether a faint input keeps its
     # magnitude or is rescaled to full strength. Values are given once, below.
-    ax.text(X4+BW/2,yc_+BH/2-0.44,r"$ff \leftarrow \dfrac{ffScale \cdot ff}{\sum_k ff + ffFloor}$",
+    # Carandini & Heeger 2012, R_j = gamma * D_j^n / (sigma^n + sum_k D_k^n), at n = 1.
+    # ⛔ NOT "D <- ...". The arrow was ASSIGNMENT, carried over from the MATLAB, which overwrites
+    # the array in place. The literature never writes it that way, and it left panel 4's output
+    # with no name at all -- the arrow into panel 5 was carrying an unnamed quantity. Panel 3 now
+    # makes D, panel 4 makes R, panel 5 takes R.
+    # ⚠️ The free index and the summation index MUST differ: j runs over the channel being
+    # normalized, k over the pool it is divided by. The first version used k for both.
+    # ⚠️ INDEXED i,k TO MATCH PANEL 3, and because the pool is PER POINT-SET. Panel 3 writes
+    # D^M_{i,k} with i the point-set and k the channel; a bare R_j here would have used a third
+    # letter for the same axis. Carrying i into the denominator's sum is also the only thing on
+    # the figure that says the 8 channels are divided by THEIR OWN total and not a global one --
+    # which is what the dropped subtitle line used to say.
+    ax.text(X4+BW/2,yc_+BH/2-0.44,
+            r"$R_{i,k} = \dfrac{\gamma\, D_{i,k}}{\sigma + \sum_j D_{i,j}}$",
             fontsize=10.5,color=col,ha="center",va="center")
     bars(X4+0.30,yc_-BH/2+0.22,vals,col,SN)
     if yc_ == YM:
         # ⚠️ Named in the text rather than pointed at. Leader lines from here either cross the box
         # or land in the header row, which is what the first attempt did.
-        ax.text(X4,yc_-BH/2-0.22,"ffScale = %g   the total the 8 channels are rescaled to"%FFSCALE,
+        # ⚠️ WIDTH IS LOAD-BEARING, and it was the bug. Panel 4's column runs X4 -> X5 = 4.30
+        # units wide; the earlier wording measured 4.49 and 4.85 and so ran straight underneath
+        # panel 5's box. Shortened until both fit -- "the 8 channels" is already said in this
+        # panel's own subtitle, so "they" carries it. Widest line is now 3.97. Re-measure with
+        # get_window_extent if this is reworded; the gap here is only 4.30 - 3.97 = 0.33.
+        ax.text(X4,yc_-BH/2-0.22,
+                "$\\gamma$ = ffScale = %g   the gain they are rescaled to"%FFSCALE,
                 fontsize=7.6,color=MUTE,va="top")
-        ax.text(X4,yc_-BH/2-0.56,"ffFloor = %g   how much drive a receptive field must have\n"
-                "                 before it is rescaled to full strength"%FFFLOOR,
-                fontsize=7.6,color=MUTE,va="top",linespacing=1.4)
+        # ⭐ `ffFloor` IS Naka-Rushton's semi-saturation constant, and exactly: the summed output
+        # is ffScale*S/(S + ffFloor), which is half of ffScale precisely when S = ffFloor. Naming
+        # it that is what makes GS's objection precise -- a single dot at the RF centre delivers
+        # S = 17.15, seventeen times above half-saturation, so an occupied receptive field sits at
+        # 94.5% of the ceiling and every magnitude difference above it is squeezed into the last
+        # 5%. That is the saturation horn of Grossberg's noise-saturation dilemma.
+        ax.text(X4,yc_-BH/2-0.60,
+                "$\\sigma$ = ffFloor = %g   the semi-saturation constant,\n"
+                "            where rescaling reaches half strength"%FFFLOOR,
+                fontsize=7.6,color=MUTE,va="top",linespacing=1.45)
 
 # ---------------- 5 the circuit ----------------
 # ⭐ GS: "lets have it feed into a generic Hypercolumn and Point-Set Models. this is the common
 # front end for the models to follow." So the last box names the FAMILY, not one circuit -- the
 # figure sits ahead of all of them and should not appear to belong to any one.
 ax.text(X5,HDR,"5   the models",fontsize=10.5,weight="bold",color=COOP)
-box(X5,4.05,2.90,2.30,COOP,"white",1.4)
-ax.text(X5+1.45,5.38,"HYPERCOLUMN AND",ha="center",fontsize=10.0,weight="bold",color=COOP)
-ax.text(X5+1.45,5.02,"POINT-SET MODELS",ha="center",fontsize=10.0,weight="bold",color=COOP)
+# ⚠️ THE BOX WAS TOO NARROW FOR ITS OWN LABEL. "HYPERCOLUMN AND" measures 2.72 units at
+# fontsize 10 bold and the box was 2.90 -- 0.09 of clearance a side, which reads as overflow.
+# 3.50 takes it out to XL - 0.55, the same margin the figure keeps on the left.
+BOXW = 3.50
+box(X5,4.05,BOXW,2.30,COOP,"white",1.4)
+ax.text(X5+BOXW/2,5.38,"HYPERCOLUMN AND",ha="center",fontsize=10.0,weight="bold",color=COOP)
+ax.text(X5+BOXW/2,5.02,"POINT-SET MODELS",ha="center",fontsize=10.0,weight="bold",color=COOP)
 for a,b,c in [((X1+3.40,5.95),(X2-0.12,YM+0.15),STIM),((X1+3.40,5.75),(X2-0.12,YC+0.55),STIM),
               ((X2+2.35,YM),(X3-0.10,YM),STIM),((X2+2.35,YC),(X3-0.10,YC),STIM),
               ((X3+BW,YM),(X4-0.10,YM),STIM),((X3+BW,YC),(X4-0.10,YC),STIM),
