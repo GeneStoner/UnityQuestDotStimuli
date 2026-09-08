@@ -37,12 +37,12 @@ from ps_stimulus_common import (INK, INK2, GREEN, RED, SURFACE,
                                 MT_C, MT_R_DEG, DOT_DIAM_DEG, OMEGA_DEG_S)
 
 
-def fig_mt_rf(out="mt_rf_figure.png"):
+def fig_mt_rf(out="mt_rf_figure.png", legend_roles=True):
     fig, (axL, axR) = plt.subplots(
         1, 2, figsize=(12.0, 6.0), gridspec_kw=dict(width_ratios=[6.4, 5.6]))
 
     # ── LEFT: the shared stimulus, with the MT RF ──
-    S.draw_stimulus(axL, show_v1_rfs=False)
+    S.draw_stimulus(axL, show_v1_rfs=False, legend_roles=legend_roles)
 
     # ── RIGHT: that RF magnified, with the real motion inside it ──
     axR.set_aspect("equal"); axR.axis("off")

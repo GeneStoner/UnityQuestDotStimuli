@@ -486,7 +486,7 @@ def _rotation_arc(ax, t0, t1, radius, colour, lw=None, z=3):
         joinstyle="round", capstyle="round", zorder=z))
 
 
-def draw_stimulus(ax, show_v1_rfs=False, legend=True):
+def draw_stimulus(ax, show_v1_rfs=False, legend=True, legend_roles=True):
     """THE shared stimulus panel. Dots only — no motion is drawn here.
 
     `show_v1_rfs` is the ONLY thing that differs between the two figures.
@@ -535,10 +535,13 @@ def draw_stimulus(ax, show_v1_rfs=False, legend=True):
         # Callers must leave room for it: a title sitting only a few points off
         # the axes will collide.
         ax.legend(handles=[
-            Line2D([0], [0], marker="o", color="none", markerfacecolor=GREEN,
-                   markersize=7, label="CW field  (cued / delayed)"),
-            Line2D([0], [0], marker="o", color="none", markerfacecolor=RED,
-                   markersize=7, label="CCW field  (uncued / first-on)")],
+            # `legend_roles=False` names the two ROTATION SENSES only. The paper introduces
+            # cued/uncued in its own figure 1 and does not want the roles repeated here (GS,
+            # 2026-09-08); the website keeps them, so the default is unchanged.
+            Line2D([0], [0], marker="o", color="none", markerfacecolor=GREEN, markersize=7,
+                   label="CW field  (cued / delayed)" if legend_roles else "CW field"),
+            Line2D([0], [0], marker="o", color="none", markerfacecolor=RED, markersize=7,
+                   label="CCW field  (uncued / first-on)" if legend_roles else "CCW field")],
             loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2,
             columnspacing=1.8, frameon=False, fontsize=9,
             handletextpad=0.4, borderpad=0.2)
