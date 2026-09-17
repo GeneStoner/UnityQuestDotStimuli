@@ -11,6 +11,10 @@ public class StimDebugHUD : MonoBehaviour
 {
     public TrialBlockRunner runner;
 
+    [Tooltip("Show the trial counter in the headset. Off for data collection: " +
+             "the observer should see nothing but the stimulus.")]
+    public bool showTrialText = false;
+
     // World-space HUD geometry
     private const float HUD_DIST      = 1.5f;    // metres in front of camera
     private const float HUD_VERT_OFF  = 0.12f;   // metres above camera centre (keeps it out of main stimulus FOV)
@@ -32,6 +36,7 @@ public class StimDebugHUD : MonoBehaviour
 
     void Start()
     {
+        if (!showTrialText) { enabled = false; return; }   // nothing drawn at all
         Transform cam = Camera.main != null ? Camera.main.transform : transform;
         BuildCanvas(cam);
     }

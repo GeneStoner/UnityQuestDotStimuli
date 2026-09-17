@@ -260,10 +260,11 @@ public class ExperimentSelector : MonoBehaviour
         bool trigROk   = _triggerRight != null;
 
         bool inputReady = thumbLOk || thumbROk || trigLOk || trigROk;
-        _diagText.text = (runnerOk && inputReady) ? "Controllers ready"
+        // Silent when everything is ready; the observer should see only the list.
+        _diagText.text = (runnerOk && inputReady) ? ""
                        : !runnerOk                ? "ERROR: session not found — check setup"
                                                   : "Waiting for controllers...";
-        _diagText.color = (runnerOk && inputReady) ? COL_DIAG_OK : COL_DIAG_ERR;
+        _diagText.color = COL_DIAG_ERR;
     }
 
     static string YN(bool v) => v ? "Y" : "N";
@@ -272,9 +273,7 @@ public class ExperimentSelector : MonoBehaviour
     {
         if (_headerText == null) return;
 
-        _headerText.text = specs.Length > 1
-            ? $"Select experiment  ({_selected + 1} of {specs.Length})"
-            : "VRDots";
+        _headerText.text = "";
 
         for (int i = 0; i < VISIBLE_ROWS; i++)
         {
@@ -300,13 +299,10 @@ public class ExperimentSelector : MonoBehaviour
             _rowTexts[i].fontStyle = isSel ? FontStyle.Bold : FontStyle.Normal;
         }
 
+        // Only scroll arrows, when the list runs off the panel
         bool canUp   = _scrollTop > 0;
         bool canDown = (_scrollTop + VISIBLE_ROWS) < specs.Length;
-        string nav = specs.Length > 1 ? "Thumbstick: navigate  |  " : "";
-        string arrows = (canUp ? "▲  " : "")
-            + nav + "Trigger: start"
-            + (canDown ? "  ▼" : "");
-        if (_footerText != null) _footerText.text = arrows;
+        if (_footerText != null) _footerText.text = (canUp ? "▲  " : "") + (canDown ? "▼" : "");
     }
 
     // ── Confirm selection ─────────────────────────────────────────────────────
