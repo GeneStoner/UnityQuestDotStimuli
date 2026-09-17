@@ -22,11 +22,40 @@ Related docs: [stimulus_verification.md](stimulus_verification.md) (checking the
 
 Do not change Company Name or Product Name in Project Settings: that changes the app's package name (`com.genestoner.vrdptsrebuildX.test`) and where data is saved.
 
-## 2. Running an experiment
+## 2. First session at a new site: confirming you have the right stimulus
+
+Do this once before collecting data, and again whenever Gene announces a new stimulus version.
+
+1. **Build from the tagged version**, not the branch tip:
+   ```
+   git fetch --tags
+   git checkout stim-v1.0
+   git status          # must report a clean tree
+   ```
+2. **Open** `Assets/Scenes/UpToDateScene`, change nothing, save nothing, and **Build and Run** (section 3).
+3. **In the headset** you will see only a short list of experiment names. Choose one with the thumbstick and press the trigger. Nothing else is displayed: no instructions, no trial counter.
+4. **Run about 30 trials** of `DensityCompare_HighDens_v2` (the no-swap one).
+5. **Pull the files** (section 4) and check the sidecar's `display` block reads:
+
+   | Field | Expected |
+   |---|---|
+   | `device_model` | `Oculus Quest 3` |
+   | `refresh_rate_hz` / `refresh_rate_confirmed` | `90` / `true` |
+   | `render_scale` | `1.23` |
+   | `eye_texture_px` | about `2080x2176` |
+   | `msaa_samples` | `4` |
+
+   and `experiment_spec` reads `dots_per_field: 173`, `dot_size_deg: 0.12`, `aperture_radius_deg: 3.5`, `translation_duration_ms: 80`.
+6. **Check the measured timing** in the TSV: `TransRenderedFrames` should be 7 on every trial and `TransDurMsMeasured` about 78 ms. `TransMaxFrameGapMs` should stay under about 16 ms.
+7. **Send Gene** the three files. He compares them with the reference session from San Diego; the site is confirmed when the stimulus records match and the cueing effect is in the expected range (roughly +30 pp with no swaps).
+
+Details of what each check protects against: [stimulus_verification.md](stimulus_verification.md).
+
+## 3. Running an experiment
 
 ### Each session
 
-1. `git pull` to get the current version (see [stimulus_verification.md](stimulus_verification.md) for using a tagged version across sites).
+1. `git fetch --tags` and check out the tagged stimulus version Gene has announced (currently `stim-v1.0`). Never build from uncommitted changes.
 2. **Open the scene** `Assets/Scenes/UpToDateScene`.
 3. **Pick the experiment.** In the Hierarchy, select `TrialBlockManager`. In the Inspector, drag a spec from `Assets/ExperimentSpecs/` into the **Spec** slot of the TrialBlockRunner component.
 4. **Check rendering.** On the `StimulusBuilder` component, **Use Screen Space Shader** and **Use Fixed AA Shader** should both be ticked.
@@ -34,7 +63,7 @@ Do not change Company Name or Product Name in Project Settings: that changes the
 5. **Save** the scene (Ctrl+S / Cmd+S), then File → Build Settings → **Build and Run** with the Quest connected. The app installs and launches (also listed under Unknown Sources).
 6. **Calibrate colors** once per new observer with the FlickerCalibration scene (flicker photometry, 10 settings, saved on the headset).
 7. **Run.** The observer starts with the right trigger, fixates the central target, reports direction with the right thumbstick, then presses the trigger twice (lock, then submit). A session is 512 trials, about 15–20 minutes, and paces itself. Observer instructions: [subject_experimenter_instructions.md](subject_experimenter_instructions.md).
-8. **Pull the data** (section 3).
+8. **Pull the data** (section 4).
 
 ### Example: the no-swap density series
 
@@ -72,8 +101,9 @@ If a changed value doesn't seem to take effect, right-click the asset → Reimpo
 | "Waiting for controllers..." in red | Re-pair or charge the controllers |
 | Wrong parameters on screen | Scene not saved before building, spec slot empty, or stale cache (Reimport) |
 | Stimulus looks blurry | See [stimulus_verification.md](stimulus_verification.md), section 3 |
+| Wrong stimulus on screen | The startup list offers more than one experiment — check which one was selected, and that the build is current (sidecar `build_date`) |
 
-## 3. Data files and analysis
+## 4. Data files and analysis
 
 ### The three files
 
@@ -151,7 +181,7 @@ Recommended: a **separate private GitHub repository for data**, not this reposit
 - Commit after every session, with the spec name and observer in the message.
 - Use observer codes, not names.
 
-## 4. Learning the project with Claude Code
+## 5. Learning the project with Claude Code
 
 Run Claude Code inside the cloned repository and ask it questions. It reads the actual scripts, specs and notes, so its answers are tied to the code you will run.
 
