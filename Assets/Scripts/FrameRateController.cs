@@ -44,6 +44,7 @@ public class FrameRateController : MonoBehaviour
 
         _retryDeadline = Time.unscaledTime + retryWindowSeconds;
         LogAvailableRates();
+        SnapToSupportedRate();
         TryApply("Awake");
     }
 
@@ -107,6 +108,30 @@ public class FrameRateController : MonoBehaviour
             Debug.Log($"[FrameRateController] {why}: rate query unavailable " +
                       $"(targetFrameRate = {Application.targetFrameRate})");
         }
+    }
+
+    /// <summary>
+    /// Guard against a stale Inspector value: an unsupported rate is silently
+    /// refused by the headset, which then stays at its default (72 Hz on Quest).
+    /// A scene saved with targetFPS 60 cost us every session up to 2026-09-17.
+    /// </summary>
+    private void SnapToSupportedRate()
+    {
+        float[] rates;
+        if (!Performance.TryGetAvailableDisplayRefreshRates(out rates) || rates == null || rates.Length == 0)
+            return;
+
+        foreach (float r in rates)
+            if (Mathf.Abs(r - targetFPS) < 0.5f) return;   // requested rate is supported
+
+        float best = rates[0];
+        foreach (float r in rates)
+            if (Mathf.Abs(r - targetFPS) < Mathf.Abs(best - targetFPS)) best = r;
+
+        Debug.LogWarning($"[FrameRateController] targetFPS {targetFPS} Hz is not supported by this headset; " +
+                         $"using {best:0.#} Hz instead. Fix the value on the FrameRateController component.");
+        targetFPS = Mathf.RoundToInt(best);
+        Application.targetFrameRate = targetFPS;
     }
 
     private static void LogAvailableRates()
