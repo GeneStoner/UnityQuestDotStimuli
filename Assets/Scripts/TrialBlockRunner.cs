@@ -113,6 +113,9 @@ public class TrialBlockRunner : MonoBehaviour
     private float _transDurMsMeasured = -1f;
     private int   _transRenderedFrames = -1;
     private float _maxFrameGapMs = -1f;
+    private float _transMaxFrameGapMs = -1f;   // worst gap inside the translation window
+    private int   _stimLateFrames = 0;         // rendered frames longer than 1.5 display periods
+    private bool  _inTranslation = false;
 
     private ExperimentSpec.PlannedTrial _currentTrial;
     private CondLib.StimulusCondition _currentCond;
@@ -660,6 +663,9 @@ public class TrialBlockRunner : MonoBehaviour
         _transDurMsMeasured = -1f;
         _transRenderedFrames = -1;
         _maxFrameGapMs = -1f;
+        _transMaxFrameGapMs = -1f;
+        _stimLateFrames = 0;
+        _inTranslation = false;
         _responseFrameIndex = 0;
         _phase = TrialPhase.WaitingForStart;
         _zDriftLoggedThisTrial = false;   // reset per-trial drift log throttle
@@ -844,6 +850,12 @@ public class TrialBlockRunner : MonoBehaviour
         {
             float gapMs = Time.unscaledDeltaTime * 1000f;
             if (gapMs > _maxFrameGapMs) _maxFrameGapMs = gapMs;
+            if (_inTranslation && gapMs > _transMaxFrameGapMs) _transMaxFrameGapMs = gapMs;
+
+            // A frame longer than 1.5 display periods means at least one was missed
+            float periodMs = (FrameRateController.ActualRefreshRateHz > 1f)
+                             ? 1000f / FrameRateController.ActualRefreshRateHz : _simDt * 1000f;
+            if (gapMs > periodMs * 1.5f) _stimLateFrames++;
         }
 
         _accum += Time.deltaTime;
@@ -895,11 +907,13 @@ public class TrialBlockRunner : MonoBehaviour
         {
             _transStartTime = Time.unscaledTime;
             _transStartRenderedFrame = Time.frameCount;
+            _inTranslation = true;
         }
         else if (_frameInStimulus == _currentTrial.translationEndFrame && _transStartTime > 0f)
         {
             _transDurMsMeasured  = (Time.unscaledTime - _transStartTime) * 1000f;
             _transRenderedFrames = Time.frameCount - _transStartRenderedFrame;
+            _inTranslation = false;
         }
 
         builder.ApplyAppearance(_currentCond, _frameInStimulus);
@@ -1101,7 +1115,8 @@ public class TrialBlockRunner : MonoBehaviour
             AuditTrajectory();
 
             csvLogger.LogResponse(-1, -1, "", -1, "", "Keyboard");
-            csvLogger.SetMeasuredTiming(_transDurMsMeasured, _transRenderedFrames, _maxFrameGapMs);
+            csvLogger.SetMeasuredTiming(_transDurMsMeasured, _transRenderedFrames, _maxFrameGapMs,
+                                        _transMaxFrameGapMs, _stimLateFrames);
             csvLogger.EndTrial();
         }
 
@@ -1159,7 +1174,8 @@ public class TrialBlockRunner : MonoBehaviour
             }
 
             csvLogger.LogResponse(responseIndex, responseDigit, responseDir, rtFrames, endKey, device);
-            csvLogger.SetMeasuredTiming(_transDurMsMeasured, _transRenderedFrames, _maxFrameGapMs);
+            csvLogger.SetMeasuredTiming(_transDurMsMeasured, _transRenderedFrames, _maxFrameGapMs,
+                                        _transMaxFrameGapMs, _stimLateFrames);
             csvLogger.EndTrial();
         }
 
