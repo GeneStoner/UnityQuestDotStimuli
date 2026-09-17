@@ -759,12 +759,14 @@ public class CsvLogger : MonoBehaviour
             sb.Append("    \"far_clip\": ").Append(f(cam != null ? cam.farClipPlane : float.NaN)).Append("\n");
             sb.Append("  },\n");
 
+            // stimulus_builder: records rendering flags not captured in experiment_spec.
+            // dot_size_m / aperture / exclusion are intentionally omitted — they are
+            // stale inspector defaults at sidecar-write time; use experiment_spec instead.
             sb.Append("  \"stimulus_builder\": {\n");
-            sb.Append("    \"dots_per_field\": ").Append(builder != null ? builder.dotsPerField : -1).Append(",\n");
-            sb.Append("    \"aperture_diameter_deg\": ").Append(f(builder != null ? builder.apertureDeg : float.NaN)).Append(",\n");
-            sb.Append("    \"dot_size_m\": ").Append(f(builder != null ? builder.dotSizeMeters : float.NaN)).Append(",\n");
-            sb.Append("    \"respawn_when_out_of_bounds\": ").Append((builder != null && builder.respawnWhenOutOfBounds) ? "true" : "false").Append(",\n");
-            sb.Append("    \"exclusion_radius_m\": ").Append(f(builder != null ? builder.exclusionRadiusMeters : float.NaN)).Append("\n");
+            sb.Append("    \"use_screen_space_shader\": ").Append((builder != null && builder.useScreenSpaceShader) ? "true" : "false").Append(",\n");
+            sb.Append("    \"use_fixed_aa_shader\": ").Append((builder != null && builder.useFixedAAShader) ? "true" : "false").Append(",\n");
+            sb.Append("    \"dot_blend_mode\": \"").Append((builder != null && builder.useFixedAAShader) ? "additive" : "alpha").Append("\",\n");
+            sb.Append("    \"respawn_when_out_of_bounds\": ").Append((builder != null && builder.respawnWhenOutOfBounds) ? "true" : "false").Append("\n");
             sb.Append("  },\n");
 
             sb.Append("  \"fixation\": {\n");

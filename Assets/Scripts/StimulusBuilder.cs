@@ -88,6 +88,12 @@ public class StimulusBuilder : MonoBehaviour
              "Toggle off to revert to the classic world-space sphere path instantly.")]
     public bool useScreenSpaceShader = false;
 
+    [Tooltip("When true, uses DotScreenSpaceFixed shader (fixed AA width=0.03) instead of " +
+             "DotScreenSpace (adaptive fwidth-based AA). Fixed AA prevents sub-pixel luminance " +
+             "variation on small dots (~2 px on Quest 3 at 0.08°). Only active when " +
+             "useScreenSpaceShader is also true.")]
+    public bool useFixedAAShader = false;
+
     [Tooltip("Inter-pupillary distance in meters used to compute binocular disparity. " +
              "Default 0.063 m (average adult). Only used when useScreenSpaceShader = true.")]
     public float ipdMeters = 0.063f;
@@ -595,12 +601,13 @@ public class StimulusBuilder : MonoBehaviour
     /// </summary>
     Material MakeScreenSpaceMaterial(Color c)
     {
-        Shader sh = Shader.Find("Custom/DotScreenSpace");
+        string shaderName = useFixedAAShader ? "Custom/DotScreenSpaceFixed" : "Custom/DotScreenSpace";
+        Shader sh = Shader.Find(shaderName);
         if (sh == null)
         {
-            Debug.LogWarning("[StimulusBuilder] DotScreenSpace shader not found — " +
+            Debug.LogWarning($"[StimulusBuilder] {shaderName} shader not found — " +
                              "falling back to additive material. " +
-                             "Ensure 'Assets/Shaders/DotScreenSpace.shader' is in the project.");
+                             "Ensure the shader file is in Assets/Shaders/.");
             return MakeAdditiveMaterial(c);
         }
 

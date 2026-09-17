@@ -5451,7 +5451,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a25a5426ddab94508b9be9ba873e477c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit.Samples.StarterAssets::TrialBlockRunner
-  spec: {fileID: 11400000, guid: 20fa7573e215445689ffed4d799bb63f, type: 2}
+  spec: {fileID: 11400000, guid: b2435d15a7eb149a4a8df19b3fae9f9f, type: 2}
   builder: {fileID: 983443834}
   fixation: {fileID: 0}
   csvLogger: {fileID: 1973951161}
@@ -32225,6 +32225,7 @@ MonoBehaviour:
   depthOffset_m: 0
   depthBias_m: 0
   useScreenSpaceShader: 1
+  useFixedAAShader: 1
   ipdMeters: 0.063
 --- !u!114 &983443835
 MonoBehaviour:
@@ -60755,7 +60756,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a25a5426ddab94508b9be9ba873e477c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrialBlockRunner
-  spec: {fileID: 11400000, guid: fabe3ea4f256249978cdc8983a45f6e1, type: 2}
+  spec: {fileID: 11400000, guid: f7086558314c4f538814f6902240714c, type: 2}
   builder: {fileID: 983443834}
   fixation: {fileID: 841569171}
   csvLogger: {fileID: 1973951161}
@@ -60794,12 +60795,8 @@ MonoBehaviour:
   runner: {fileID: 1973951165}
   xrInputActions: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   specs:
-  - {fileID: 11400000, guid: 9e24d07b8f4044229ac8ae08e0752f9d, type: 2}
-  - {fileID: 11400000, guid: a8376e3845864b22b77b2b625d978be8, type: 2}
-  - {fileID: 11400000, guid: b3c94d71a2e548f1a8c6d5e9f0b12345, type: 2}
-  - {fileID: 11400000, guid: 97681d7c58c64430892cc311fe5f8a2f, type: 2}
-  - {fileID: 11400000, guid: e57e293b1db4546749a6db62a1300919, type: 2}
-  - {fileID: 11400000, guid: fabe3ea4f256249978cdc8983a45f6e1, type: 2}
+  - {fileID: 11400000, guid: b2435d15a7eb149a4a8df19b3fae9f9f, type: 2}
+  - {fileID: 11400000, guid: 2b7bd7e151b1a4c9d88cbe9ca16196c0, type: 2}
 --- !u!1 &1975619407
 GameObject:
   m_ObjectHideFlags: 0
@@ -63526,7 +63523,8 @@ MonoBehaviour:
   exclusionRadiusMeters: 0
   depthOffset_m: 0
   depthBias_m: 0
-  useScreenSpaceShader: 0
+  useScreenSpaceShader: 1
+  useFixedAAShader: 0
   ipdMeters: 0.063
 --- !u!1 &2080098370
 GameObject:

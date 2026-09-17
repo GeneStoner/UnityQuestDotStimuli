@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6b2bce2bb36a4c26bd3ffebf54318e4, type: 3}
-  m_Name: Exp_DensityCompare_HighDens
+  m_Name: Exp_DensityCompare_HighDens_ColorMotionSwap
   m_EditorClassIdentifier: Assembly-CSharp::ExpSpecTestPhase
-  experimentName: DensityCompare_HighDens_v2
+  experimentName: DensityCompare_HighDens_ColorMotionSwap_v1
   simHz: 90
   viewDistance_m: 2
   apertureRadius_deg: 3.5
@@ -45,7 +45,7 @@ MonoBehaviour:
   includeBothRotationConfigs: 1
   includeMotionSwaps: 0
   includeColorSwaps: 0
-  includeCMSwaps: 0
+  includeCMSwaps: 1
   includeDots50Swaps: 0
   includeDots50ASwaps: 0
   includeDots50BothSwaps: 0

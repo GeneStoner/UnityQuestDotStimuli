@@ -259,12 +259,11 @@ public class ExperimentSelector : MonoBehaviour
         bool trigLOk   = _triggerLeft  != null;
         bool trigROk   = _triggerRight != null;
 
-        string line1 = $"runner:{YN(runnerOk)}  xrActions:{YN(inputOk)}  specs:{(specs != null ? specs.Length : 0)}";
-        string line2 = $"thumbL:{YN(thumbLOk)} thumbR:{YN(thumbROk)} trigL:{YN(trigLOk)} trigR:{YN(trigROk)}";
-
-        _diagText.text  = line1 + "\n" + line2;
-        _diagText.color = (runnerOk && (thumbLOk || thumbROk || trigLOk || trigROk))
-            ? COL_DIAG_OK : COL_DIAG_ERR;
+        bool inputReady = thumbLOk || thumbROk || trigLOk || trigROk;
+        _diagText.text = (runnerOk && inputReady) ? "Controllers ready"
+                       : !runnerOk                ? "ERROR: session not found — check setup"
+                                                  : "Waiting for controllers...";
+        _diagText.color = (runnerOk && inputReady) ? COL_DIAG_OK : COL_DIAG_ERR;
     }
 
     static string YN(bool v) => v ? "Y" : "N";
@@ -273,7 +272,9 @@ public class ExperimentSelector : MonoBehaviour
     {
         if (_headerText == null) return;
 
-        _headerText.text = $"Select Experiment  ({_selected + 1} / {specs.Length})";
+        _headerText.text = specs.Length > 1
+            ? $"Select experiment  ({_selected + 1} of {specs.Length})"
+            : "VRDots";
 
         for (int i = 0; i < VISIBLE_ROWS; i++)
         {
@@ -301,8 +302,9 @@ public class ExperimentSelector : MonoBehaviour
 
         bool canUp   = _scrollTop > 0;
         bool canDown = (_scrollTop + VISIBLE_ROWS) < specs.Length;
-        string arrows = (canUp ? "▲  " : "      ")
-            + "thumbstick: navigate  |  trigger: confirm"
+        string nav = specs.Length > 1 ? "Thumbstick: navigate  |  " : "";
+        string arrows = (canUp ? "▲  " : "")
+            + nav + "Trigger: start"
             + (canDown ? "  ▼" : "");
         if (_footerText != null) _footerText.text = arrows;
     }

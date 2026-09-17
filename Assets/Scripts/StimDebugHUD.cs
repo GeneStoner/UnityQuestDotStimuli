@@ -49,16 +49,15 @@ public class StimDebugHUD : MonoBehaviour
 
         if (!visible || _bannerText == null) return;
 
-        // Banner: experiment name + build date
-        _bannerText.text = $"{runner.ExperimentName}\nBuild: {BuildInfo.BUILD_DATE}";
+        // Debug row only — no banner text (experiment name is technical, not useful to observer)
+        _bannerText.text = "";
 
-        // Debug row: trial details while waiting for trigger
         if (_debugText == null) return;
         var t = runner.CurrentTrial;
+        // TrialIndex = _startedTrialCount, already incremented to 1 for the first trial — no +1
         _debugText.text = (t == null)
-            ? "Ready — press trigger to begin"
-            : $"Trial {runner.TrialIndex + 1}/{runner.TrialsCount}  " +
-              $"Cond: {t.conditionID}  Heading: {t.headingDeg:F1}°";
+            ? "Press trigger to begin"
+            : $"Trial {runner.TrialIndex} of {runner.TrialsCount}";
     }
 
     // ── Canvas construction ───────────────────────────────────────────────────
