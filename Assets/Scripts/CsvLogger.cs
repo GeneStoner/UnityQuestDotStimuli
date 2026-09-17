@@ -96,6 +96,12 @@ public class CsvLogger : MonoBehaviour
     private int _curOn = -1, _curTS = -1, _curTE = -1, _curN = -1;
     private int _curPresentedDurFrames = -1;
     private float _curPresentedDurMs = -1f;
+
+    // Measured (wall-clock) timing of the translation window, set by TrialBlockRunner.
+    // PresentedDurMs above is only frames x spec simDt; these three say what happened.
+    private float _curTransDurMsMeasured = -1f;   // real elapsed ms, translation start -> end
+    private int   _curTransRenderedFrames = -1;   // rendered frames shown across that window
+    private float _curMaxFrameGapMs = -1f;        // longest rendered-frame interval in the trial
     private int _curSeedA0 = 0, _curSeedA1 = 0, _curSeedB2 = 0, _curSeedB3 = 0;
 
     // session constants
@@ -162,7 +168,8 @@ public class CsvLogger : MonoBehaviour
         "SeedA0","SeedA1","SeedB2","SeedB3",
         "DelayedFieldColor","DelayedFieldDepth","SwapType","LateralShiftDir","EndKey","Device",
         "MkHash32","ColorHash32","DepthHash32",
-        "MotionTypeByFrame_SubfieldCodes","ColorByFrame_SubfieldCodes","DepthByFrame_SubfieldCodes"
+        "MotionTypeByFrame_SubfieldCodes","ColorByFrame_SubfieldCodes","DepthByFrame_SubfieldCodes",
+        "TransDurMsMeasured","TransRenderedFrames","MaxFrameGapMs"
     };
 
     // ---------- public API (called by TrialBlockRunner) ----------
@@ -395,6 +402,14 @@ public class CsvLogger : MonoBehaviour
         _curRespDeg = ResponseDirToDeg(respDir);
     }
 
+    /// <summary>Measured timing for the trial just shown (called before EndTrial).</summary>
+    public void SetMeasuredTiming(float transDurMs, int renderedFrames, float maxFrameGapMs)
+    {
+        _curTransDurMsMeasured = transDurMs;
+        _curTransRenderedFrames = renderedFrames;
+        _curMaxFrameGapMs = maxFrameGapMs;
+    }
+
     public void EndTrial()
     {
         if (!_sessionOpen || _tsv == null) return;
@@ -443,7 +458,10 @@ public class CsvLogger : MonoBehaviour
             _curDepthHash32.ToString("X8") + "\t" +
             mkOut + "\t" +
             colOut + "\t" +
-            depthOut;
+            depthOut + "\t" +
+            F(_curTransDurMsMeasured) + "\t" +
+            _curTransRenderedFrames + "\t" +
+            F(_curMaxFrameGapMs);
 
         try
         {
@@ -918,6 +936,9 @@ public class CsvLogger : MonoBehaviour
 
         _curOn = _curTS = _curTE = _curN = -1;
         _curPresentedDurFrames = -1;
+        _curTransDurMsMeasured = -1f;
+        _curTransRenderedFrames = -1;
+        _curMaxFrameGapMs = -1f;
         _curPresentedDurMs = -1f;
         _curSeedA0 = _curSeedA1 = _curSeedB2 = _curSeedB3 = 0;
     }

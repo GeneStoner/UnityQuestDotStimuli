@@ -105,6 +105,15 @@ public class TrialBlockRunner : MonoBehaviour
     private float _accum;
     private float _simDt;
 
+    // Measured timing of the translation window (wall clock), logged per trial.
+    // The sim advances on a time accumulator, so a dropped rendered frame does not
+    // stretch the stimulus; it means a simulated frame was never displayed.
+    private float _transStartTime = -1f;
+    private int   _transStartRenderedFrame = -1;
+    private float _transDurMsMeasured = -1f;
+    private int   _transRenderedFrames = -1;
+    private float _maxFrameGapMs = -1f;
+
     private ExperimentSpec.PlannedTrial _currentTrial;
     private CondLib.StimulusCondition _currentCond;
 
@@ -646,6 +655,11 @@ public class TrialBlockRunner : MonoBehaviour
 
         _frameInStimulus = 0;
         _accum = 0f;
+        _transStartTime = -1f;
+        _transStartRenderedFrame = -1;
+        _transDurMsMeasured = -1f;
+        _transRenderedFrames = -1;
+        _maxFrameGapMs = -1f;
         _responseFrameIndex = 0;
         _phase = TrialPhase.WaitingForStart;
         _zDriftLoggedThisTrial = false;   // reset per-trial drift log throttle
@@ -826,6 +840,12 @@ public class TrialBlockRunner : MonoBehaviour
 
         _xrTriggerPressedThisFrame = false; // Clear any unconsumed XR input
 
+        if (_phase == TrialPhase.Stimulus)
+        {
+            float gapMs = Time.unscaledDeltaTime * 1000f;
+            if (gapMs > _maxFrameGapMs) _maxFrameGapMs = gapMs;
+        }
+
         _accum += Time.deltaTime;
         while (_accum >= _simDt)
         {
@@ -869,6 +889,17 @@ public class TrialBlockRunner : MonoBehaviour
                 spec.translationSpeed_degPerSec,
                 spec.viewDistance_m
             );
+        }
+
+        if (_frameInStimulus == _currentTrial.translationStartFrame)
+        {
+            _transStartTime = Time.unscaledTime;
+            _transStartRenderedFrame = Time.frameCount;
+        }
+        else if (_frameInStimulus == _currentTrial.translationEndFrame && _transStartTime > 0f)
+        {
+            _transDurMsMeasured  = (Time.unscaledTime - _transStartTime) * 1000f;
+            _transRenderedFrames = Time.frameCount - _transStartRenderedFrame;
         }
 
         builder.ApplyAppearance(_currentCond, _frameInStimulus);
@@ -1070,6 +1101,7 @@ public class TrialBlockRunner : MonoBehaviour
             AuditTrajectory();
 
             csvLogger.LogResponse(-1, -1, "", -1, "", "Keyboard");
+            csvLogger.SetMeasuredTiming(_transDurMsMeasured, _transRenderedFrames, _maxFrameGapMs);
             csvLogger.EndTrial();
         }
 
@@ -1127,6 +1159,7 @@ public class TrialBlockRunner : MonoBehaviour
             }
 
             csvLogger.LogResponse(responseIndex, responseDigit, responseDir, rtFrames, endKey, device);
+            csvLogger.SetMeasuredTiming(_transDurMsMeasured, _transRenderedFrames, _maxFrameGapMs);
             csvLogger.EndTrial();
         }
 

@@ -101,7 +101,8 @@ Pull them with the headset connected:
 | `RespDeg` | Reported direction |
 | `RTf` | Response time from translation onset |
 | `DelayedFieldColor` | Color of the later field: `R` or `G` |
-| `TransStartFrame`, `TransEndFrame`, `PresentedDurMs` | Frame timing, for checking dropped frames |
+| `TransStartFrame`, `TransEndFrame`, `PresentedDurMs` | Frame timing. `PresentedDurMs` is frames × the spec's frame duration, not a measurement |
+| `TransDurMsMeasured`, `TransRenderedFrames`, `MaxFrameGapMs` | Measured translation timing (from 2026-09-17): real elapsed ms, rendered frames shown, worst frame gap |
 | `SeedA0`–`SeedB3`, `MkHash32` | Seeds and trajectory fingerprint, for exact replay and checking trial identity |
 
 ### Key sidecar fields

@@ -54,10 +54,17 @@ Each measured value should equal the spec. This checks the stimulus logic, not t
 
 **Check the timing on every trial.** The TSV logs `TransStartFrame`, `TransEndFrame`, `PresentedDurFrames` and `PresentedDurMs`. At 90 Hz, one frame is 11.1 ms, so an 80 ms translation lasts 7 frames (78 ms).
 
-⚠️ **`PresentedDurMs` is not measured.** It is the frame count multiplied by the spec's `simHz` (90), so it always reads as if the headset ran at 90 Hz. The stimulus also steps once per rendered frame, so a dropped frame lengthens the stimulus without changing the frame count. Two things therefore have to be checked separately:
+⚠️ **`PresentedDurMs` is not measured.** It is the frame count multiplied by the spec's `simHz` (90), so it always reads as if the stimulus ran at 90 Hz. Since 2026-09-17 three measured columns sit beside it:
 
-- **The display rate really was 90 Hz.** The sidecar's `display` block records `refresh_rate_hz` and `refresh_rate_confirmed` (from 2026-09-17). If `refresh_rate_confirmed` is false, the headset ran at another rate (72 Hz is the Quest default) and every duration in that session is wrong in proportion.
-- **No frames were dropped.** Watch the log and OVR Metrics Tool (below). A measured FPS below the display rate means the stimulus was stretched. Known cause: the headset's tracking cameras losing confidence in a dim room drops the rate from 90 to 72 Hz, so run sessions with the room lights on.
+| Column | Meaning | Expected |
+|---|---|---|
+| `TransDurMsMeasured` | Wall-clock time from the first to the last translation frame | Within a frame or two of `PresentedDurMs` |
+| `TransRenderedFrames` | Rendered frames actually shown across that window | Equal to `PresentedDurFrames` when the display keeps up; fewer means simulated frames were never displayed |
+| `MaxFrameGapMs` | Longest gap between rendered frames in the trial | Near the display period (11.1 ms at 90 Hz); a large value is a hitch |
+
+**What a dropped frame does here.** The stimulus advances on a time accumulator (`_accum += Time.deltaTime`), not one step per rendered frame, so dropped frames do **not** stretch the stimulus: the motion keeps correct real-world timing, but some simulated frames are never shown. At a 72 Hz display with `simHz` 90, roughly one simulated frame in five is skipped. Brief stimuli are then displayed more coarsely than intended, which is a reason to fix the rate, not to discard the timing.
+
+**Also confirm the display rate.** The sidecar's `display` block records `refresh_rate_hz` and `refresh_rate_confirmed`. If `refresh_rate_confirmed` is false the headset ran at another rate (72 Hz is the Quest default). Known cause of a mid-session drop from 90 to 72 Hz: the tracking cameras losing confidence in a dim room, so keep room lighting constant and documented.
 
 **Check the refresh rate during the session.** `FrameRateController` requests 90 Hz and logs the actual rate once per second. Watch it live with the headset connected:
 
