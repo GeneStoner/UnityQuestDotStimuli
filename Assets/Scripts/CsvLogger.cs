@@ -780,8 +780,10 @@ public class CsvLogger : MonoBehaviour
             sb.Append("    \"msaa_samples\": ").Append(urp != null ? urp.msaaSampleCount : 0).Append(",\n");
             sb.Append("    \"eye_texture_px\": \"").Append(UnityEngine.XR.XRSettings.eyeTextureWidth)
               .Append("x").Append(UnityEngine.XR.XRSettings.eyeTextureHeight).Append("\",\n");
-            float hz = Unity.XR.Oculus.Performance.TryGetDisplayRefreshRate(out float rate) ? rate : float.NaN;
-            sb.Append("    \"refresh_rate_hz\": ").Append(f(hz)).Append("\n");
+            float hz = Unity.XR.Oculus.Performance.TryGetDisplayRefreshRate(out float rate)
+                       ? rate : FrameRateController.ActualRefreshRateHz;
+            sb.Append("    \"refresh_rate_hz\": ").Append(f(hz)).Append(",\n");
+            sb.Append("    \"refresh_rate_confirmed\": ").Append(FrameRateController.RefreshRateConfirmed ? "true" : "false").Append("\n");
             sb.Append("  },\n");
 
             sb.Append("  \"fixation\": {\n");
