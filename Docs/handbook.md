@@ -30,6 +30,7 @@ Do not change Company Name or Product Name in Project Settings: that changes the
 2. **Open the scene** `Assets/Scenes/UpToDateScene`.
 3. **Pick the experiment.** In the Hierarchy, select `TrialBlockManager`. In the Inspector, drag a spec from `Assets/ExperimentSpecs/` into the **Spec** slot of the TrialBlockRunner component.
 4. **Check rendering.** On the `StimulusBuilder` component, **Use Screen Space Shader** and **Use Fixed AA Shader** should both be ticked.
+   Rendering settings live in `Assets/Settings/Mobile_RPAsset.asset` and must not be changed: render scale **1.23** (the Quest 3 panel resolution) and MSAA **4×**. Each session's sidecar records them in its `display` block.
 5. **Save** the scene (Ctrl+S / Cmd+S), then File → Build Settings → **Build and Run** with the Quest connected. The app installs and launches (also listed under Unknown Sources).
 6. **Calibrate colors** once per new observer with the FlickerCalibration scene (flicker photometry, 10 settings, saved on the headset).
 7. **Run.** The observer starts with the right trigger, fixates the central target, reports direction with the right thumbstick, then presses the trigger twice (lock, then submit). A session is 512 trials, about 15–20 minutes, and paces itself. Observer instructions: [subject_experimenter_instructions.md](subject_experimenter_instructions.md).
@@ -120,7 +121,7 @@ The `experiment_spec` block is the authoritative record of the stimulus.
 | `delayed_onset_ms` | 750 | Delay between the two fields' onsets |
 | `include_no_swap_baseline`, `include_cm_swaps` | true / false | Which trial types were included |
 
-Other blocks: `calibration_colors` (the observer's red and green RGBA values), `stimulus_builder` (`use_fixed_aa_shader`, `dot_blend_mode`: sessions from 2026-09-16 use the fixed shader and additive blending), and `build_date` (which app version ran).
+Other blocks: `display` (headset model, render scale, MSAA, eye-texture size, refresh rate — from 2026-09-17), `calibration_colors` (the observer's red and green RGBA values), `stimulus_builder` (`use_fixed_aa_shader`, `dot_blend_mode`: sessions from 2026-09-16 use the fixed shader and additive blending), and `build_date` (which app version ran).
 
 ### Analysis
 

@@ -769,6 +769,21 @@ public class CsvLogger : MonoBehaviour
             sb.Append("    \"respawn_when_out_of_bounds\": ").Append((builder != null && builder.respawnWhenOutOfBounds) ? "true" : "false").Append("\n");
             sb.Append("  },\n");
 
+            // display: what the stimulus was actually rendered and shown at.
+            // render_scale 1.23 = the Quest 3 panel resolution (default 1.0 renders
+            // 1680x1760 per eye and upscales); eye_texture is the size in use now.
+            var urp = (QualitySettings.renderPipeline ?? UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline)
+                      as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            sb.Append("  \"display\": {\n");
+            sb.Append("    \"device_model\": \"").Append(esc(SystemInfo.deviceModel)).Append("\",\n");
+            sb.Append("    \"render_scale\": ").Append(f(urp != null ? urp.renderScale : float.NaN)).Append(",\n");
+            sb.Append("    \"msaa_samples\": ").Append(urp != null ? urp.msaaSampleCount : 0).Append(",\n");
+            sb.Append("    \"eye_texture_px\": \"").Append(UnityEngine.XR.XRSettings.eyeTextureWidth)
+              .Append("x").Append(UnityEngine.XR.XRSettings.eyeTextureHeight).Append("\",\n");
+            float hz = Unity.XR.Oculus.Performance.TryGetDisplayRefreshRate(out float rate) ? rate : float.NaN;
+            sb.Append("    \"refresh_rate_hz\": ").Append(f(hz)).Append("\n");
+            sb.Append("  },\n");
+
             sb.Append("  \"fixation\": {\n");
             sb.Append("    \"preview_scale\": ").Append(f(fixPreviewScale)).Append(",\n");
             sb.Append("    \"inner_diameter_deg\": ").Append(f(fixInnerDeg)).Append(",\n");

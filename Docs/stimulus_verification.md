@@ -17,7 +17,7 @@ Both sites use the **Meta Quest 3** (not the Quest 3S or Quest Pro, which are di
 |---|---|---|
 | Display | Two LCD panels, 2064 × 2208 pixels per eye, about 25 pixels per degree; no local dimming [1] | Dot luminance does not depend on other screen content (the Quest Pro's local dimming would) |
 | Refresh rate | 72, 90 or 120 Hz [1] | We run at 90 Hz (11.1 ms per frame). 120 Hz (8.3 ms) is possible but changes every frame count, so both sites must use the same rate for a whole study |
-| Default render resolution | 1680 × 1760 per eye at render scale 1.0, below the panel's resolution; scaling up to the panel's resolution (about 1.23) "provides a significant increase in image clarity" [2] | VRDots uses scale 1.0, so the scene renders at about 20 pixels per degree and is upsampled: a 0.12° dot is about 2.4 rendered pixels, not 3. See the blur table |
+| Render resolution | Meta's default render scale of 1.0 gives 1680 × 1760 per eye, below the panel; raising it to the panel's resolution (about 1.23) "provides a significant increase in image clarity" [2] | **VRDots uses 1.23** (set 2026-09-17 after an A/B test in the headset; sharper, not dramatically). Sessions before that date rendered at 1.0 and were upsampled |
 | Setting render scale | In URP, `UniversalRenderPipelineAsset.renderScale`; `XRSettings.eyeTextureResolutionScale` is for the Built-in pipeline [2] | VRDots uses URP: the value is `m_RenderScale` in `Assets/Settings/Mobile_RPAsset.asset` |
 | Dynamic resolution | Optional; changes render resolution with GPU load; enabled through `OVRManager` [3] | VRDots does not use `OVRManager`, so resolution is fixed. Keep it that way |
 | Lenses | Pancake lenses, about 110° horizontal field of view [1] | Image quality and luminance are best at the lens center; our stimulus is within 3.5° of center |
@@ -33,11 +33,12 @@ Both sites use the **Meta Quest 3** (not the Quest 3S or Quest Pro, which are di
 | Project settings | Keep them in git and never edit them locally: `ProjectSettings/`, `Assets/XR/Settings/OculusSettings.asset`, `Assets/Settings/Mobile_RPAsset.asset` | `git status` shows no changes there |
 | Experiment | The same spec asset in the Spec slot | The sidecar's `experiment_spec` block, compared between sites |
 | Scene toggles | Use Screen Space Shader and Use Fixed AA Shader both ticked | The sidecar's `stimulus_builder` block |
+| Render settings | `m_RenderScale: 1.23` and `m_MSAA: 4` in `Assets/Settings/Mobile_RPAsset.asset`, 90 Hz | The sidecar's `display` block: `render_scale`, `msaa_samples`, `eye_texture_px`, `refresh_rate_hz`, `device_model` |
 | Colors | Red/green isoluminance measured for each observer | The sidecar's `calibration_colors` block |
 
 **Checking that two sites match:** compare the sidecar files from one session at each site. Apart from the timestamp, the `experiment_spec`, `stimulus_builder` and `build_date` blocks should be identical. Trials with the same seeds (`SeedA0`–`SeedB3`) produce the same dot trajectories, and `MkHash32` fingerprints each trial's trajectory, so matching hashes mean matching motion.
 
-**(to build)** Log more in the sidecar: git commit hash, Unity version, headset model and OS build, measured refresh rate, URP render scale, MSAA and foveation level. Today only `build_date` identifies the build.
+The sidecar's `display` block records the headset model, render scale, MSAA, eye-texture size and refresh rate from 2026-09-17 on. **(to build)** Also log the git commit hash, Unity version, headset OS build and foveation level. Today only `build_date` identifies the build.
 
 ## 2. Rendering: confirm the app drew the specified stimulus
 
@@ -83,7 +84,7 @@ Published VR timing studies found stimulus durations accurate but software times
 | **Headset fit**: the lens sweet spot is small | Adjust the head strap until the display is sharpest; set the **IPD wheel** to the observer's IPD [4]; set **eye relief** with the buttons beside the lenses the same way for every session [5] |
 | **Dirty or fogged lenses** | Clean with a dry microfiber cloth before each session; let a cold headset warm up |
 | **Glasses** | Use the glasses spacer or prescription lens inserts, the same for every session |
-| **Render resolution**: at render scale 1.0 the Quest 3 renders 1680 × 1760 per eye and upsamples to the 2064 × 2208 panel [2] | Test `m_RenderScale` of about 1.23 in `Mobile_RPAsset` (panel resolution) while confirming 90 Hz holds in OVR Metrics Tool; then fix the value for the study and log it **(to build)** |
+| **Render resolution**: at render scale 1.0 the Quest 3 renders below panel resolution and upsamples [2] | Keep `m_RenderScale: 1.23` in `Assets/Settings/Mobile_RPAsset.asset` (both sites). The sidecar's `display` block records what was used; confirm 90 Hz holds in OVR Metrics Tool |
 | **Anti-aliasing and foveation** | Keep MSAA 4× (`Mobile_RPAsset`) and foveated rendering and SpaceWarp off (`OculusSettings`). Both are in git; don't change them |
 | **Dropped frames** | Check logcat as above; keep the headset charged and cool |
 
@@ -136,6 +137,7 @@ Each dot's visual angle is set in the code from the viewing geometry, so it does
 
 - [ ] `git pull`, still on the approved tag, `git status` clean
 - [ ] Correct spec in the Spec slot; scene saved; build
+- [ ] Sidecar `display` block: render scale 1.23, 90 Hz, expected eye texture (about 2064 × 2208)
 - [ ] Lenses clean, headset fitted, IPD wheel and eye relief set and recorded, brightness at the agreed level
 - [ ] Observer's flicker calibration present
 - [ ] logcat shows 90 Hz
