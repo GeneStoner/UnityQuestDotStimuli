@@ -32239,7 +32239,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3df7a4ecd6ac454cbd8d43b01fa2d0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FrameRateController
-  targetFPS: 60
+  targetFPS: 90
+  retryWindowSeconds: 10
+  enforceThroughoutSession: 1
 --- !u!1 &983885635
 GameObject:
   m_ObjectHideFlags: 0
@@ -60768,7 +60770,7 @@ MonoBehaviour:
   monitorPreviewMode: 0
   previewScale: 5
   useSeparatePreviewScales: 0
-  previewDotScale: 4
+  previewDotScale: 12.54
   previewFixationScale: 20
   previewApertureScale: 5
   logRealizedGeometryEachTrial: 1
@@ -63499,7 +63501,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3df7a4ecd6ac454cbd8d43b01fa2d0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FrameRateController
-  targetFPS: 60
+  targetFPS: 90
+  retryWindowSeconds: 10
+  enforceThroughoutSession: 1
 --- !u!114 &2073251897
 MonoBehaviour:
   m_ObjectHideFlags: 0
