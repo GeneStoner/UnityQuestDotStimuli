@@ -18,6 +18,9 @@ public class FrameRateController : MonoBehaviour
     [Tooltip("How long to keep retrying the request after startup (seconds).")]
     public float retryWindowSeconds = 10f;
 
+    [Tooltip("Keep re-requesting whenever the display drifts off the target rate.")]
+    public bool enforceThroughoutSession = true;
+
     /// <summary>Rate the display reports now, or NaN if unavailable.</summary>
     public static float ActualRefreshRateHz { get; private set; } = float.NaN;
 
@@ -28,6 +31,7 @@ public class FrameRateController : MonoBehaviour
     private float _timeElapsed;
     private float _retryDeadline;
     private float _nextRetry;
+    private int _reassertCount;
 
     void Awake()
     {
@@ -52,6 +56,19 @@ public class FrameRateController : MonoBehaviour
             TryApply("retry");
         }
 
+        // The runtime can accept 90 Hz at startup and then drop back to the
+        // headset default a second later (seen on Quest 3, Horizon OS). One
+        // request is therefore not enough: re-assert whenever it drifts off.
+        if (enforceThroughoutSession && Time.unscaledTime >= _nextRetry
+            && Performance.TryGetDisplayRefreshRate(out float rateNow)
+            && Mathf.Abs(rateNow - targetFPS) > 0.5f)
+        {
+            _nextRetry = Time.unscaledTime + 1f;
+            _reassertCount++;
+            RefreshRateConfirmed = false;
+            TryApply($"re-assert #{_reassertCount}");
+        }
+
         _frameCount += 1f;
         _timeElapsed += Time.unscaledDeltaTime;
 
@@ -60,8 +77,8 @@ public class FrameRateController : MonoBehaviour
             float fps = _frameCount / _timeElapsed;
             if (Performance.TryGetDisplayRefreshRate(out float now)) ActualRefreshRateHz = now;
 
-            // A measured rate well below the display rate means dropped frames.
-            // The stimulus steps once per frame, so dropped frames stretch it.
+            // A measured rate below the display rate means dropped frames: the sim
+            // advances on a time accumulator, so simulated frames go undisplayed.
             string warn = (!float.IsNaN(ActualRefreshRateHz) && fps < ActualRefreshRateHz - 3f)
                 ? "  DROPPING FRAMES" : "";
             Debug.Log($"[FrameRateController] Measured FPS = {fps:F1}; display = {ActualRefreshRateHz:F1} Hz{warn}");
