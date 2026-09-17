@@ -8,7 +8,7 @@ All current experiment documentation lives in this `Docs/` folder of the reposit
 | Doc | Focus | Audience |
 |---|---|---|
 | [handbook.md](handbook.md) | Setup, running an experiment (density series example), making new specs, data files, analysis, where data should live, learning the project with Claude Code | Anyone running experiments |
-| [stimulus_verification.md](stimulus_verification.md) | Checking the stimulus is what we intend at three levels (build, rendering, delivery to the eye); blur and pixelation; keeping both sites identical; checklists | Anyone running experiments; co-authors |
+| [stimulus_verification.md](stimulus_verification.md) | Checking the stimulus is what we intend at three levels (build, rendering, delivery to the eye); blur and pixelation; measurement methods (photometer, photodiode timing, OVR Metrics Tool, visual angle) with references; keeping both sites identical; checklists | Anyone running experiments; co-authors |
 | [subject_experimenter_instructions.md](subject_experimenter_instructions.md) | Part 1: the task as explained to observers. Part 2: flicker calibration and running a session | Observers and experimenters |
 | [experiment_catalog.md](experiment_catalog.md) | Every experiment run so far: parameters, sessions, results | Co-authors; analysis |
 | [psychophysics_limitations_and_mitigations.md](psychophysics_limitations_and_mitigations.md) | Known limits of Unity and Quest 3 for psychophysics (e.g. vergence–accommodation conflict) and what we do about them. Last updated 2026-04-17 | Co-authors |

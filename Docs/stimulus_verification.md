@@ -7,7 +7,9 @@ A stimulus can go wrong at three levels, and each needs its own check:
 2. **Rendering**: what the app actually drew, frame by frame.
 3. **Delivery**: what reached the observer's eye through the display, lenses and headset fit.
 
-Two labs are showing the same stimulus only when all three levels match. Items marked **(to build)** don't exist yet.
+Two labs are showing the same stimulus only when all three levels match. Items marked **(to build)** don't exist yet; references are at the end.
+
+**The headset: Meta Quest 3** (not the Quest 3S or Quest Pro, which are different headsets). LCD panels, 2064 × 2208 pixels per eye, about 25 pixels per degree at the center, pancake lenses, no local dimming, physical IPD wheel. We run it at 90 Hz. Confirm the model at each site with `adb shell getprop ro.product.model`.
 
 ## 1. Definition: build the same thing at both sites
 
@@ -44,13 +46,23 @@ Each measured value should equal the spec. This checks the stimulus logic, not t
 
 It should report a display rate of 90 Hz and a measured FPS near 90.0 throughout.
 
+**Log frame performance with OVR Metrics Tool.** Meta's free OVR Metrics Tool (install from the Meta Store) shows frame rate, stale (late) frames, screen tears and CPU/GPU throttling as an overlay in the headset. Its Report Mode saves a CSV for a whole session. Run it for the reference session of each stimulus version and keep the report: it should show 90 fps and no stale frames during trials.
+
+**Measure true timing with a photodiode (once per stimulus version).** Frame counts and logs show what the app intended, not when light actually left the lens. The standard check is a photodiode held against the lens, recorded with an oscilloscope or a microcontroller (e.g. an Arduino). Use a test build that flashes a white patch where the photodiode sits, synchronized with a trial event (e.g. translation onset). Measure:
+
+- **Duration:** the Quest 3 display is low-persistence (the backlight flashes once per frame), so count the flashes: a 7-frame event should show 7 flashes.
+- **Latency:** delay from the logged event to the light, and its trial-to-trial jitter.
+- **Dropped frames:** any missing flash.
+
+Published VR timing studies found stimulus durations accurate but software timestamps unreliable, and visual latencies of around 18 ms or more, so latency must be measured rather than assumed. **(to build)** the photodiode test build.
+
 **Look at the stimulus directly.** A headset screenshot or recording (Quest menu, or `adb shell screencap`) shows the dot layout and colors. It shows the rendered image before the lenses, so use it for geometry and counts, not for sharpness or brightness.
 
 **(to build)** A script that takes a session's TSV and sidecar and runs all of the above: checks the spec against intended values, flags frame timing errors, and compares one reconstructed trial with the spec.
 
 ## 3. Delivery: what reaches the eye
 
-## Blur and pixelation: causes and fixes
+### Blur and pixelation: causes and fixes
 
 | Cause | What to do |
 |---|---|
@@ -62,17 +74,39 @@ It should report a display rate of 90 Hz and a measured FPS near 90.0 throughout
 | **Anti-aliasing and foveation** | Keep MSAA 4× (`Mobile_RPAsset`) and foveated rendering and SpaceWarp off (`OculusSettings`). Both are in git; don't change them |
 | **Dropped frames** | Check logcat as above; keep the headset charged and cool |
 
-## Luminance and color
+### Luminance and color
 
-- **Isoluminance:** run flicker photometry for every observer and log the result (it goes in the sidecar).
-- **Absolute luminance:** measure the red and green dots and the background through the lens with a photometer, at full brightness, and keep the Quest brightness slider the same at both sites. Record the headset's display settings.
-- **Headset software:** record the Quest OS version at each site (`adb shell getprop ro.build.version.incremental`). Turn off automatic updates during a study if possible.
+**Isoluminance** is set for each observer by flicker photometry and logged in the sidecar. It makes red and green equally bright for that observer but says nothing about absolute luminance, so measure that too (once per stimulus version, at each site).
 
-## Visual angle
+**How to measure.**
 
-Each dot's visual angle is set in the code from the viewing geometry, so it doesn't depend on the headset. What varies is where the observer's eye sits relative to the lens.
+- **Instrument:** a spectroradiometer (best: gives luminance, chromaticity and spectrum) or a spot photometer / colorimeter.
+- **Placement:** where the eye would be, behind the lens, looking straight through its center, with a **pupil-sized aperture** (about 3–4 mm) in front of the instrument. In a recent HMD study, a handheld luminance meter overestimated luminance at every level compared with a spectroradiometer. One Unity calibration study validated spot-photometer readings with a photodiode mounted behind pinhole "pupils" in a mannequin head.
+- **Conditions:** headset brightness slider at the agreed level (record it), headset warmed up for 15 minutes, room dark.
 
-**(to build)** A calibration scene: rings at 1.1° and 3.5° radius, a 1° grid, and red, green and background luminance patches. Observers confirm the rings look sharp and circular, and the photometer is pointed at the patches.
+**What to measure** (use a calibration scene with large uniform patches, **(to build)**):
+
+| Property | Test | Why it matters for VRDots |
+|---|---|---|
+| Luminance of red dot, green dot, background | Patches rendered with the exact dot colors | Report cd/m² in the methods; compare sites |
+| Linearity | Gray patches at 8–10 RGB levels | Unity's color handling and the display's gamma decide how RGB maps to light |
+| Additivity | Red, green, and red + green overlapping | Our dots use additive blending; overlaps must equal the sum |
+| Chromaticity | CIE xy of red and green | Checks the colors match across sites |
+| Uniformity | Patch at center and at 3.5° eccentricity | Luminance falls off away from the lens center in HMDs; our aperture is 3.5° radius |
+| Stability | Same patch at start and end of 30 minutes | Warm-up and thermal drift |
+
+**Unity settings that change luminance.** Tonemapping, color grading, bloom and auto-exposure all alter output light. Published calibration work found default engine post-processing makes luminance non-linear and non-additive. In VRDots, post-processing is **off on the scene's cameras** (`m_RenderPostProcessing: 0`) and the project uses linear color space; keep both, even though the default URP volume profile contains tonemapping.
+
+**Headset software:** record the Quest OS version at each site (`adb shell getprop ro.build.version.incremental`). Turn off automatic updates during a study if possible.
+
+### Visual angle
+
+Each dot's visual angle is set in the code from the viewing geometry, so it doesn't depend on the headset. What varies is where the observer's eye sits relative to the lens, and lens distortion away from the center. Check it two ways:
+
+- **Through-the-lens photograph:** put a camera with a known field of view at the eye position and photograph a rendered 1° grid and rings at 1.1° and 3.5° radius. Measure the ring radii in the photo in degrees.
+- **Observer check:** observers confirm the rings look sharp and circular and the grid looks evenly spaced.
+
+**(to build)** A calibration scene: rings at 1.1° and 3.5° radius, a 1° grid, a photodiode flash patch, and red, green, gray and background luminance patches.
 
 ## 4. Protocol for both sites
 
@@ -81,8 +115,9 @@ Each dot's visual angle is set in the code from the viewing geometry, so it does
 1. Gene tags the commit (e.g. `stim-v1.0`) and announces it.
 2. Each site checks out the tag, confirms a clean `git status`, and builds.
 3. Each site runs a short reference session, then sends Gene the TSV, sidecar and a headset screenshot.
-4. Gene compares the sidecars and runs the timing and reconstruction checks; the version is approved only when both sites match.
-5. **Behavioral check:** the standard no-swap session should give a cueing effect of about +30 pp at both sites. A much smaller effect points to a delivery problem (blur, fit, luminance).
+4. Each site runs the physical measurements with the calibration scene: luminance and chromaticity table, photodiode timing, through-the-lens photo of the grid, and an OVR Metrics Tool report.
+5. Gene compares the sidecars and measurements and runs the timing and reconstruction checks; the version is approved only when both sites match.
+6. **Behavioral check:** the standard no-swap session should give a cueing effect of about +30 pp at both sites. A much smaller effect points to a delivery problem (blur, fit, luminance).
 
 **Every session**
 
@@ -92,3 +127,15 @@ Each dot's visual angle is set in the code from the viewing geometry, so it does
 - [ ] Observer's flicker calibration present
 - [ ] logcat shows 90 Hz
 - [ ] After the session: sidecar spec matches the intended spec; timing check passes
+
+## References
+
+- Murray, R. F., Patel, K. Y., & Wiedenmann, E. S. (2022). Luminance calibration of virtual reality displays in Unity. *Journal of Vision*, 22(13), 1. [doi:10.1167/jov.22.13.1](https://doi.org/10.1167/jov.22.13.1)
+- Murray, R. F. A model of the Unity High Definition Render Pipeline, with applications to flat-panel and head-mounted display characterization. *Journal of Vision*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC13112491/)
+- Zaman, N., Sarker, P., & Tavakkoli, A. (2023). Calibration of head mounted displays for vision research with virtual reality. *Journal of Vision*, 23(6), 7. [PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10278547/)
+- Colour calibration of a head mounted display for colour vision research using virtual reality. *SN Computer Science*. [PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8551135/)
+- Luminance and thresholding limitations of virtual reality headsets for visual field testing. *PLOS One*. [Link](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0332795)
+- Accuracy and precision of visual and auditory stimulus presentation in virtual reality in Python 2 and 3 environments. *Behavior Research Methods*. [PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9046309/)
+- Temporal precision and accuracy of audio-visual stimuli in mixed reality systems. *PLOS One*. [Link](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0295817)
+- Wiesing, M., Fink, G. R., & Weidner, R. (2020). Accuracy and precision of stimulus timing and reaction times with Unreal Engine and SteamVR. *PLOS One*. [PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7141612/)
+- Meta. Monitor performance with OVR Metrics Tool. [Developer docs](https://developers.meta.com/horizon/documentation/unity/ts-ovrmetricstool/)
