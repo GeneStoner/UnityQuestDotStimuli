@@ -29,7 +29,7 @@ All current experiment documentation lives in this `Docs/` folder of the reposit
 - **Say what changed** in the commit message, e.g. "handbook: 63-dot spec now 0.12° dots".
 - **For changes co-authors should review,** edit on a branch and open a pull request.
 - **Update docs with the code.** When a spec, setting or logged field changes, update the doc in the same commit. Claude Code can do this: "Update Docs/ to reflect this change."
-- **To share a copy:** `pandoc Docs/handbook.md -o handbook.pdf` (or `.docx`). Don't commit the exports; they go out of date.
+- **To share a copy:** `python3 Tools/docs_export.py Docs/handbook.md handbook.docx` makes a compact Word file (opens in Pages). Don’t commit the exports; they go out of date.
 
 ## Redundancies and cleanup
 
