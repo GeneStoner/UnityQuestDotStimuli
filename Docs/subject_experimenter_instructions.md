@@ -39,7 +39,17 @@ Use the **right thumbstick** on the controller to point in the direction you per
 
 > **Tip:** You can change your direction after Step 2 — just push the thumbstick somewhere new. If you change direction after locking (Step 3), the lock releases automatically and you can re-select.
 
-> **If you confirmed by accident** (pressed trigger without selecting a direction): the trial will be silently re-added to the end of the session and repeated later. There is no penalty.
+---
+
+### Skipping a trial
+
+If you **blink during the movement**, or something disturbs you (a noise, the headset slipping), you can skip the trial: **press the trigger without pushing the thumbstick in any direction**. A message reads "Trial skipped — it will be repeated later", and the trial is put back into the session to be run again.
+
+**Skip only for blinks and disturbances — never because you are unsure.** When you did see the display but cannot tell which direction it moved, **guess**. There are only eight choices, so even a vague impression carries information, while a skipped trial carries none. Skipping when uncertain also biases the results, because the hardest trials are exactly the ones that would be thrown away.
+
+Skipping should be rare — a few trials in a session, not dozens. Every skipped trial also makes the session longer, since it is repeated.
+
+> **If you confirm by accident**, without selecting a direction, the same thing happens: you will see the skip message and the trial will be repeated later. There is no penalty.
 
 ---
 

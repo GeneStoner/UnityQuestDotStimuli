@@ -35,7 +35,7 @@ The psychometric function for an 8-alternative task is steepest at **d′ ≈ 1.
 
 **Policy.** Skipping should be reserved for a blink or an external disturbance, never for uncertainty — on an 8-alternative task a guess is informative and a skipped trial is not. Afife's 103 skipped trials in one session (20%) is far above what that policy implies.
 
-**To do.** State the policy in the observer instructions. Consider a dedicated skip button with a logged reason. Consider interleaving easy catch trials (the 200 ms practice stimulus, ~10% of trials) so the lapse rate can be measured and divided out.
+**Done 2026-09-18.** The policy is in the observer instructions, and a skipped trial now shows "Trial skipped — it will be repeated later" in the headset instead of passing silently. **To do.** Consider a dedicated skip button with a logged reason. Consider interleaving easy catch trials (the 200 ms practice stimulus, ~10% of trials) so the lapse rate can be measured and divided out.
 
 ## 5. Fixation
 
