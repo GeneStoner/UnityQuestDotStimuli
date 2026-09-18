@@ -63,6 +63,10 @@ public class ExpSpecTestPhase : ExperimentSpec
     public bool delayTranslator = true;
 
     [Header("Dot continuity removal")]
+    [Tooltip("With balanceDelayedFieldColor off, both fields are drawn in one colour: red by " +
+             "default, green when this is true. Diagnostic control for red/green asymmetries.")]
+    public bool unbalancedFieldsUseGreen = false;
+
     [Tooltip("When true, coherently translating dots (MotionKind.Linear subfields) are randomly " +
              "repositioned at the first frame of translation. Removes dot-identity continuity " +
              "between the rotation and translation phases. One frame of coherent translation " +
@@ -255,9 +259,10 @@ public class ExpSpecTestPhase : ExperimentSpec
                             }
                             else
                             {
+                                int soloColor = unbalancedFieldsUseGreen ? COLOR_GREEN : COLOR_RED;
                                 for (int r = 0; r < reps; r++)
                                 {
-                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, COLOR_RED, swap, depth));
+                                    trials.Add(MakeTrial(rng, ref idx, condID, h, rotCfg, soloColor, swap, depth));
                                 }
                             }
                         }
