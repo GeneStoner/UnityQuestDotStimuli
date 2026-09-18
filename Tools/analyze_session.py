@@ -33,6 +33,58 @@ EXPECTED = {
 }
 
 
+def pc_to_dprime(p, m=8, lo=0.0, hi=6.0):
+    """
+    Percent correct -> d' for an unbiased m-alternative forced choice observer.
+
+    Model: on each trial the signal alternative draws from N(d', 1) and the
+    m-1 others from N(0, 1); the observer picks the largest. Then
+
+        P(correct) = integral phi(x - d') * Phi(x)^(m-1) dx
+
+    which is monotonic in d', so it inverts by bisection. At chance (1/m) d' is
+    0; at 100% it is unbounded, so callers should apply a correction first.
+    """
+    if p <= 1.0 / m:
+        return 0.0
+    if p >= 1.0:
+        return float("nan")
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        if dprime_to_pc(mid, m) < p:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def dprime_to_pc(d, m=8, lo=-8.0, hi=10.0, n=2000):
+    """Forward direction of the m-AFC model above (Simpson's rule)."""
+    h = (hi - lo) / n
+    total = 0.0
+    for i in range(n + 1):
+        x = lo + i * h
+        w = 1 if i in (0, n) else (4 if i % 2 else 2)
+        total += w * math.exp(-0.5 * (x - d) ** 2) / math.sqrt(2 * math.pi) \
+                 * (0.5 * (1 + math.erf(x / math.sqrt(2)))) ** (m - 1)
+    return total * h / 3
+
+
+def dprime_with_se(hits, n, m=8):
+    """
+    d' and its standard error. A half-trial correction keeps 0% and 100% finite
+    (Hautus 1995); the SE comes from the binomial SE on percent correct divided
+    by the local slope of the psychometric function.
+    """
+    if n == 0:
+        return float("nan"), float("nan")
+    p = (hits + 0.5) / (n + 1.0)
+    d = pc_to_dprime(p, m)
+    slope = (dprime_to_pc(d + 0.01, m) - dprime_to_pc(max(0.0, d - 0.01), m)) / 0.02
+    se_p = math.sqrt(p * (1 - p) / n)
+    return d, (se_p / slope if slope > 1e-6 else float("nan"))
+
+
 def pct(rows):
     """Percent correct over rows that carry a response."""
     scored = [r for r in rows if r["resp"] >= 0]
@@ -142,14 +194,21 @@ def results(rows):
         by_swap[r["swap"]].append(r)
 
     print(f"  {'swap':6s} {'CUED':>16s} {'UNCUED':>16s} {'cueing':>12s}")
+    print(f"  (d' rows: unbiased 8-AFC model; d' = 0 is chance, 1.3 is ~49% correct)")
     for swap in sorted(by_swap):
         cu = [r for r in by_swap[swap] if r["cond"] == "CUED"]
         un = [r for r in by_swap[swap] if r["cond"] == "UNCUED"]
         p_cu, n_cu = pct(cu)
         p_un, n_un = pct(un)
         chi = chi2_2x2(round(p_cu * n_cu / 100), n_cu, round(p_un * n_un / 100), n_un)
+        d_cu, se_cu = dprime_with_se(round(p_cu * n_cu / 100), n_cu)
+        d_un, se_un = dprime_with_se(round(p_un * n_un / 100), n_un)
+        dd = d_cu - d_un
+        se_dd = math.sqrt(se_cu ** 2 + se_un ** 2)
         print(f"  {swap:6s} {p_cu:8.1f}% (n={n_cu:3d}) {p_un:8.1f}% (n={n_un:3d})"
               f" {p_cu - p_un:+8.1f} pp {stars(chi)}")
+        print(f"  {'':6s} {'d prime':>10s} {d_cu:6.2f}      {d_un:14.2f}"
+              f" {dd:+8.2f} +- {se_dd:.2f}")
 
     # Which field translated: the delayed one on CUED trials, the other on UNCUED
     print()
