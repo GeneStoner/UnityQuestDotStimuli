@@ -273,6 +273,11 @@ public class TrialBlockRunner : MonoBehaviour
 
     public void BeginBlock()
     {
+        // Re-apply here, not only in Awake: ExperimentSelector assigns the chosen
+        // spec after Awake has run, so a spec picked from the menu would otherwise
+        // keep its default colours and ignore the observer's flicker calibration.
+        LoadCalibrationColors();
+
         string expName = string.IsNullOrWhiteSpace(spec.experimentName) ? "(unnamed)" : spec.experimentName;
         Debug.Log($"[TrialBlockRunner] ========================================");
         Debug.Log($"[TrialBlockRunner]  EXPERIMENT: {expName}");
