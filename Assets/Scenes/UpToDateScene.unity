@@ -12462,6 +12462,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StimDebugHUD
   runner: {fileID: 1973951165}
+  showTrialText: 0
 --- !u!4 &365388873
 Transform:
   m_ObjectHideFlags: 0
@@ -60799,6 +60800,7 @@ MonoBehaviour:
   specs:
   - {fileID: 11400000, guid: b2435d15a7eb149a4a8df19b3fae9f9f, type: 2}
   - {fileID: 11400000, guid: 2b7bd7e151b1a4c9d88cbe9ca16196c0, type: 2}
+  - {fileID: 11400000, guid: b0a2dfe2d0f24d10981eb0cceb1509f6, type: 2}
 --- !u!1 &1975619407
 GameObject:
   m_ObjectHideFlags: 0
