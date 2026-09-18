@@ -1128,6 +1128,10 @@ public class TrialBlockRunner : MonoBehaviour
         csvLogger?.AddRequeuedTrial();
         RequeueTrial(_currentTrial);
 
+        // Tell the observer: a skipped trial is silent otherwise, so an accidental
+        // confirm looks the same as a normal trial ending.
+        HeadsetMessage.Show("Trial skipped - it will be repeated later", 2f);
+
         _phase = TrialPhase.Done;
         NextTrial();
     }

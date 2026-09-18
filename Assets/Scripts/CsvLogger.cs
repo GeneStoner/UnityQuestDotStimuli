@@ -47,6 +47,7 @@ public class CsvLogger : MonoBehaviour
     private int _startedTrials = 0;
     private int _completedTrials = 0;
     private int _requeuedTrials = 0;
+    private int _abortedTrials = 0;   // rows written with no response (RespDeg -1)
 
     private float? _fpsMean = null;
     private float? _fpsStd = null;
@@ -223,6 +224,7 @@ public class CsvLogger : MonoBehaviour
         _startedTrials = 0;
         _completedTrials = 0;
         _requeuedTrials = 0;
+        _abortedTrials = 0;
 
         _trialOpen = false;
         _sidecarWritten = false;
@@ -475,7 +477,10 @@ public class CsvLogger : MonoBehaviour
             _tsv.WriteLine(line);
             _tsv.Flush();
 
-            _completedTrials++;
+            // A row with no direction is an aborted attempt (skipped trial): it is
+            // re-queued and run again, so it must not count as a completed trial.
+            if (_curRespDeg >= 0f) _completedTrials++;
+            else                   _abortedTrials++;
             _metaDirty = true;
 
             // Log progress every 10 trials
@@ -991,6 +996,8 @@ public class CsvLogger : MonoBehaviour
         sb.Append($"    \"started_trials\": {_startedTrials},\n");
         sb.Append($"    \"completed_trials\": {_completedTrials},\n");
         sb.Append($"    \"requeued_trials\": {_requeuedTrials},\n");
+        sb.Append($"    \"aborted_trials\": {_abortedTrials},\n");
+        sb.Append($"    \"rows_written\": {_completedTrials + _abortedTrials},\n");
         sb.Append($"    \"measured_fps_mean\": {nNullFloat(_fpsMean)},\n");
         sb.Append($"    \"measured_fps_std\": {nNullFloat(_fpsStd)}\n");
         sb.Append("  }\n");
