@@ -1226,4 +1226,7 @@ public class TrialBlockRunner : MonoBehaviour
                                     ? spec.experimentName : "(no experiment loaded)";
     /// <summary>True when the HUD should be visible: idle or waiting for trigger press.</summary>
     public bool HudVisible => _phase == TrialPhase.WaitingForStart || _phase == TrialPhase.Done;
+
+    /// <summary>True once every planned trial has been run and the session file is closed.</summary>
+    public bool SessionFinished => _phase == TrialPhase.Done;
 }
