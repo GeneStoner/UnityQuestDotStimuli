@@ -170,6 +170,22 @@ print(pc.round(1))
 
 For example, Gene's session 260916_1340 (173 dots, N and CM interleaved) gave +35.5 pp cueing on N trials and +23.0 pp on CM trials. A healthy no-swap session is roughly CUED 60–70%, UNCUED 30–40%.
 
+### Checking and summarizing a session
+
+`Tools/analyze_session.py` does the routine checks on one session. It needs only Python 3.9+ and the `.tsv` with its `.sidecar.json` beside it:
+
+```
+python3 Tools/analyze_session.py ~/VRDotsData/vr_dots_session_260918_1313.tsv
+```
+
+It prints three blocks:
+
+1. **Stimulus check** — headset model, refresh rate, render scale and the spec's parameters, each against its expected value. Run this before looking at any result.
+2. **Timing check** — measured translation duration, frames shown, and whether any stall landed inside the translation window.
+3. **Results** — percent correct and the cueing effect for each swap type, plus the red and green fields separately.
+
+Trials where the observer confirmed without choosing a direction are logged with `RespDeg` −1 and re-queued automatically; the script excludes them from percent correct and reports how many there were.
+
 More scripts: `Tools/Analysis/` (start with `analyze_vr_dots_v2.py`) and `Agents/SwapPilot/Analysis/`. Many have data paths written into them; change those to your own folder.
 
 ### Where data should live
