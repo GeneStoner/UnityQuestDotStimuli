@@ -997,8 +997,14 @@ public class TrialBlockRunner : MonoBehaviour
         // Apply stereo depth offsets AFTER motion stepping
         builder.ApplyDepthOffsets(_currentCond, _frameInStimulus);
 
-        // Accumulate mkrows + colorrows + depthrows into single TSV fields
-        if (_currentCond.subfields != null)
+        // Accumulate mkrows + colorrows + depthrows into single TSV fields.
+        // Skipped entirely when nothing consumes them: the arrays and string.Join
+        // calls below allocate on every simulated frame, which costs a GC pause
+        // roughly once per trial.
+        // AuditTrajectory() also reads the builders, so they are built whenever a
+        // logger is present; the flag decides only whether they reach the TSV.
+        bool needPayloads = (csvLogger != null && csvLogger.writeTrajectoryPayloads);
+        if (needPayloads && _currentCond.subfields != null)
         {
             int subCount = _currentCond.subfields.Length;
             int[] mkCodes = new int[subCount];
@@ -1090,6 +1096,7 @@ public class TrialBlockRunner : MonoBehaviour
     {
         if (csvLogger == null || _currentTrial == null) return;
         if (_mkPayloadBuilder == null || _colorPayloadBuilder == null) return;
+        if (_mkPayloadBuilder.Length == 0) return;   // payloads not being built this session
 
         string cond     = _currentTrial.conditionID ?? "";
         string delCol   = (_currentTrial.delayedFieldColorCode == ExperimentSpec.COLOR_RED) ? "R" : "G";
